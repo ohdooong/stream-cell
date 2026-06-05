@@ -169,6 +169,7 @@ services:
       POSTGRES_PASSWORD: "streamcell"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ../sql/ddl/V2__init_schema.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U streamcell -d streamcell"]
       interval: 10s
@@ -197,6 +198,10 @@ services:
         condition: service_completed_successfully
       postgres:
         condition: service_healthy
+    volumes:
+      - ./flink/lib/flink-sql-connector-kafka-3.2.0-1.19.jar:/opt/flink/lib/flink-sql-connector-kafka-3.2.0-1.19.jar
+      - ./flink/lib/flink-connector-jdbc-3.2.0-1.19.jar:/opt/flink/lib/flink-connector-jdbc-3.2.0-1.19.jar
+      - ./flink/lib/postgresql-42.7.3.jar:/opt/flink/lib/postgresql-42.7.3.jar
 
   # Flink TaskManager.
   # No host port is exposed; it communicates with JobManager over streamcell-net.
@@ -213,6 +218,10 @@ services:
         parallelism.default: 1
     depends_on:
       - flink-jobmanager
+    volumes:
+      - ./flink/lib/flink-sql-connector-kafka-3.2.0-1.19.jar:/opt/flink/lib/flink-sql-connector-kafka-3.2.0-1.19.jar
+      - ./flink/lib/flink-connector-jdbc-3.2.0-1.19.jar:/opt/flink/lib/flink-connector-jdbc-3.2.0-1.19.jar
+      - ./flink/lib/postgresql-42.7.3.jar:/opt/flink/lib/postgresql-42.7.3.jar
 
   # Flink SQL Gateway.
   # Host port 8083: SQL Gateway REST endpoint at http://localhost:8083
