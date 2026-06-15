@@ -2,7 +2,7 @@ package com.streamcell.web.user.service.impl;
 
 import com.streamcell.web.user.domain.User;
 import com.streamcell.web.user.dto.UserResponse;
-import com.streamcell.web.user.repository.UserMapper;
+import com.streamcell.web.user.repository.UserRepository;
 import com.streamcell.web.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    private final UserMapper mapper;
+    private final UserRepository mapper;
 
     @Override
     @Transactional(readOnly = true)
