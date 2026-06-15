@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '4.0.6'
+    id 'org.springframework.boot' version '4.1.0'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -19,13 +19,17 @@ repositories {
 }
 
 ext {
-    kafka_version =   '4.1.2'
-    mybatis_version = '4.0.1'
+    kafkaVersion =   '4.1.2'
+    mybatisVersion = '4.0.1'
+    springdocVersion = '2.8.5'
 }
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
@@ -33,7 +37,12 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-jdbc"
 
     /* mybatis */
-    implementation "org.mybatis.spring.boot:mybatis-spring-boot-starter:${mybatis_version}"
+    implementation "org.mybatis.spring.boot:mybatis-spring-boot-starter:${mybatisVersion}"
+
+    /* swagger */
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+
+    implementation "org.springframework.boot:spring-boot-starter-kafka"
 
     testImplementation 'org.springframework.boot:spring-boot-starter-thymeleaf-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
