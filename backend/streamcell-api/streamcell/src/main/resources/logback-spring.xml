@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <!-- Spring Boot 기본 logback 설정 포함 -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- 로그 패턴 -->
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <!-- 콘솔 출력 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 애플리케이션 로그 -->
+    <logger name="com.streamcell" level="DEBUG"/>
+
+    <!-- Spring 로그는 너무 많으므로 INFO -->
+    <logger name="org.springframework" level="INFO"/>
+    <logger name="org.springframework.web" level="INFO"/>
+    <logger name="org.springframework.jdbc" level="DEBUG"/>
+
+    <!-- MyBatis 기본 로그 -->
+    <logger name="org.mybatis" level="DEBUG"/>
+    <logger name="org.apache.ibatis" level="DEBUG"/>
+
+    <!-- Mapper 패키지 로그: 본인 패키지에 맞게 조정 -->
+    <logger name="com.streamcell.web" level="DEBUG"/>
+    <logger name="com.streamcell.platform" level="DEBUG"/>
+
+    <!-- HikariCP 로그 -->
+    <logger name="com.zaxxer.hikari" level="INFO"/>
+
+    <!-- 루트 로그 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
