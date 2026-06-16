@@ -3,7 +3,7 @@
 StreamCell은 Kafka, Flink, Platform API Server로 구성된 스트리밍 플랫폼입니다.<br>
 사용자는 Platform API Server를 통해 AI를 이용하여 자동화된 실시간 파이프라인을 생성(Flink SQL)하거나
 직접 파이프라인 Job을 개발하여 배포할 수 있습니다.
-즉, <b>StreamCell은 간단한 분석은 AI에이전트를 통한 Flink SQL 방식으로, 복잡한 실시간 처리는 개발자가 직접 Flink Job을 개발하는 방식으로 배포하는<br> AI-assisted 실시간 스트리밍 파이프라인 플랫폼입니다.</b>
+즉, <b>StreamCell은 간단한 분석은 AI에이전트를 통한 Flink SQL 방식으로, 복잡한 실시간 처리는 개발자가 직접 Flink Job을 개발하는 방식으로 배포하는 AI-assisted 실시간 스트리밍 파이프라인 플랫폼입니다.</b>
 
 ## 목표 및 핵심기능
 사용자 권한에 따라 특정 Kafka Topic에 접근하고 제어할 수 있습니다.<br>
