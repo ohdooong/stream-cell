@@ -1,11 +1,11 @@
 package com.streamcell.platform.topic.converter;
 
-import com.streamcell.platform.topic.dto.TopicResponse;
+import com.streamcell.platform.topic.dto.TopicResponse.Item;
 import com.streamcell.platform.topic.vo.Topic;
 
 public class TopicConverter {
-    public static TopicResponse.Items toDTO(Topic topic) {
-        return TopicResponse.Items.builder()
+    public static Item toDTO(Topic topic) {
+        return Item.builder()
                 .topicId(topic.getTopicId())
                 .displayName(topic.getDisplayName())
                 .topicName(topic.getTopicName())

@@ -1,5 +1,6 @@
 package com.streamcell.platform.topic.repository;
 
+import com.streamcell.platform.topic.dto.TopicResponse.Item;
 import com.streamcell.platform.topic.vo.Topic;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -41,4 +42,18 @@ public interface TopicRepository {
             values (#{topic}, 'ADMIN', now(), 'ADMIN', now())
     """)
     int mergeIntoTopic(String topic);
+
+    @Select("""
+        select
+            topic_id,
+            topic_name,
+            display_name,
+            description,
+            schema_json,
+            time_field,
+            message_format
+        from platform.topic_metadata
+       where topic_id = #{topicId}
+    """)
+    Item findById(Long topicId);
 }

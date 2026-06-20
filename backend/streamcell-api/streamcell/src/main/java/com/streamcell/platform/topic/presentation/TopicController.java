@@ -1,6 +1,6 @@
 package com.streamcell.platform.topic.presentation;
 
-import com.streamcell.platform.topic.dto.TopicResponse;
+import com.streamcell.platform.topic.dto.TopicResponse.Item;
 import com.streamcell.platform.topic.service.TopicService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -9,14 +9,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 @Tag(name = "Kafka Topic", description = "Kafka Topic 컨트롤러")
 @RestController
@@ -45,8 +43,22 @@ public class TopicController {
             @ApiResponse(responseCode = "500", description = "Internal Server Error.")
     })
     @GetMapping("/topics")
-    public ResponseEntity<List<TopicResponse.Items>> getTopics() {
-        List<TopicResponse.Items> topics = service.getTopics();
+    public ResponseEntity<List<Item>> getTopics() {
+        List<Item> topics = service.getTopics();
         return ResponseEntity.ok(topics);
     }
+
+    @Operation(summary = "Topic 상세정보 조회(메타데이터)", description = "Topic 상세정보 조회")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "조회성공"),
+        @ApiResponse(responseCode = "400", description = "Bad Request"),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error.")
+    })
+    @GetMapping("/topics/{topicId}")
+    public ResponseEntity<Item> getTopicById(@PathVariable Long topicId) {
+        service.getTopicById(topicId);
+        return ResponseEntity.ok(null);
+    }
+
+
 }
