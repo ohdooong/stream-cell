@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS web.user_roles (
     created_by               VARCHAR(255) NOT NULL,
     created_at               TIMESTAMP NOT NULL DEFAULT now(),
     updated_by               VARCHAR(255) NOT NULL,
-    updated_at               TIMESTAMP NOT NULL DEFAULT now()
+    updated_at               TIMESTAMP NOT NULL DEFAULT now(),
     CONSTRAINT uk_user_roles UNIQUE (user_id, role_id)
 );
 
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS platform.topic_permission (
     created_at               TIMESTAMP NOT NULL DEFAULT now(),
     updated_by               VARCHAR(255) NOT NULL,
     updated_at               TIMESTAMP NOT NULL DEFAULT now(),
-    CONSTRAINT uk_topic_permission UNIQUE (topic_id, user_id, permission_type),
+    CONSTRAINT uk_topic_permission UNIQUE (topic_id, user_id, permission_type)
 );
 
 CREATE TABLE IF NOT EXISTS platform.pipeline (
@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS platform.custom_job_config (
     created_by               VARCHAR(255) NOT NULL,
     created_at               TIMESTAMP NOT NULL DEFAULT now(),
     updated_by               VARCHAR(255) NOT NULL,
-    updated_at               TIMESTAMP NOT NULL DEFAULT now()
+    updated_at               TIMESTAMP NOT NULL DEFAULT now(),
     CONSTRAINT chk_custom_job_parallelism CHECK (parallelism >= 1)
 );
 
@@ -197,36 +197,36 @@ CREATE INDEX IF NOT EXISTS idx_custom_job_config_pipeline_id
 -- password는 임시값입니다. 실제 구현 시 BCrypt 등으로 교체하세요.
 -- =========================================================
 
-INSERT INTO web.roles (role_name, description)
+INSERT INTO web.roles (role_name, description, created_by, created_at, updated_by, updated_at)
 VALUES
-    ('ADMIN', 'StreamCell administrator'),
-    ('ANALYST', 'AI SQL pipeline user'),
-    ('ENGINEER', 'Custom Flink job user')
+    ('ADMIN', 'StreamCell administrator', 'ADMIN', now(), 'ADMIN', now()),
+    ('ANALYST', 'AI SQL pipeline user', 'ADMIN', now(), 'ADMIN', now()),
+    ('ENGINEER', 'Custom Flink job user', 'ADMIN', now(), 'ADMIN', now())
     ON CONFLICT (role_name) DO NOTHING;
 
-INSERT INTO web.users (email, password, name, status)
+INSERT INTO web.users (email, password, name, status, created_by, created_at, updated_by, updated_at)
 VALUES
-    ('admin@streamcell.local', '{noop}admin1234', 'Admin User', 'ACTIVE'),
-    ('analyst@streamcell.local', '{noop}analyst1234', 'Analyst User', 'ACTIVE'),
-    ('engineer@streamcell.local', '{noop}engineer1234', 'Engineer User', 'ACTIVE')
+    ('admin@streamcell.local', 'admin1234', 'Admin User', 'ACTIVE', 'ADMIN', now(), 'ADMIN', now()),
+    ('analyst@streamcell.local', 'analyst1234', 'Analyst User', 'ACTIVE', 'ADMIN', now(), 'ADMIN', now()),
+    ('engineer@streamcell.local', 'engineer1234', 'Engineer User', 'ACTIVE', 'ADMIN', now(), 'ADMIN', now())
     ON CONFLICT (email) DO NOTHING;
 
-INSERT INTO web.user_roles (user_id, role_id)
-SELECT u.user_id, r.role_id
+INSERT INTO web.user_roles (user_id, role_id, created_by, created_at, updated_by, updated_at)
+SELECT u.user_id, r.role_id, 'ADMIN', now(), 'ADMIN', now()
 FROM web.users u
          JOIN web.roles r ON r.role_name = 'ADMIN'
 WHERE u.email = 'admin@streamcell.local'
     ON CONFLICT (user_id, role_id) DO NOTHING;
 
-INSERT INTO web.user_roles (user_id, role_id)
-SELECT u.user_id, r.role_id
+INSERT INTO web.user_roles (user_id, role_id, created_by, created_at, updated_by, updated_at)
+SELECT u.user_id, r.role_id, 'ADMIN', now(), 'ADMIN', now()
 FROM web.users u
          JOIN web.roles r ON r.role_name = 'ANALYST'
 WHERE u.email = 'analyst@streamcell.local'
     ON CONFLICT (user_id, role_id) DO NOTHING;
 
-INSERT INTO web.user_roles (user_id, role_id)
-SELECT u.user_id, r.role_id
+INSERT INTO web.user_roles (user_id, role_id, created_by, created_at, updated_by, updated_at)
+SELECT u.user_id, r.role_id, 'ADMIN', now(), 'ADMIN', now()
 FROM web.users u
          JOIN web.roles r ON r.role_name = 'ENGINEER'
 WHERE u.email = 'engineer@streamcell.local'
@@ -244,7 +244,7 @@ INSERT INTO platform.topic_metadata (
     description,
     schema_json,
     time_field,
-    message_format
+    message_format, created_by, created_at, updated_by, updated_at
 )
 VALUES (
            'orders',
@@ -258,13 +258,14 @@ VALUES (
              "event_time": "TIMESTAMP(3)"
            }'::jsonb,
            'event_time',
-           'json'
+           'json',
+        'ADMIN', now(), 'ADMIN', now()
        )
     ON CONFLICT (topic_name) DO NOTHING;
 
 -- admin: orders 전체 권한
-INSERT INTO platform.topic_permission (topic_id, user_id, permission_type)
-SELECT t.topic_id, u.user_id, p.permission_type
+INSERT INTO platform.topic_permission (topic_id, user_id, permission_type, created_by, created_at, updated_by, updated_at)
+SELECT t.topic_id, u.user_id, p.permission_type, 'ADMIN', now(), 'ADMIN', now()
 FROM platform.topic_metadata t
          JOIN web.users u ON u.email = 'admin@streamcell.local'
          CROSS JOIN (
@@ -274,8 +275,8 @@ WHERE t.topic_name = 'orders'
     ON CONFLICT (topic_id, user_id, permission_type) DO NOTHING;
 
 -- analyst: VIEW, QUERY
-INSERT INTO platform.topic_permission (topic_id, user_id, permission_type)
-SELECT t.topic_id, u.user_id, p.permission_type
+INSERT INTO platform.topic_permission (topic_id, user_id, permission_type, created_by, created_at, updated_by, updated_at)
+SELECT t.topic_id, u.user_id, p.permission_type, 'ADMIN', now(), 'ADMIN', now()
 FROM platform.topic_metadata t
          JOIN web.users u ON u.email = 'analyst@streamcell.local'
          CROSS JOIN (
@@ -285,8 +286,8 @@ WHERE t.topic_name = 'orders'
     ON CONFLICT (topic_id, user_id, permission_type) DO NOTHING;
 
 -- engineer: VIEW, QUERY, DEPLOY
-INSERT INTO platform.topic_permission (topic_id, user_id, permission_type)
-SELECT t.topic_id, u.user_id, p.permission_type
+INSERT INTO platform.topic_permission (topic_id, user_id, permission_type, created_by, created_at, updated_by, updated_at)
+SELECT t.topic_id, u.user_id, p.permission_type, 'ADMIN', now(), 'ADMIN', now()
 FROM platform.topic_metadata t
          JOIN web.users u ON u.email = 'engineer@streamcell.local'
          CROSS JOIN (
