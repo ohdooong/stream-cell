@@ -62,11 +62,18 @@ public class TopicController {
         return ResponseEntity.ok(service.getTopicById(topicId));
     }
 
+    @Operation(summary = "Topic Schema 업데이트", description = "Topic의 Schema를 업데이트 합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "update 성공"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error."),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+    })
     @PutMapping("/topics/{topicId}/schema")
     public ResponseEntity<String> updateTopicSchema(
         @PathVariable Long topicId,
         @RequestBody TopicRequest.Schema schema) {
-        service.updateTopicSchema(topicId, schema);
-        return ResponseEntity.ok("schema updated");
+
+        int updated = service.updateTopicSchema(topicId, schema);
+        return ResponseEntity.ok("schema updated: " + updated);
     }
 }

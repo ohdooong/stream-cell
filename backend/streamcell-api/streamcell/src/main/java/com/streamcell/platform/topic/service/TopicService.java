@@ -1,8 +1,8 @@
 package com.streamcell.platform.topic.service;
 
-import com.streamcell.platform.topic.dto.TopicRequest;
 import com.streamcell.platform.topic.dto.TopicRequest.Schema;
 import com.streamcell.platform.topic.dto.TopicResponse.Item;
+
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
