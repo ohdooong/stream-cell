@@ -2,6 +2,7 @@ package com.streamcell.platform.topic.service.impl;
 
 import com.streamcell.platform.kafka.KafkaManager;
 import com.streamcell.platform.topic.converter.TopicConverter;
+import com.streamcell.platform.topic.dto.TopicRequest.Schema;
 import com.streamcell.platform.topic.dto.TopicResponse.Item;
 import com.streamcell.platform.topic.repository.TopicRepository;
 import com.streamcell.platform.topic.service.TopicService;
@@ -40,5 +41,14 @@ public class TopicServiceImpl implements TopicService {
     @Override
     public Item getTopicById(Long topicId) {
         return repository.findById(topicId);
+    }
+
+    @Override
+    public int updateTopicSchema(Long topicId, Schema schema) {
+
+
+
+
+        return 0;
     }
 }
