@@ -19,7 +19,7 @@ repositories {
 }
 
 ext {
-    kafkaVersion =   '4.1.2'
+    starterKafkaVersion =   '4.1.0'
     mybatisVersion = '4.0.1'
     springdocVersion = '2.8.5'
 }
@@ -42,7 +42,7 @@ dependencies {
     /* swagger */
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
 
-    implementation "org.springframework.boot:spring-boot-starter-kafka"
+    implementation "org.springframework.boot:spring-boot-starter-kafka:${starterKafkaVersion}"
 
     testImplementation 'org.springframework.boot:spring-boot-starter-thymeleaf-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'

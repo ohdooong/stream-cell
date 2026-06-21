@@ -1,5 +1,6 @@
 package com.streamcell.platform.topic.presentation;
 
+import com.streamcell.platform.topic.dto.TopicRequest;
 import com.streamcell.platform.topic.dto.TopicResponse.Item;
 import com.streamcell.platform.topic.service.TopicService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,9 +29,9 @@ public class TopicController {
 
     @Operation(summary = "Kafka Topic 동기화 메서드", description = "Kafka Topic 동기화")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "동기화 성공"),
-            @ApiResponse(responseCode = "400", description = "Kafka Topic Client Error"),
-            @ApiResponse(responseCode = "500", description = "Internal Server Error.")
+        @ApiResponse(responseCode = "200", description = "동기화 성공"),
+        @ApiResponse(responseCode = "400", description = "Kafka Topic Client Error"),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error.")
     })
     @PostMapping("/sync")
     public ResponseEntity<String> syncTopics() throws Exception {
@@ -38,9 +41,9 @@ public class TopicController {
 
     @Operation(summary = "Topic 조회 메서드", description = "Topic 목록 조회")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "조회성공"),
-            @ApiResponse(responseCode = "400", description = "Bad Request"),
-            @ApiResponse(responseCode = "500", description = "Internal Server Error.")
+        @ApiResponse(responseCode = "200", description = "조회성공"),
+        @ApiResponse(responseCode = "400", description = "Bad Request"),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error.")
     })
     @GetMapping("/topics")
     public ResponseEntity<List<Item>> getTopics() {
@@ -56,9 +59,21 @@ public class TopicController {
     })
     @GetMapping("/topics/{topicId}")
     public ResponseEntity<Item> getTopicById(@PathVariable Long topicId) {
-        service.getTopicById(topicId);
-        return ResponseEntity.ok(null);
+        return ResponseEntity.ok(service.getTopicById(topicId));
     }
 
+    @Operation(summary = "Topic Schema 업데이트", description = "Topic의 Schema를 업데이트 합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "update 성공"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error."),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+    })
+    @PutMapping("/topics/{topicId}/schema")
+    public ResponseEntity<String> updateTopicSchema(
+        @PathVariable Long topicId,
+        @RequestBody TopicRequest.Schema schema) {
 
+        int updated = service.updateTopicSchema(topicId, schema);
+        return ResponseEntity.ok("schema updated: " + updated);
+    }
 }

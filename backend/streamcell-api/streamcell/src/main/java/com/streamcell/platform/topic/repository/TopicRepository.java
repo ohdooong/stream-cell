@@ -1,10 +1,12 @@
 package com.streamcell.platform.topic.repository;
 
+import com.streamcell.platform.topic.dto.TopicRequest;
 import com.streamcell.platform.topic.dto.TopicResponse.Item;
 import com.streamcell.platform.topic.vo.Topic;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -55,5 +57,16 @@ public interface TopicRepository {
         from platform.topic_metadata
        where topic_id = #{topicId}
     """)
-    Item findById(Long topicId);
+    Topic findById(Long topicId);
+
+    @Update("""
+        update platform.topic_metadata
+           set display_name = #{displayName}
+             , description = #{description}
+             , message_format = #{description}
+             , time_field = #{timeField}
+             , schema_json = #{schemaJson}::jsonb
+         where topic_id = #{topicId}
+    """)
+    int updateTopicSchema(Topic topic);
 }
