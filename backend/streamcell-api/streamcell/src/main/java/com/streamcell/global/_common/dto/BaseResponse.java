@@ -1,4 +1,4 @@
-package com.streamcell.global.common.dto;
+package com.streamcell.global._common.dto;
 
 
 import lombok.AllArgsConstructor;
