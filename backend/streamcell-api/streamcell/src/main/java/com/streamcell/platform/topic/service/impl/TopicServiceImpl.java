@@ -1,7 +1,8 @@
 package com.streamcell.platform.topic.service.impl;
 
-import com.streamcell.platform._common.enums.ErrorCode;
-import com.streamcell.platform._common.exception.BaseAPIException;
+import com.streamcell.global._common.enums.ErrorCode;
+import com.streamcell.global._common.exception.BaseAPIException;
+import com.streamcell.global._common.util.JsonUtils;
 import com.streamcell.platform.kafka.KafkaManager;
 import com.streamcell.platform.topic.converter.TopicConverter;
 import com.streamcell.platform.topic.dto.TopicRequest.Schema;
@@ -52,6 +53,14 @@ public class TopicServiceImpl implements TopicService {
     @Override
     public int updateTopicSchema(Long topicId, Schema schema) {
         Topic topic = TopicConverter.toVO(schema, topicId);
+
+        String schemaJson = schema.getSchemaJson();
+        String timeField = schema.getTimeField();
+        boolean included = JsonUtils.isIncludedFrom(schemaJson, timeField);
+        if (!included) {
+            throw new BaseAPIException(ErrorCode.INVALID_REQUEST);
+        }
+
         return repository.updateTopicSchema(topic);
     }
 }

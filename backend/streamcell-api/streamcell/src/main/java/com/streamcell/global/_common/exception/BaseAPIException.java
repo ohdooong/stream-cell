@@ -1,6 +1,6 @@
-package com.streamcell.platform._common.exception;
+package com.streamcell.global._common.exception;
 
-import com.streamcell.platform._common.enums.ErrorCode;
+import com.streamcell.global._common.enums.ErrorCode;
 
 public class BaseAPIException extends RuntimeException {
     public BaseAPIException(String message) {

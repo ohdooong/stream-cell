@@ -1,15 +1,12 @@
 package com.streamcell.platform.topic.repository;
 
-import com.streamcell.platform.topic.dto.TopicRequest;
-import com.streamcell.platform.topic.dto.TopicResponse.Item;
 import com.streamcell.platform.topic.vo.Topic;
+import java.util.List;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
 
 @Mapper
 @Repository

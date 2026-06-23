@@ -1,6 +1,6 @@
 package com.streamcell.platform.topic.presentation;
 
-import com.streamcell.global.common.dto.BaseResponse;
+import com.streamcell.global._common.dto.BaseResponse;
 import com.streamcell.platform.topic.dto.TopicRequest;
 import com.streamcell.platform.topic.dto.TopicResponse.Item;
 import com.streamcell.platform.topic.service.TopicService;
