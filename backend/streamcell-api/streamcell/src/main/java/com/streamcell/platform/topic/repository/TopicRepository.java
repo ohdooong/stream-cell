@@ -2,6 +2,8 @@ package com.streamcell.platform.topic.repository;
 
 import com.streamcell.platform.topic.vo.Topic;
 import java.util.List;
+
+import com.streamcell.platform.topic.vo.TopicPermission;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -66,4 +68,38 @@ public interface TopicRepository {
          where topic_id = #{topicId}
     """)
     int updateTopicSchema(Topic topic);
+
+    @Select("""
+        select
+               a.permission_id
+             , a.topic_id
+             , tm.topic_name
+             , a.user_id
+             , b.name as user_name
+             , a.permission_type
+          from platform.topic_permission a
+          join web.users b
+            on a.user_id = b.user_id
+          join platform.topic_metadata tm
+            on a.topic_id = tm.topic_id
+         where a.topic_id = #{topicId}
+    """)
+    List<TopicPermission> findTopicPermissions(Long topicId);
+
+    @Select("""
+        select
+               a.permission_id
+             , a.topic_id
+             , tm.topic_name
+             , a.user_id
+             , b.name as user_name
+             , a.permission_type
+          from platform.topic_permission a
+          join web.users b
+            on a.user_id = b.user_id
+          join platform.topic_metadata tm
+            on a.topic_id = tm.topic_id
+         where a.user_id = #{userId}
+    """)
+    List<TopicPermission> findTopicPermissionByUserId(Long userId);
 }

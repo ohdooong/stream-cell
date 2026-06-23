@@ -6,6 +6,7 @@ import com.streamcell.global._common.util.JsonUtils;
 import com.streamcell.platform.kafka.KafkaManager;
 import com.streamcell.platform.topic.converter.TopicConverter;
 import com.streamcell.platform.topic.dto.TopicRequest.Schema;
+import com.streamcell.platform.topic.dto.TopicResponse;
 import com.streamcell.platform.topic.dto.TopicResponse.Item;
 import com.streamcell.platform.topic.repository.TopicRepository;
 import com.streamcell.platform.topic.service.TopicService;
@@ -63,4 +64,22 @@ public class TopicServiceImpl implements TopicService {
 
         return repository.updateTopicSchema(topic);
     }
+
+    @Override
+    public List<TopicResponse.TopicPermission> getPermissionsOfTopic(Long topicId) {
+        return repository.findTopicPermissions(topicId)
+                .stream()
+                .map(TopicConverter::toDTO)
+                .toList();
+    }
+
+    @Override
+    public List<TopicResponse.TopicPermission> getPermissionsOfTopicByUserId(Long userId) {
+        return repository.findTopicPermissionByUserId(userId)
+                .stream()
+                .map(TopicConverter::toDTO)
+                .toList();
+    }
+
+
 }

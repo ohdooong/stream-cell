@@ -2,6 +2,7 @@ package com.streamcell.platform.topic.presentation;
 
 import com.streamcell.global._common.dto.BaseResponse;
 import com.streamcell.platform.topic.dto.TopicRequest;
+import com.streamcell.platform.topic.dto.TopicResponse;
 import com.streamcell.platform.topic.dto.TopicResponse.Item;
 import com.streamcell.platform.topic.service.TopicService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -88,23 +89,28 @@ public class TopicController {
         @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @GetMapping("/topics/{topicId}/permissions")
-    public ResponseEntity<BaseResponse<?>> getPermissionsOfTopic(
+    public ResponseEntity<BaseResponse<List<TopicResponse.TopicPermission>>> getPermissionsOfTopic(
         @PathVariable Long topicId
     ) {
-        return ResponseEntity.ok(BaseResponse.of());
+        BaseResponse<List<TopicResponse.TopicPermission>> result =
+                BaseResponse.success(service.getPermissionsOfTopic(topicId));
+        return ResponseEntity.ok(result);
     }
 
     @Operation(summary = "Topic의 권한정보를 등록/수정", description = "Topic의 권한정보를 등록/수정합니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "처리성공"),
-        @ApiResponse(responseCode = "400", description = "Bad Request"),
-        @ApiResponse(responseCode = "404", description = "Not Found"),
-        @ApiResponse(responseCode = "500", description = "Internal Server Error."),
+            @ApiResponse(responseCode = "200", description = "처리성공"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "404", description = "Not Found"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @PostMapping("/topics/{topicId}/permissions")
     public ResponseEntity<BaseResponse<?>> postTopicPermissions(
-        @PathVariable Long topicId
+            @PathVariable Long topicId,
+            @RequestBody TopicRequest.TopicPermission topicPermission
     ) {
+
+
         return ResponseEntity.ok(BaseResponse.of());
     }
 
@@ -115,11 +121,12 @@ public class TopicController {
         @ApiResponse(responseCode = "404", description = "Not Found"),
         @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
-    @GetMapping("/topics/{topicId}/permissions")
-    public ResponseEntity<BaseResponse<?>> getPermissionsByUserId(
+    @GetMapping("/topics/permissions")
+    public ResponseEntity<BaseResponse<List<TopicResponse.TopicPermission>>> getPermissionsOfTopicByUserId(
         @RequestParam Long userId
     ) {
-        return ResponseEntity.ok(BaseResponse.of());
+        return ResponseEntity.ok(
+                BaseResponse.success(service.getPermissionsOfTopicByUserId(userId)));
     }
 
 }
