@@ -35,8 +35,7 @@ public class TopicRequest {
     @NoArgsConstructor
     @AllArgsConstructor(staticName = "of")
     public static class TopicPermission {
-        List<Long> userId;
-        Long topicId;
+        List<Long> userIds;
         TopicPermissionType topicPermissionType;
     }
 }
