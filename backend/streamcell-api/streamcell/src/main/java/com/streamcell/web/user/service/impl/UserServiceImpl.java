@@ -1,5 +1,6 @@
 package com.streamcell.web.user.service.impl;
 
+import com.streamcell.web.user.converter.UserConverter;
 import com.streamcell.web.user.domain.User;
 import com.streamcell.web.user.dto.UserResponse;
 import com.streamcell.web.user.repository.UserRepository;
@@ -20,18 +21,8 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public List<UserResponse> findAll() {
         return mapper.findAll().stream()
-                .map(this::mapToDto)
+                .map(UserConverter::toDTO)
                 .toList();
-    }
-
-    private UserResponse mapToDto(User user) {
-        return UserResponse.builder()
-                .userId(user.getUserId())
-                .email(user.getEmail())
-                .name(user.getName())
-                .password(user.getPassword())
-                .status(user.getStatus())
-                .build();
     }
 }
 

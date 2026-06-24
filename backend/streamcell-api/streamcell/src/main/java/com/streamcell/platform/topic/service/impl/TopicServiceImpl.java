@@ -6,6 +6,7 @@ import com.streamcell.global._common.util.JsonUtils;
 import com.streamcell.platform.kafka.KafkaManager;
 import com.streamcell.platform.topic.converter.TopicConverter;
 import com.streamcell.platform.topic.dto.TopicRequest.Schema;
+import com.streamcell.platform.topic.dto.TopicRequest.TopicPermission;
 import com.streamcell.platform.topic.dto.TopicResponse;
 import com.streamcell.platform.topic.dto.TopicResponse.Item;
 import com.streamcell.platform.topic.repository.TopicRepository;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -52,6 +54,7 @@ public class TopicServiceImpl implements TopicService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int updateTopicSchema(Long topicId, Schema schema) {
         Topic topic = TopicConverter.toVO(schema, topicId);
 
@@ -81,5 +84,20 @@ public class TopicServiceImpl implements TopicService {
                 .toList();
     }
 
+    @Override
+    public List<TopicResponse.TopicPermission> postUsersPermissionsOfTopic(Long topicId, TopicPermission topicPermission) {
+        Topic topic = repository.findById(topicId);
+        if (topic == null) {
+            throw new BaseAPIException(ErrorCode.NOT_FOUND_TOPIC);
+        }
+
+        List<Long> userIds = topicPermission.getUserIds();
+        for (Long userId : userIds) {
+
+            repository.mergeIntoTopicPermission(topicId, userId);
+        }
+
+        return getPermissionsOfTopic(topicId);
+    }
 
 }

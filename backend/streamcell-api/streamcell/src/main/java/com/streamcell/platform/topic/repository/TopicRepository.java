@@ -102,4 +102,20 @@ public interface TopicRepository {
          where a.user_id = #{userId}
     """)
     List<TopicPermission> findTopicPermissionByUserId(Long userId);
+
+    @Update("""
+        merge into platform.topic_permission a
+        using (
+            select #{topicId} as topic_id,
+                   #{userId} as user_id) b
+        on a.topic_id = b.topic_id and a.user_id = b.user_id
+        when matched then
+            update set a.permission_type = #{permissionType}
+                     , a.updated_by = 'SYSTEM'
+                     , a.updated_at = now()
+        when not matched then
+            insert (topic_id, user_id, permission_type, created_by, created_at, updated_by, updated_at)
+            values (b.topic_id, b.user_id, #{permissionType}, 'SYSTEM', now(), 'SYSTEM', now())
+    """)
+    int mergeIntoTopicPermission(Long topicId, Long userId);
 }

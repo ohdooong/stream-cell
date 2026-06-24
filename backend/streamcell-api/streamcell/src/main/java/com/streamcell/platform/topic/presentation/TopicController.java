@@ -105,13 +105,12 @@ public class TopicController {
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @PostMapping("/topics/{topicId}/permissions")
-    public ResponseEntity<BaseResponse<?>> postTopicPermissions(
+    public ResponseEntity<BaseResponse<List<TopicResponse.TopicPermission>>> postUsersPermissionsOfTopic(
             @PathVariable Long topicId,
             @RequestBody TopicRequest.TopicPermission topicPermission
     ) {
-
-
-        return ResponseEntity.ok(BaseResponse.of());
+        return ResponseEntity.ok(
+            BaseResponse.success(service.postUsersPermissionsOfTopic(topicId, topicPermission)));
     }
 
     @Operation(summary = "특정 사용자의 Topic의 권한정보를 조회", description = "특정 사용자의 Topic의 권한정보를 조회합니다.")
