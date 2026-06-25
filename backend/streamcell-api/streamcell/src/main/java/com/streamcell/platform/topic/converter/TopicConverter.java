@@ -1,8 +1,10 @@
 package com.streamcell.platform.topic.converter;
 
 import com.streamcell.platform.topic.dto.TopicRequest;
+import com.streamcell.platform.topic.dto.TopicResponse;
 import com.streamcell.platform.topic.dto.TopicResponse.Item;
 import com.streamcell.platform.topic.vo.Topic;
+import com.streamcell.platform.topic.vo.TopicPermission;
 
 public class TopicConverter {
     public static Item toDTO(Topic topic) {
@@ -25,6 +27,17 @@ public class TopicConverter {
                 .timeField(schema.getTimeField())
                 .schemaJson(schema.getSchemaJson())
                 .messageFormat(schema.getMessageFormat())
+                .build();
+    }
+
+    public static TopicResponse.TopicPermission toDTO(TopicPermission topicPermission) {
+        return TopicResponse.TopicPermission.builder()
+                .permissionId(topicPermission.getPermissionId())
+                .topicId(topicPermission.getTopicId())
+                .topicName(topicPermission.getTopicName())
+                .userId(topicPermission.getUserId())
+                .userName(topicPermission.getUserName())
+                .topicPermissionType(topicPermission.getTopicPermissionType())
                 .build();
     }
 }
