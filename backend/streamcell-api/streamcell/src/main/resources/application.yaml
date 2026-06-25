@@ -9,7 +9,7 @@ spring:
     url: ${POSTGRES_URL}
     username: ${POSTGRES_USERNAME}
     password: ${POSTGRES_PASSWORD}
-    driver-class-name: org.postgresql.Driver
+    driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
 

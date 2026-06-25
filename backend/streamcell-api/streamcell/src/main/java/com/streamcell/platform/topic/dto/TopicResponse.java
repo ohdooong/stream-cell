@@ -1,5 +1,6 @@
 package com.streamcell.platform.topic.dto;
 
+import com.streamcell.platform._common.enums.TopicPermissionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,7 +16,6 @@ public class TopicResponse {
     @NoArgsConstructor
     @AllArgsConstructor(staticName = "of")
     public static class Item {
-
         private Long topicId;
         private String topicName;
         private String displayName;
@@ -24,4 +24,19 @@ public class TopicResponse {
         private String timeField;
         private String messageFormat;
     }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor(staticName = "of")
+    public static class TopicPermission {
+        private Long permissionId;
+        private Long topicId;
+        private String topicName;
+        private Long userId;
+        private String userName;
+        private TopicPermissionType topicPermissionType;
+    }
+
 }
