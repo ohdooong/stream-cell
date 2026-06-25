@@ -1,5 +1,6 @@
 package com.streamcell.platform.topic.service;
 
+import com.streamcell.platform._common.enums.TopicPermissionType;
 import com.streamcell.platform.topic.dto.TopicRequest;
 import com.streamcell.platform.topic.dto.TopicRequest.Schema;
 import com.streamcell.platform.topic.dto.TopicRequest.TopicPermission;
@@ -66,4 +67,14 @@ public interface TopicService {
      * @return a list of {@code TopicResponse.TopicPermission} objects representing the posted permissions
      */
     List<TopicResponse.TopicPermission> postUsersPermissionsOfTopic(Long topicId, TopicPermission topicPermission);
+
+    /**
+     * 토픽id list에 대한 사용자가 권한을 가지고 있는지 검증
+     *
+     * @param userId 사용자 id
+     * @param topicIds 토픽 id list
+     * @param topicPermissionType topicPermissionType
+     * @return boolean
+     */
+    boolean hasPermission(Long userId, List<Long> topicIds, TopicPermissionType topicPermissionType);
 }
