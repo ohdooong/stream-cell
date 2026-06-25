@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Setter
 @Getter
 @NoArgsConstructor(staticName = "of")
@@ -21,6 +23,9 @@ public class BaseResponse<T> {
     private LocalDateTime timestamp;
     private T body;
 
+    public static <T> BaseResponse<T> error(int status, String message, T body) {
+        return new BaseResponse<>(status, message, LocalDateTime.now(), body);
+    }
 
     public static <T> BaseResponse<T> success(int status, String message, T body) {
         return new BaseResponse<>(status, message, LocalDateTime.now(), body);
@@ -34,4 +39,7 @@ public class BaseResponse<T> {
         return new BaseResponse<>(DEFAULT_SUCCESS_STATUS, DEFAULT_SUCCESS_MESSAGE, LocalDateTime.now(), body);
     }
 
+    public static <T> BaseResponse<T> error(String message) {
+        return new BaseResponse<>(500, message, LocalDateTime.now(), null);
+    }
 }
