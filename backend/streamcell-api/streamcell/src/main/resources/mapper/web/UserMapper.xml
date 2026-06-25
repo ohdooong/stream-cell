@@ -13,4 +13,14 @@
         FROM web.users
     </select>
 
+    <select id="findExistingUserIds" resultType="Long">
+        select
+            user_id
+        from web.users
+        where user_id in
+        <foreach collection="userIds" item="userId" open="(" close=")" separator=",">
+            #{userId}
+        </foreach>
+    </select>
+
 </mapper>
