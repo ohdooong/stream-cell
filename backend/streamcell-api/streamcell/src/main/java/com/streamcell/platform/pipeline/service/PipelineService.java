@@ -2,6 +2,7 @@ package com.streamcell.platform.pipeline.service;
 
 import com.streamcell.platform.pipeline.dto.PipelineRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface PipelineService {
 
@@ -10,5 +11,7 @@ public interface PipelineService {
     PipelineResponse.Pipeline update(PipelineRequest.Update updateItem);
 
     PipelineResponse.Pipeline findPipelineByPipelineId(Long pipelineId);
+
+    PipelineResponse.Artifact createFlinkCustomJar(MultipartFile file, PipelineRequest.CreateCustomJar createCustomJar);
 
 }

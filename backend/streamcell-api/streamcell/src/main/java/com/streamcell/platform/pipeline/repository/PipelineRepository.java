@@ -13,21 +13,25 @@ public interface PipelineRepository {
         (
              owner_user_id
            , pipeline_name
+           , description
            , pipeline_type
            , status
-           , natural_language_request
-           , pipeline_plan_json
-           , generated_sql
+           , created_by
+           , created_at
+           , updated_by
+           , updated_at
         )
         values
         (
             #{pipeline.ownerUserId}
           , #{pipeline.pipelineName}
+          , #{pipeline.description}
           , #{pipeline.pipelineType}
           , #{pipeline.pipelineStatus}
-          , #{pipeline.naturalLanguageRequest}
-          , #{pipeline.pipelinePlanJson}::jsonb
-          , #{pipeline.generatedSql}
+          , 'ADMIN'
+          , now()
+          , 'ADMIN'
+          , now()
         )
     """)
     @Options(useGeneratedKeys = true, keyProperty = "pipelineId")
@@ -37,11 +41,10 @@ public interface PipelineRepository {
         update platform.pipeline
            set 
                pipeline_name = #{pipeline.pipelineName}
+             , description = #{pipeline.description}
              , pipeline_type = #{pipeline.pipelineType}
-             , status = #{pipeline.pipelineStatus}
-             , natural_language_request = #{pipeline.naturalLanguageRequest}
-             , pipeline_plan_json = #{pipeline.pipelinePlanJson}
-             , generated_sql = #{pipeline.generatedSql}
+             , updated_by = 'ADMIN'
+             , updated_at = now()
         where pipeline_id = #{pipeline.pipelineId}
     """)
     int update(Pipeline pipeline);

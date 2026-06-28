@@ -1,6 +1,5 @@
 package com.streamcell.platform.pipeline.dto;
 
-import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.enums.PipelineType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,7 +13,6 @@ public class PipelineRequest {
     @NoArgsConstructor
     @AllArgsConstructor(staticName = "of")
     public static class Create {
-        private Long pipelineId;
 
         @NotNull
         private Long ownerUserId;
@@ -22,15 +20,12 @@ public class PipelineRequest {
         @NotBlank
         private String pipelineName;
 
+        private String description;
+
         @NotNull
         private PipelineType pipelineType;
 
-        @NotNull
-        private PipelineStatus pipelineStatus;
 
-        private String naturalLanguageRequest;
-        private String pipelinePlanJson;
-        private String generatedSql;
     }
 
     @Getter
@@ -48,14 +43,20 @@ public class PipelineRequest {
         @NotBlank
         private String pipelineName;
 
-        @NotNull
-        private PipelineType pipelineType;
+        private String description;
 
         @NotNull
-        private PipelineStatus pipelineStatus;
-        private String naturalLanguageRequest;
-        private String pipelinePlanJson;
-        private String generatedSql;
+        private PipelineType pipelineType;
     }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor(staticName = "of")
+    public static class CreateCustomJar {
+
+    }
+
 }
 

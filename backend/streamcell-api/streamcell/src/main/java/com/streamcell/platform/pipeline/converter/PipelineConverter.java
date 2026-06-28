@@ -2,6 +2,7 @@ package com.streamcell.platform.pipeline.converter;
 
 import com.streamcell.platform.pipeline.dto.PipelineRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
+import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.vo.Pipeline;
 
 
@@ -12,6 +13,7 @@ public class PipelineConverter {
                 .pipelineId(vo.getPipelineId())
                 .ownerUserId(vo.getOwnerUserId())
                 .pipelineName(vo.getPipelineName())
+                .description(vo.getDescription())
                 .pipelineType(vo.getPipelineType())
                 .pipelineStatus(vo.getPipelineStatus())
                 .naturalLanguageRequest(vo.getNaturalLanguageRequest())
@@ -22,14 +24,11 @@ public class PipelineConverter {
 
     public static Pipeline toVO(PipelineRequest.Create createItem) {
         return Pipeline.builder()
-                .pipelineId(createItem.getPipelineId())
                 .ownerUserId(createItem.getOwnerUserId())
                 .pipelineName(createItem.getPipelineName())
+                .description(createItem.getDescription())
                 .pipelineType(createItem.getPipelineType())
-                .pipelineStatus(createItem.getPipelineStatus())
-                .naturalLanguageRequest(createItem.getNaturalLanguageRequest())
-                .pipelinePlanJson(createItem.getPipelinePlanJson())
-                .generatedSql(createItem.getGeneratedSql())
+                .pipelineStatus(PipelineStatus.CREATED)
                 .build();
     }
 
@@ -38,11 +37,8 @@ public class PipelineConverter {
                 .pipelineId(updateItem.getPipelineId())
                 .ownerUserId(updateItem.getOwnerUserId())
                 .pipelineName(updateItem.getPipelineName())
+                .description(updateItem.getDescription())
                 .pipelineType(updateItem.getPipelineType())
-                .pipelineStatus(updateItem.getPipelineStatus())
-                .naturalLanguageRequest(updateItem.getNaturalLanguageRequest())
-                .pipelinePlanJson(updateItem.getPipelinePlanJson())
-                .generatedSql(updateItem.getGeneratedSql())
                 .build();
     }
 

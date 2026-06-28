@@ -2,6 +2,7 @@ package com.streamcell.platform.pipeline.presentation;
 
 import com.streamcell.global._common.dto.BaseResponse;
 import com.streamcell.platform.pipeline.dto.PipelineRequest;
+import com.streamcell.platform.pipeline.dto.PipelineResponse;
 import com.streamcell.platform.pipeline.service.PipelineService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -9,8 +10,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "Platform Pipeline API", description = "Pipeline(파이프라인관리) API 컨트롤러")
 @RestController
@@ -28,7 +31,7 @@ public class PipelineController {
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @PostMapping("/pipelines")
-    public ResponseEntity<BaseResponse<?>> createPipeline(
+    public ResponseEntity<BaseResponse<PipelineResponse.Pipeline>> createPipeline(
             @RequestBody @Valid PipelineRequest.Create createItem) {
         return ResponseEntity.ok(
                 BaseResponse.success(service.create(createItem)));
@@ -42,7 +45,7 @@ public class PipelineController {
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @PatchMapping("/pipelines")
-    public ResponseEntity<BaseResponse<?>> updatePipeline(
+    public ResponseEntity<BaseResponse<PipelineResponse.Pipeline>> updatePipeline(
             @RequestBody @Valid PipelineRequest.Update updateItem) {
         return ResponseEntity.ok(
                 BaseResponse.success(service.update(updateItem)));
@@ -62,4 +65,21 @@ public class PipelineController {
                 BaseResponse.success(service.findPipelineByPipelineId(pipelineId)));
     }
 
+    @Operation(summary = "Pipeline Flink Custom Jar 파일 업로드", description = "Pipeline의 Flink Custom Jar 파일을 업로드합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "업로드 성공"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "404", description = "Not Found"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error."),
+    })
+    @PostMapping(value = "/pipelines/{pipelineId}/custom-jar",
+                 consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BaseResponse<PipelineResponse.Artifact>> createFlinkCustomJar(
+        @RequestPart MultipartFile file,
+        @RequestPart @Valid PipelineRequest.CreateCustomJar createCustomJar
+    ) {
+        PipelineResponse.Artifact artifact =
+                service.createFlinkCustomJar(file, createCustomJar);
+        return ResponseEntity.ok(BaseResponse.success(artifact));
+    }
 }

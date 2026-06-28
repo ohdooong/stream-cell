@@ -13,6 +13,7 @@ public class Pipeline {
     private Long pipelineId;
     private Long ownerUserId;
     private String pipelineName;
+    private String description;
     private PipelineType pipelineType;
     private PipelineStatus pipelineStatus;
     private String naturalLanguageRequest;

@@ -10,8 +10,19 @@ spring:
     username: ${POSTGRES_USERNAME}
     password: ${POSTGRES_PASSWORD}
     driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 50MB
+
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+
+file:
+  upload:
+    dir: C:\streamcell_workspace\upload
 
 mybatis:
   configuration:

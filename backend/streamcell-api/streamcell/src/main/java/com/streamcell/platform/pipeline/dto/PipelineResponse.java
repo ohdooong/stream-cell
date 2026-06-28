@@ -10,17 +10,33 @@ public class PipelineResponse {
     @Setter
     @Builder
     @NoArgsConstructor
-    @AllArgsConstructor(staticName = "of")
+    @AllArgsConstructor(staticName = "from")
     public static class Pipeline {
         private Long pipelineId;
         private Long ownerUserId;
         private String pipelineName;
+        private String description;
         private PipelineType pipelineType;
         private PipelineStatus pipelineStatus;
         private String naturalLanguageRequest;
         private String pipelinePlanJson;
         private String generatedSql;
     }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor(staticName = "from")
+    @AllArgsConstructor(staticName = "from")
+    public static class Artifact {
+        private Long artifactId;
+        private Long pipelineId;
+        private String artifactType;
+        private String originalFileName;
+        private String storedFilePath;
+        private String flinkJarId;
+    }
+
 
 }
 

@@ -2,6 +2,8 @@ package com.streamcell.platform.pipeline.service.impl;
 
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
+import com.streamcell.global._common.file.dto.FileResponse;
+import com.streamcell.global._common.file.service.FileService;
 import com.streamcell.platform._common.port.UserLookupPort;
 import com.streamcell.platform.pipeline.converter.PipelineConverter;
 import com.streamcell.platform.pipeline.dto.PipelineRequest;
@@ -11,6 +13,7 @@ import com.streamcell.platform.pipeline.service.PipelineService;
 import com.streamcell.platform.pipeline.vo.Pipeline;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Optional;
 
@@ -20,6 +23,7 @@ public class PipelineServiceImpl implements PipelineService {
 
     private final PipelineRepository repository;
     private final UserLookupPort userLookupPort;
+    private final FileService fileService;
 
     @Override
     public PipelineResponse.Pipeline create(PipelineRequest.Create createItem) {
@@ -49,9 +53,18 @@ public class PipelineServiceImpl implements PipelineService {
                 .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
     }
 
+    @Override
+    public PipelineResponse.Artifact createFlinkCustomJar(MultipartFile file, PipelineRequest.CreateCustomJar createCustomJar) {
+        FileResponse.FileUpload uploaded = fileService.save(file);
+
+
+
+        return PipelineResponse.Artifact.from();
+    }
+
+
     private void validateUser(Long userId) {
-        boolean isExistsUser =
-                userLookupPort.existsByUserId(userId);
+        boolean isExistsUser = userLookupPort.existsByUserId(userId);
         if (!isExistsUser) {
             throw new BaseAPIException(ErrorCode.INVALID_USER);
         }
