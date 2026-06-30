@@ -11,7 +11,7 @@ import java.util.Set;
 @Component
 public class FileUploadValidator {
 
-    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jar");
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jar", "png", "jpg");
     private static final long MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
     public void validateFile(MultipartFile file) {

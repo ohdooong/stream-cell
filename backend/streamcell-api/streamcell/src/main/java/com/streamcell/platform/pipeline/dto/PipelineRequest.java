@@ -55,7 +55,7 @@ public class PipelineRequest {
     @NoArgsConstructor
     @AllArgsConstructor(staticName = "of")
     public static class CreateCustomJar {
-
+        private String name;
     }
 
 }

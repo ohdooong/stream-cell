@@ -13,6 +13,7 @@ import com.streamcell.platform.pipeline.service.PipelineService;
 import com.streamcell.platform.pipeline.vo.Pipeline;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Optional;
@@ -26,6 +27,7 @@ public class PipelineServiceImpl implements PipelineService {
     private final FileService fileService;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public PipelineResponse.Pipeline create(PipelineRequest.Create createItem) {
         // 사용자 검증
         validateUser(createItem.getOwnerUserId());
@@ -37,6 +39,7 @@ public class PipelineServiceImpl implements PipelineService {
 
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public PipelineResponse.Pipeline update(PipelineRequest.Update updateItem) {
         // 사용자 검증
         validateUser(updateItem.getOwnerUserId());

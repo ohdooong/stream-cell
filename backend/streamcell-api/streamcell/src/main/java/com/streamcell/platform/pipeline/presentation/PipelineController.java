@@ -5,6 +5,7 @@ import com.streamcell.platform.pipeline.dto.PipelineRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
 import com.streamcell.platform.pipeline.service.PipelineService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -66,6 +67,9 @@ public class PipelineController {
     }
 
     @Operation(summary = "Pipeline Flink Custom Jar 파일 업로드", description = "Pipeline의 Flink Custom Jar 파일을 업로드합니다.")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE)
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "업로드 성공"),
             @ApiResponse(responseCode = "400", description = "Bad Request"),
@@ -76,7 +80,8 @@ public class PipelineController {
                  consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BaseResponse<PipelineResponse.Artifact>> createFlinkCustomJar(
         @RequestPart MultipartFile file,
-        @RequestPart @Valid PipelineRequest.CreateCustomJar createCustomJar
+        @RequestPart @Valid PipelineRequest.CreateCustomJar createCustomJar,
+        @PathVariable Long pipelineId
     ) {
         PipelineResponse.Artifact artifact =
                 service.createFlinkCustomJar(file, createCustomJar);

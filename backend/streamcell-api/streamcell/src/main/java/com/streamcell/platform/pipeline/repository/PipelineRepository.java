@@ -23,11 +23,11 @@ public interface PipelineRepository {
         )
         values
         (
-            #{pipeline.ownerUserId}
-          , #{pipeline.pipelineName}
-          , #{pipeline.description}
-          , #{pipeline.pipelineType}
-          , #{pipeline.pipelineStatus}
+            #{ownerUserId}
+          , #{pipelineName}
+          , #{description}
+          , #{pipelineType}
+          , #{pipelineStatus}
           , 'ADMIN'
           , now()
           , 'ADMIN'
@@ -40,12 +40,12 @@ public interface PipelineRepository {
     @Update("""
         update platform.pipeline
            set 
-               pipeline_name = #{pipeline.pipelineName}
-             , description = #{pipeline.description}
-             , pipeline_type = #{pipeline.pipelineType}
+               pipeline_name = #{pipelineName}
+             , description = #{description}
+             , pipeline_type = #{pipelineType}
              , updated_by = 'ADMIN'
              , updated_at = now()
-        where pipeline_id = #{pipeline.pipelineId}
+        where pipeline_id = #{pipelineId}
     """)
     int update(Pipeline pipeline);
 
