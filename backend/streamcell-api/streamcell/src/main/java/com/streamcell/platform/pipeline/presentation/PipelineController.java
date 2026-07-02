@@ -80,11 +80,11 @@ public class PipelineController {
                  consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BaseResponse<PipelineResponse.Artifact>> createFlinkCustomJar(
         @RequestPart MultipartFile file,
-        @RequestPart @Valid PipelineRequest.CreateCustomJar createCustomJar,
+        @RequestPart @Valid PipelineRequest.CreateCustomJobConfig createCustomJobConfig,
         @PathVariable Long pipelineId
     ) {
         PipelineResponse.Artifact artifact =
-                service.createFlinkCustomJar(file, createCustomJar);
+                service.createFlinkCustomJar(file, createCustomJobConfig, pipelineId);
         return ResponseEntity.ok(BaseResponse.success(artifact));
     }
 }

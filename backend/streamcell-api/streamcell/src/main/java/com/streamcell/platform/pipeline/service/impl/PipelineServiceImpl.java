@@ -8,9 +8,12 @@ import com.streamcell.platform._common.port.UserLookupPort;
 import com.streamcell.platform.pipeline.converter.PipelineConverter;
 import com.streamcell.platform.pipeline.dto.PipelineRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
+import com.streamcell.platform.pipeline.enums.ArtifactType;
 import com.streamcell.platform.pipeline.repository.PipelineRepository;
 import com.streamcell.platform.pipeline.service.PipelineService;
+import com.streamcell.platform.pipeline.vo.CustomJobConfig;
 import com.streamcell.platform.pipeline.vo.Pipeline;
+import com.streamcell.platform.pipeline.vo.PipelineArtifact;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,12 +60,39 @@ public class PipelineServiceImpl implements PipelineService {
     }
 
     @Override
-    public PipelineResponse.Artifact createFlinkCustomJar(MultipartFile file, PipelineRequest.CreateCustomJar createCustomJar) {
+    @Transactional(rollbackFor = Exception.class)
+    public PipelineResponse.Artifact createFlinkCustomJar(MultipartFile file, PipelineRequest.CreateCustomJobConfig createCustomJobConfig, Long pipelineId) {
+        // 파일저장
         FileResponse.FileUpload uploaded = fileService.save(file);
 
+        // artifact 메타데이터 저장
+        PipelineArtifact artifact = insertPipelineArtifact(pipelineId, uploaded);
+
+        CustomJobConfig customJobConfigVo = PipelineConverter.toVO(createCustomJobConfig, pipelineId);
+
+        // artifact job config 저장
+        CustomJobConfig customJobConfig = insertCustomJobConfig(customJobConfigVo);
+
+        PipelineResponse.Artifact response = PipelineConverter.toDTO(artifact);
+        return response;
+    }
 
 
-        return PipelineResponse.Artifact.from();
+    private PipelineArtifact insertPipelineArtifact(Long pipelineId, FileResponse.FileUpload uploaded) {
+        PipelineArtifact artifact = PipelineArtifact.builder()
+                .pipelineId(pipelineId)
+                .artifactType(ArtifactType.CUSTOM_JAR)
+                .originalFileName(uploaded.getOriginalFileName())
+                .storedFileName(uploaded.getSavedFileName())
+                .storedFilePath(uploaded.getSavedPath())
+                .build();
+        repository.insertPipelineArtifact(artifact);
+        return artifact;
+    }
+
+    private CustomJobConfig insertCustomJobConfig(CustomJobConfig customJobConfig) {
+        repository.insertCustomJobConfig(customJobConfig);
+        return customJobConfig;
     }
 
 

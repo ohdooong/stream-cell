@@ -1,6 +1,8 @@
 package com.streamcell.platform.pipeline.repository;
 
+import com.streamcell.platform.pipeline.vo.CustomJobConfig;
 import com.streamcell.platform.pipeline.vo.Pipeline;
+import com.streamcell.platform.pipeline.vo.PipelineArtifact;
 import org.apache.ibatis.annotations.*;
 import org.springframework.stereotype.Repository;
 
@@ -64,5 +66,61 @@ public interface PipelineRepository {
      """)
     Pipeline findPipelineByPipelineId(Long pipelineId);
 
+    @Insert("""
+        insert into platform.pipeline_artifact
+        (
+            pipeline_id,
+            artifact_type,
+            original_file_name,
+            stored_file_name,
+            stored_file_path,
+            flink_jar_id,
+            created_by,
+            created_at,
+            updated_by,
+            updated_at
+        )
+        values (
+                #{pipelineId},
+                #{artifactType},
+                #{originalFileName},
+                #{storedFileName},
+                #{storedFilePath},
+                #{flinkJarId},
+                'ADMIN',
+                now(),
+                'ADMIN',
+                now()
+        )
+    """)
+    @Options(useGeneratedKeys = true, keyProperty = "artifactId")
+    int insertPipelineArtifact(PipelineArtifact artifact);
 
+    @Insert("""
+        insert into platform.custom_job_config
+        (
+            pipeline_id,
+            entry_class,
+            input_topics,
+            output_topics,
+            program_args,
+            created_by,
+            created_at,
+            updated_by,
+            updated_at
+        )
+        values (
+                #{pipelineId},
+                #{entryClass},
+                #{inputTopics}::json,
+                #{outputTopics}::json,
+                #{programArgs},
+                'ADMIN',
+                now(),
+                'ADMIN',
+                now()
+        )
+    """)
+    @Options(useGeneratedKeys = true, keyProperty = "configId")
+    int insertCustomJobConfig(CustomJobConfig customJobConfig);
 }

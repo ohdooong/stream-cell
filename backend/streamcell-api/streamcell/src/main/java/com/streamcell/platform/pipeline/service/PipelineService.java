@@ -12,6 +12,6 @@ public interface PipelineService {
 
     PipelineResponse.Pipeline findPipelineByPipelineId(Long pipelineId);
 
-    PipelineResponse.Artifact createFlinkCustomJar(MultipartFile file, PipelineRequest.CreateCustomJar createCustomJar);
+    PipelineResponse.Artifact createFlinkCustomJar(MultipartFile file, PipelineRequest.CreateCustomJobConfig createCustomJobConfig, Long pipelineId);
 
 }
