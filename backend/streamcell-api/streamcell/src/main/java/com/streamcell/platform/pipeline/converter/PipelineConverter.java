@@ -2,7 +2,6 @@ package com.streamcell.platform.pipeline.converter;
 
 import com.streamcell.platform.pipeline.dto.PipelineRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
-import com.streamcell.platform.pipeline.enums.ArtifactType;
 import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.vo.CustomJobConfig;
 import com.streamcell.platform.pipeline.vo.Pipeline;

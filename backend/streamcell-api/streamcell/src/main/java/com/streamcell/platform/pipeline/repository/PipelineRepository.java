@@ -6,6 +6,8 @@ import com.streamcell.platform.pipeline.vo.PipelineArtifact;
 import org.apache.ibatis.annotations.*;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Mapper
 @Repository
 public interface PipelineRepository {
@@ -56,15 +58,16 @@ public interface PipelineRepository {
                  pipeline_id
                , owner_user_id
                , pipeline_name
+               , description
                , pipeline_type
-               , status
+               , status as pipeline_status
                , natural_language_request
                , pipeline_plan_json
                , generated_sql
          from platform.pipeline a
         where a.pipeline_id = #{pipelineId}
      """)
-    Pipeline findPipelineByPipelineId(Long pipelineId);
+    Optional<Pipeline> findPipelineByPipelineId(Long pipelineId);
 
     @Insert("""
         insert into platform.pipeline_artifact
@@ -114,7 +117,7 @@ public interface PipelineRepository {
                 #{entryClass},
                 #{inputTopics}::json,
                 #{outputTopics}::json,
-                #{programArgs},
+                #{programArgs}::json,
                 'ADMIN',
                 now(),
                 'ADMIN',

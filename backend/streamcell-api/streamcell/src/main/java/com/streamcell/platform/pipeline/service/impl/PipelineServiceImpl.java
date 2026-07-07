@@ -6,6 +6,8 @@ import com.streamcell.global._common.file.dto.FileResponse;
 import com.streamcell.global._common.file.service.FileService;
 import com.streamcell.platform._common.port.UserLookupPort;
 import com.streamcell.platform.pipeline.converter.PipelineConverter;
+import com.streamcell.platform.pipeline.domain.validator.CustomJobConfigValidator;
+import com.streamcell.platform.pipeline.domain.validator.PipelineValidator;
 import com.streamcell.platform.pipeline.dto.PipelineRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
 import com.streamcell.platform.pipeline.enums.ArtifactType;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -28,6 +31,8 @@ public class PipelineServiceImpl implements PipelineService {
     private final PipelineRepository repository;
     private final UserLookupPort userLookupPort;
     private final FileService fileService;
+
+    private final Map<String, PipelineValidator<?>> validatorMap;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -54,24 +59,42 @@ public class PipelineServiceImpl implements PipelineService {
 
     @Override
     public PipelineResponse.Pipeline findPipelineByPipelineId(Long pipelineId) {
-        return Optional.ofNullable(repository.findPipelineByPipelineId(pipelineId))
+        return repository.findPipelineByPipelineId(pipelineId)
                 .map(PipelineConverter::toDTO)
                 .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public PipelineResponse.Artifact createFlinkCustomJar(MultipartFile file, PipelineRequest.CreateCustomJobConfig createCustomJobConfig, Long pipelineId) {
-        // 파일저장
-        FileResponse.FileUpload uploaded = fileService.save(file);
+    public PipelineResponse.Artifact createFlinkCustomJar(
+            MultipartFile file,
+            PipelineRequest.CreateCustomJobConfig createCustomJobConfig,
+            Long pipelineId) {
 
-        // artifact 메타데이터 저장
-        PipelineArtifact artifact = insertPipelineArtifact(pipelineId, uploaded);
+        // 파이프라인 id 검증
+        Pipeline pipeline = repository.findPipelineByPipelineId(pipelineId)
+                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
+        // user 검증
+        Long userId = createCustomJobConfig.getUserId();
+        validateUser(userId);
 
-        CustomJobConfig customJobConfigVo = PipelineConverter.toVO(createCustomJobConfig, pipelineId);
+        CustomJobConfig customJobConfig = PipelineConverter.toVO(createCustomJobConfig, pipelineId);
+
+        // customJobConfig 유효성검증
+        PipelineValidator<CustomJobConfig> customJobConfigValidator =
+                (PipelineValidator<CustomJobConfig>) validatorMap.get("customJobConfigValidator");
+        if (customJobConfigValidator == null) {
+            throw new RuntimeException("validator Bean을 찾을 수 없습니다.");
+        }
+        customJobConfigValidator.validate(customJobConfig);
 
         // artifact job config 저장
-        CustomJobConfig customJobConfig = insertCustomJobConfig(customJobConfigVo);
+        insertCustomJobConfig(customJobConfig);
+
+        // 파일저장
+        FileResponse.FileUpload uploaded = fileService.save(file);
+        // artifact 메타데이터 저장
+        PipelineArtifact artifact = insertPipelineArtifact(pipelineId, uploaded);
 
         PipelineResponse.Artifact response = PipelineConverter.toDTO(artifact);
         return response;
@@ -94,7 +117,6 @@ public class PipelineServiceImpl implements PipelineService {
         repository.insertCustomJobConfig(customJobConfig);
         return customJobConfig;
     }
-
 
     private void validateUser(Long userId) {
         boolean isExistsUser = userLookupPort.existsByUserId(userId);

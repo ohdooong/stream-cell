@@ -11,11 +11,12 @@ import java.util.Map;
 @Setter
 @Builder
 public class CustomJobConfig {
+    private Long userId;
     private Long configId;
     private Long pipelineId;
     private String entryClass;
     private List<Long> inputTopicIds;
     private List<Long> outputTopicIds;
     private Integer parallelism;
-    private Map<String, Object> programArgs;
+    private String programArgs;
 }
