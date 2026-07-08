@@ -53,6 +53,16 @@ public interface PipelineRepository {
     """)
     int update(Pipeline pipeline);
 
+    @Update("""
+        update platform.pipeline
+           set 
+               status = #{pipelineStatus}
+             , updated_by = 'ADMIN'
+             , updated_at = now()
+        where pipeline_id = #{pipelineId}
+    """)
+    int updatePipelineStatus(Pipeline pipeline);
+
     @Select("""
          select
                  pipeline_id
@@ -68,6 +78,32 @@ public interface PipelineRepository {
         where a.pipeline_id = #{pipelineId}
      """)
     Optional<Pipeline> findPipelineByPipelineId(Long pipelineId);
+
+    @Select("""
+        select
+               artifact_id,
+               pipeline_id,
+               artifact_type,
+               original_file_name,
+               stored_file_name,
+               stored_file_path,
+               flink_jar_id
+          from platform.pipeline_artifact
+         where pipeline_id = #{pipelineId}
+    """)
+    Optional<PipelineArtifact> findPipelineArtifactByPipelineId(Long pipelineId);
+
+    @Select("""
+        select
+              pipeline_id,
+              entry_class,
+              input_topics,
+              output_topics,
+              program_args
+         from platform.custom_job_config
+        where pipeline_id = #{pipelineId}
+    """)
+    Optional<CustomJobConfig> findCustomJobConfigByPipelineId(Long pipelineId);
 
     @Insert("""
         insert into platform.pipeline_artifact
@@ -115,8 +151,8 @@ public interface PipelineRepository {
         values (
                 #{pipelineId},
                 #{entryClass},
-                #{inputTopics}::json,
-                #{outputTopics}::json,
+                #{inputTopicIds}::json,
+                #{outputTopicIds}::json,
                 #{programArgs}::json,
                 'ADMIN',
                 now(),

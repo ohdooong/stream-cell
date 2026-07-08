@@ -59,6 +59,7 @@ public class PipelineConverter {
 
     public static CustomJobConfig toVO(PipelineRequest.CreateCustomJobConfig createCustomJobConfig, Long pipelineId) {
         return CustomJobConfig.builder()
+                .userId(createCustomJobConfig.getUserId())
                 .pipelineId(pipelineId)
                 .entryClass(createCustomJobConfig.getEntryClass())
                 .inputTopicIds(createCustomJobConfig.getInputTopicIds())

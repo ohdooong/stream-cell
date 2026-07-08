@@ -29,6 +29,7 @@ mybatis:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
   mapper-locations: classpath:/mapper/**/*.xml
+  type-handlers-package: com.streamcell.global.helper.typehandler
 
 logging:
   level:

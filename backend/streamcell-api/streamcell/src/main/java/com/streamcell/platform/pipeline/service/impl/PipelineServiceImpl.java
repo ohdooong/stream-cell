@@ -6,11 +6,11 @@ import com.streamcell.global._common.file.dto.FileResponse;
 import com.streamcell.global._common.file.service.FileService;
 import com.streamcell.platform._common.port.UserLookupPort;
 import com.streamcell.platform.pipeline.converter.PipelineConverter;
-import com.streamcell.platform.pipeline.domain.validator.CustomJobConfigValidator;
 import com.streamcell.platform.pipeline.domain.validator.PipelineValidator;
 import com.streamcell.platform.pipeline.dto.PipelineRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
 import com.streamcell.platform.pipeline.enums.ArtifactType;
+import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.repository.PipelineRepository;
 import com.streamcell.platform.pipeline.service.PipelineService;
 import com.streamcell.platform.pipeline.vo.CustomJobConfig;
@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -72,11 +71,21 @@ public class PipelineServiceImpl implements PipelineService {
             Long pipelineId) {
 
         // 파이프라인 id 검증
-        Pipeline pipeline = repository.findPipelineByPipelineId(pipelineId)
+        repository.findPipelineByPipelineId(pipelineId)
                 .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
         // user 검증
-        Long userId = createCustomJobConfig.getUserId();
-        validateUser(userId);
+        validateUser(createCustomJobConfig.getUserId());
+
+        // pipeline artifact와 custom job config가 존재하면 실패
+        repository.findPipelineArtifactByPipelineId(pipelineId)
+                    .ifPresent(artifact -> {
+                        throw new BaseAPIException(ErrorCode.CONFLICT_PIPLINE_ARTIFACT);
+                    });
+
+        repository.findCustomJobConfigByPipelineId(pipelineId)
+                .ifPresent(artifact -> {
+                    throw new BaseAPIException(ErrorCode.CONFLICT_CUSTOM_JOB_CONFIG);
+                });
 
         CustomJobConfig customJobConfig = PipelineConverter.toVO(createCustomJobConfig, pipelineId);
 
@@ -90,14 +99,17 @@ public class PipelineServiceImpl implements PipelineService {
 
         // artifact job config 저장
         insertCustomJobConfig(customJobConfig);
-
         // 파일저장
         FileResponse.FileUpload uploaded = fileService.save(file);
         // artifact 메타데이터 저장
         PipelineArtifact artifact = insertPipelineArtifact(pipelineId, uploaded);
 
-        PipelineResponse.Artifact response = PipelineConverter.toDTO(artifact);
-        return response;
+        repository.updatePipelineStatus(Pipeline.builder()
+                .pipelineId(pipelineId)
+                .pipelineStatus(PipelineStatus.ARTIFACT_UPLOADED)
+                .build());
+
+        return PipelineConverter.toDTO(artifact);
     }
 
 

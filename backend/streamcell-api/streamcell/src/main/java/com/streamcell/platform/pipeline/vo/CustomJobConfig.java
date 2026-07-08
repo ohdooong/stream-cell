@@ -18,5 +18,5 @@ public class CustomJobConfig {
     private List<Long> inputTopicIds;
     private List<Long> outputTopicIds;
     private Integer parallelism;
-    private String programArgs;
+    private Map<String, String> programArgs;
 }

@@ -79,7 +79,7 @@ public class PipelineRequest {
 
         @Schema(description = "programArgs", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull
-        private String programArgs;
+        private Map<String, String> programArgs;
 
 //        @NotNull
 //        private Map<String, Object> programArgs;

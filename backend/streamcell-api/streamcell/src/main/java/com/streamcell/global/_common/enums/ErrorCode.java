@@ -16,7 +16,13 @@ public enum ErrorCode {
     FORBIDDEN_TOPICS(HttpStatus.FORBIDDEN, "접근 불가능한 Topic이 포함되어 있습니다."),
 
     NOT_FOUND_PIPELINE(HttpStatus.NOT_FOUND,"파이프라인을 찾을 수 없습니다"),
-    FAILED_FILE_SAVE(HttpStatus.INSUFFICIENT_STORAGE, "파일 저장에 실패했습니다.");
+    FAILED_FILE_SAVE(HttpStatus.INSUFFICIENT_STORAGE, "파일 저장에 실패했습니다."),
+
+
+    CONFLICT_PIPLINE_ARTIFACT(HttpStatus.CONFLICT, "artifact가 이미 존재합니다."),
+    CONFLICT_CUSTOM_JOB_CONFIG(HttpStatus.CONFLICT, "custom job 설정이 이미 존재합니다."),
+
+    ;
 
     private final HttpStatus status;
     private final String message;

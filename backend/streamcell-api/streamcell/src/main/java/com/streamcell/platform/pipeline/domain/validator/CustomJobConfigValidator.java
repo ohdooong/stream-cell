@@ -2,6 +2,7 @@ package com.streamcell.platform.pipeline.domain.validator;
 
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
+import com.streamcell.platform._common.enums.TopicPermissionType;
 import com.streamcell.platform.pipeline.vo.CustomJobConfig;
 import com.streamcell.platform.topic.repository.TopicRepository;
 import com.streamcell.platform.topic.vo.TopicPermission;
@@ -12,7 +13,7 @@ import org.springframework.util.ClassUtils;
 import java.util.List;
 import java.util.regex.Pattern;
 
-@Component
+@Component("customJobConfigValidator")
 @RequiredArgsConstructor
 public class CustomJobConfigValidator implements PipelineValidator<CustomJobConfig>{
 
@@ -48,14 +49,30 @@ public class CustomJobConfigValidator implements PipelineValidator<CustomJobConf
             throw new BaseAPIException(ErrorCode.INVALID_PARALLELISM);
         }
 
+        // Topic Permission 검증
         Long userId = customJobConfig.getUserId();
-        List<Long> topics = topicRepository.findTopicPermissionByUserId(userId)
+
+        List<TopicPermission> topicPermissions = topicRepository.findTopicPermissionByUserId(userId);
+        List<Long> topics = topicPermissions
                 .stream()
                 .map(TopicPermission::getTopicId)
                 .distinct()
                 .toList();
+        // 분석가능한 토픽에 요청 토픽이 포함되어있는지
         if (!topics.containsAll(inputTopicIds)) {
             throw new BaseAPIException(ErrorCode.FORBIDDEN_TOPICS);
         }
+
+        // TopicPermissionType이 DEPLOY || ADMIN 일때만
+        boolean match = topicPermissions
+                .stream()
+                .map(TopicPermission::getTopicPermissionType)
+                .distinct()
+                .anyMatch(type -> TopicPermissionType.DEPLOY == type || TopicPermissionType.ADMIN == type);
+        if (!match) {
+            throw new BaseAPIException(ErrorCode.FORBIDDEN_TOPICS);
+        }
+
+
     }
 }
