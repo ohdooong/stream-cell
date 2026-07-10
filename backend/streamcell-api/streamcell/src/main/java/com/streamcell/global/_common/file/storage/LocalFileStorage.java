@@ -16,21 +16,8 @@ import java.nio.file.StandardCopyOption;
 @Component
 public class LocalFileStorage implements FileStorage {
 
-    @Value("${file.upload.dir}")
-    private String uploadDir;
-
     @Override
-    public String save(MultipartFile file, String saveFileName) {
-        Path rootPath = Paths.get(uploadDir)
-                .toAbsolutePath()
-                .normalize();
-        Path storedPath = rootPath.resolve(saveFileName)
-                .normalize();
-
-        if (!storedPath.startsWith(rootPath)) {
-            throw new RuntimeException("잘못된 파일 저장 경로입니다.");
-        }
-
+    public String save(MultipartFile file, String saveFileName, Path storedPath) {
         try {
             Files.createDirectories(storedPath.getParent());
             try (InputStream inputStream = file.getInputStream()) {
@@ -39,7 +26,6 @@ public class LocalFileStorage implements FileStorage {
         } catch (IOException e) {
             throw new BaseAPIException(ErrorCode.FAILED_FILE_SAVE);
         }
-
         return storedPath.toString();
     }
 

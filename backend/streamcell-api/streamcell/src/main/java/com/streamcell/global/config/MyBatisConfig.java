@@ -7,4 +7,5 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @MapperScan(basePackages = "com.streamcell.**", annotationClass = Mapper.class)
 public class MyBatisConfig {
+
 }

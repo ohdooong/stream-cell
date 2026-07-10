@@ -23,6 +23,7 @@ spring:
 file:
   upload:
     dir: C:\streamcell_workspace\upload
+    custom-jar-path: C:\streamcell_workspace\upload\flink\artifacts
 
 mybatis:
   configuration:

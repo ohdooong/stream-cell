@@ -5,5 +5,5 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.file.Path;
 
 public interface FileStorage {
-    String save(MultipartFile file, String saveFileName);
+    String save(MultipartFile file, String saveFileName, Path storedPath);
 }

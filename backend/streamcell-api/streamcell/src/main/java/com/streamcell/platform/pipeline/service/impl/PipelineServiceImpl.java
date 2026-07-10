@@ -100,7 +100,7 @@ public class PipelineServiceImpl implements PipelineService {
         // artifact job config 저장
         insertCustomJobConfig(customJobConfig);
         // 파일저장
-        FileResponse.FileUpload uploaded = fileService.save(file);
+        FileResponse.FileUpload uploaded = fileService.saveCustomJar(file, pipelineId);
         // artifact 메타데이터 저장
         PipelineArtifact artifact = insertPipelineArtifact(pipelineId, uploaded);
 
