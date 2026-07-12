@@ -1,4 +1,4 @@
-package com.streamcell.platform.pipeline.domain.validator;
+package com.streamcell.platform.pipeline.validator;
 
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
@@ -8,7 +8,6 @@ import com.streamcell.platform.topic.repository.TopicRepository;
 import com.streamcell.platform.topic.vo.TopicPermission;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.util.ClassUtils;
 
 import java.util.List;
 import java.util.regex.Pattern;

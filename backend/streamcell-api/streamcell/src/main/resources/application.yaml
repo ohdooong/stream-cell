@@ -20,6 +20,9 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
 
+flink:
+  base-url: ${FLINK_JOB_MANAGER_URL}
+  
 file:
   upload:
     dir: C:\streamcell_workspace\upload

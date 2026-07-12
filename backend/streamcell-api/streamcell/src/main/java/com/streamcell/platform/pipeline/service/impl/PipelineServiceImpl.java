@@ -6,7 +6,7 @@ import com.streamcell.global._common.file.dto.FileResponse;
 import com.streamcell.global._common.file.service.FileService;
 import com.streamcell.platform._common.port.UserLookupPort;
 import com.streamcell.platform.pipeline.converter.PipelineConverter;
-import com.streamcell.platform.pipeline.domain.validator.PipelineValidator;
+import com.streamcell.platform.pipeline.validator.PipelineValidator;
 import com.streamcell.platform.pipeline.dto.PipelineRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
 import com.streamcell.platform.pipeline.enums.ArtifactType;
