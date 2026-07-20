@@ -29,7 +29,11 @@ public class FlinkRestClient {
 
         try {
             ResponseEntity<FlinkResponse.ClusterOverview> response =
-                    restTemplate.exchange(flinkProperties.getClusterOverviewUrl(), HttpMethod.GET, entity, FlinkResponse.ClusterOverview.class);
+                    restTemplate.exchange(
+                            flinkProperties.getClusterOverviewUrl(),
+                            HttpMethod.GET,
+                            entity,
+                            FlinkResponse.ClusterOverview.class);
 
             return response.getBody();
         } catch (HttpClientErrorException e) {

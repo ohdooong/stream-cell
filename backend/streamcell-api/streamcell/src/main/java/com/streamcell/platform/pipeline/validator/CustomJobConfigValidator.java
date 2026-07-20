@@ -67,11 +67,11 @@ public class CustomJobConfigValidator implements PipelineValidator<CustomJobConf
                 .stream()
                 .map(TopicPermission::getTopicPermissionType)
                 .distinct()
-                .anyMatch(type -> TopicPermissionType.DEPLOY == type || TopicPermissionType.ADMIN == type);
+                .anyMatch(
+                        type -> TopicPermissionType.DEPLOY == type
+                                                  || TopicPermissionType.ADMIN == type);
         if (!match) {
             throw new BaseAPIException(ErrorCode.FORBIDDEN_TOPICS);
         }
-
-
     }
 }

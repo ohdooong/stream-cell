@@ -36,4 +36,14 @@ public class FlinkResponse {
         private Integer jobsCancelled;
     }
 
+    @Setter
+    @Getter
+    @Builder
+    @NoArgsConstructor(staticName = "from")
+    @AllArgsConstructor(staticName = "from")
+    public static class JarUploadResponse {
+
+    }
+
 }
+

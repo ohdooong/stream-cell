@@ -48,3 +48,4 @@ springdoc:
   default-produces-media-type: application/json;charset=UTF-8
   swagger-ui:
     path: /swagger-ui
+    doc-expansion: none

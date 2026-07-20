@@ -9,11 +9,13 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class FlinkServiceImpl implements FlinkService {
-    private final FlinkRestClient flinkRestClient;
 
+    private final FlinkRestClient flinkRestClient;
 
     @Override
     public FlinkResponse.ClusterOverview getClusterOverview() {
         return flinkRestClient.getClusterOverview();
     }
+
+
 }
