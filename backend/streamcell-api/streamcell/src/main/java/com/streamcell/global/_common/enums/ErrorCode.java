@@ -10,6 +10,7 @@ public enum ErrorCode {
     NOT_FOUND_PIPELINE(HttpStatus.NOT_FOUND,"파이프라인을 찾을 수 없습니다"),
     NOT_FOUND_PIPELINE_ARTIFACT(HttpStatus.NOT_FOUND, "파이프라인 Artifact정보를 찾을 수 없습니다."),
     NOT_FOUND_FILE(HttpStatus.NOT_FOUND, "파일을 찾을 수 없습니다."),
+    NOT_FOUND_USER(HttpStatus.NOT_FOUND, "사용자 정보를 찾을 수 없습니다."),
 
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
     INVALID_USER(HttpStatus.BAD_REQUEST, "존재하지 않는 사용자가 포함되어 있습니다."),
