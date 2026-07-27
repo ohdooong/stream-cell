@@ -37,6 +37,7 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
 
     implementation "org.springframework.boot:spring-boot-starter-jdbc"
+    implementation "org.springframework.boot:spring-boot-starter-security"
 
     /* mybatis */
     implementation "org.mybatis.spring.boot:mybatis-spring-boot-starter:${mybatisVersion}"
