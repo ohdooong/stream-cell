@@ -2,7 +2,10 @@ package com.streamcell.platform.pipeline.converter;
 
 import com.streamcell.platform.pipeline.dto.PipelineRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
+import com.streamcell.platform.pipeline.enums.PipelineStatus;
+import com.streamcell.platform.pipeline.vo.CustomJobConfig;
 import com.streamcell.platform.pipeline.vo.Pipeline;
+import com.streamcell.platform.pipeline.vo.PipelineArtifact;
 
 
 public class PipelineConverter {
@@ -12,6 +15,7 @@ public class PipelineConverter {
                 .pipelineId(vo.getPipelineId())
                 .ownerUserId(vo.getOwnerUserId())
                 .pipelineName(vo.getPipelineName())
+                .description(vo.getDescription())
                 .pipelineType(vo.getPipelineType())
                 .pipelineStatus(vo.getPipelineStatus())
                 .naturalLanguageRequest(vo.getNaturalLanguageRequest())
@@ -22,14 +26,11 @@ public class PipelineConverter {
 
     public static Pipeline toVO(PipelineRequest.Create createItem) {
         return Pipeline.builder()
-                .pipelineId(createItem.getPipelineId())
                 .ownerUserId(createItem.getOwnerUserId())
                 .pipelineName(createItem.getPipelineName())
+                .description(createItem.getDescription())
                 .pipelineType(createItem.getPipelineType())
-                .pipelineStatus(createItem.getPipelineStatus())
-                .naturalLanguageRequest(createItem.getNaturalLanguageRequest())
-                .pipelinePlanJson(createItem.getPipelinePlanJson())
-                .generatedSql(createItem.getGeneratedSql())
+                .pipelineStatus(PipelineStatus.CREATED)
                 .build();
     }
 
@@ -38,12 +39,32 @@ public class PipelineConverter {
                 .pipelineId(updateItem.getPipelineId())
                 .ownerUserId(updateItem.getOwnerUserId())
                 .pipelineName(updateItem.getPipelineName())
+                .description(updateItem.getDescription())
                 .pipelineType(updateItem.getPipelineType())
-                .pipelineStatus(updateItem.getPipelineStatus())
-                .naturalLanguageRequest(updateItem.getNaturalLanguageRequest())
-                .pipelinePlanJson(updateItem.getPipelinePlanJson())
-                .generatedSql(updateItem.getGeneratedSql())
                 .build();
     }
 
+
+    public static PipelineResponse.Artifact toDTO(PipelineArtifact artifact) {
+        return PipelineResponse.Artifact.builder()
+                .artifactId(artifact.getArtifactId())
+                .pipelineId(artifact.getPipelineId())
+                .artifactType(artifact.getArtifactType())
+                .originalFileName(artifact.getOriginalFileName())
+                .storedFileName(artifact.getStoredFileName())
+                .storedFilePath(artifact.getStoredFilePath())
+                .flinkJarId(artifact.getFlinkJarId())
+                .build();
+    }
+
+    public static CustomJobConfig toVO(PipelineRequest.CreateCustomJobConfig createCustomJobConfig, Long pipelineId) {
+        return CustomJobConfig.builder()
+                .userId(createCustomJobConfig.getUserId())
+                .pipelineId(pipelineId)
+                .entryClass(createCustomJobConfig.getEntryClass())
+                .inputTopicIds(createCustomJobConfig.getInputTopicIds())
+                .outputTopicIds(createCustomJobConfig.getOutputTopicIds())
+                .parallelism(createCustomJobConfig.getParallelism())
+                .programArgs(createCustomJobConfig.getProgramArgs()).build();
+    }
 }

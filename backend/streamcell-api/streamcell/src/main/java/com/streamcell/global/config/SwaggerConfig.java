@@ -5,9 +5,18 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.kafka.support.converter.JacksonJsonMessageConverter;
+import org.springframework.kafka.support.converter.MappingJacksonJsonParameterizedConverter;
+import org.springframework.kafka.support.mapping.JacksonJavaTypeMapper;
 
 @Configuration
 public class SwaggerConfig {
+
+//    public SwaggerConfig(JacksonJsonMessageConverter converter) {
+//
+//
+//    }
 
     @Bean
     public OpenAPI openAPI() {

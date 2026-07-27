@@ -53,7 +53,7 @@ public class TopicServiceImpl implements TopicService {
 
     @Override
     public Item getTopicById(Long topicId) {
-        return Optional.ofNullable(repository.findById(topicId))
+        return repository.findById(topicId)
                 .map(TopicConverter::toDTO)
                 .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_TOPIC));
     }
@@ -92,10 +92,8 @@ public class TopicServiceImpl implements TopicService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public List<TopicResponse.TopicPermission> postUsersPermissionsOfTopic(Long topicId, TopicPermission topicPermission) {
-        Topic topic = repository.findById(topicId);
-        if (topic == null) {
-            throw new BaseAPIException(ErrorCode.NOT_FOUND_TOPIC);
-        }
+        Topic topic = repository.findById(topicId)
+                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_TOPIC));
 
         List<Long> userIds = topicPermission.getUserIds().stream().distinct().toList();
         validateUsers(userIds);

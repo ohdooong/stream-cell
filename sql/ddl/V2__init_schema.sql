@@ -24,8 +24,8 @@ CREATE TABLE IF NOT EXISTS web.users (
 );
 
 CREATE TABLE IF NOT EXISTS web.roles (
-     role_id BIGSERIAL PRIMARY KEY,
-     role_name VARCHAR(100) NOT NULL UNIQUE,
+    role_id BIGSERIAL PRIMARY KEY,
+    role_name VARCHAR(100) NOT NULL UNIQUE,
     description TEXT,
     created_by               VARCHAR(255) NOT NULL,
     created_at               TIMESTAMP NOT NULL DEFAULT now(),
@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS platform.pipeline (
     pipeline_id BIGSERIAL PRIMARY KEY,
     owner_user_id BIGINT NOT NULL REFERENCES web.users(user_id),
     pipeline_name VARCHAR(255) NOT NULL,
+    description   VARCHAR(1000),
     pipeline_type VARCHAR(50) NOT NULL,
     status VARCHAR(50) NOT NULL,
     natural_language_request TEXT,

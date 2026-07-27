@@ -10,14 +10,30 @@ spring:
     username: ${POSTGRES_USERNAME}
     password: ${POSTGRES_PASSWORD}
     driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 50MB
+
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+
+flink:
+  base-url: ${FLINK_JOB_MANAGER_URL}
+  
+file:
+  upload:
+    dir: C:\streamcell_workspace\upload
+    custom-jar-path: C:\streamcell_workspace\upload\flink\artifacts
 
 mybatis:
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
   mapper-locations: classpath:/mapper/**/*.xml
+  type-handlers-package: com.streamcell.global.helper.typehandler
 
 logging:
   level:
@@ -32,3 +48,4 @@ springdoc:
   default-produces-media-type: application/json;charset=UTF-8
   swagger-ui:
     path: /swagger-ui
+    doc-expansion: none

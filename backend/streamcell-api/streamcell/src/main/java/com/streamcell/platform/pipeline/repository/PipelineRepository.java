@@ -1,8 +1,12 @@
 package com.streamcell.platform.pipeline.repository;
 
+import com.streamcell.platform.pipeline.vo.CustomJobConfig;
 import com.streamcell.platform.pipeline.vo.Pipeline;
+import com.streamcell.platform.pipeline.vo.PipelineArtifact;
 import org.apache.ibatis.annotations.*;
 import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
 
 @Mapper
 @Repository
@@ -13,21 +17,25 @@ public interface PipelineRepository {
         (
              owner_user_id
            , pipeline_name
+           , description
            , pipeline_type
            , status
-           , natural_language_request
-           , pipeline_plan_json
-           , generated_sql
+           , created_by
+           , created_at
+           , updated_by
+           , updated_at
         )
         values
         (
-            #{pipeline.ownerUserId}
-          , #{pipeline.pipelineName}
-          , #{pipeline.pipelineType}
-          , #{pipeline.pipelineStatus}
-          , #{pipeline.naturalLanguageRequest}
-          , #{pipeline.pipelinePlanJson}::jsonb
-          , #{pipeline.generatedSql}
+            #{ownerUserId}
+          , #{pipelineName}
+          , #{description}
+          , #{pipelineType}
+          , #{pipelineStatus}
+          , 'ADMIN'
+          , now()
+          , 'ADMIN'
+          , now()
         )
     """)
     @Options(useGeneratedKeys = true, keyProperty = "pipelineId")
@@ -36,30 +44,122 @@ public interface PipelineRepository {
     @Update("""
         update platform.pipeline
            set 
-               pipeline_name = #{pipeline.pipelineName}
-             , pipeline_type = #{pipeline.pipelineType}
-             , status = #{pipeline.pipelineStatus}
-             , natural_language_request = #{pipeline.naturalLanguageRequest}
-             , pipeline_plan_json = #{pipeline.pipelinePlanJson}
-             , generated_sql = #{pipeline.generatedSql}
-        where pipeline_id = #{pipeline.pipelineId}
+               pipeline_name = #{pipelineName}
+             , description = #{description}
+             , pipeline_type = #{pipelineType}
+             , updated_by = 'ADMIN'
+             , updated_at = now()
+        where pipeline_id = #{pipelineId}
     """)
     int update(Pipeline pipeline);
+
+    @Update("""
+        update platform.pipeline
+           set 
+               status = #{pipelineStatus}
+             , updated_by = 'ADMIN'
+             , updated_at = now()
+        where pipeline_id = #{pipelineId}
+    """)
+    int updatePipelineStatus(Pipeline pipeline);
 
     @Select("""
          select
                  pipeline_id
                , owner_user_id
                , pipeline_name
+               , description
                , pipeline_type
-               , status
+               , status as pipeline_status
                , natural_language_request
                , pipeline_plan_json
                , generated_sql
          from platform.pipeline a
         where a.pipeline_id = #{pipelineId}
      """)
-    Pipeline findPipelineByPipelineId(Long pipelineId);
+    Optional<Pipeline> findPipelineByPipelineId(Long pipelineId);
 
+    @Select("""
+        select
+               artifact_id,
+               pipeline_id,
+               artifact_type,
+               original_file_name,
+               stored_file_name,
+               stored_file_path,
+               flink_jar_id
+          from platform.pipeline_artifact
+         where pipeline_id = #{pipelineId}
+    """)
+    Optional<PipelineArtifact> findPipelineArtifactByPipelineId(Long pipelineId);
 
+    @Select("""
+        select
+              pipeline_id,
+              entry_class,
+              input_topics,
+              output_topics,
+              program_args
+         from platform.custom_job_config
+        where pipeline_id = #{pipelineId}
+    """)
+    Optional<CustomJobConfig> findCustomJobConfigByPipelineId(Long pipelineId);
+
+    @Insert("""
+        insert into platform.pipeline_artifact
+        (
+            pipeline_id,
+            artifact_type,
+            original_file_name,
+            stored_file_name,
+            stored_file_path,
+            flink_jar_id,
+            created_by,
+            created_at,
+            updated_by,
+            updated_at
+        )
+        values (
+                #{pipelineId},
+                #{artifactType},
+                #{originalFileName},
+                #{storedFileName},
+                #{storedFilePath},
+                #{flinkJarId},
+                'ADMIN',
+                now(),
+                'ADMIN',
+                now()
+        )
+    """)
+    @Options(useGeneratedKeys = true, keyProperty = "artifactId")
+    int insertPipelineArtifact(PipelineArtifact artifact);
+
+    @Insert("""
+        insert into platform.custom_job_config
+        (
+            pipeline_id,
+            entry_class,
+            input_topics,
+            output_topics,
+            program_args,
+            created_by,
+            created_at,
+            updated_by,
+            updated_at
+        )
+        values (
+                #{pipelineId},
+                #{entryClass},
+                #{inputTopicIds}::json,
+                #{outputTopicIds}::json,
+                #{programArgs}::json,
+                'ADMIN',
+                now(),
+                'ADMIN',
+                now()
+        )
+    """)
+    @Options(useGeneratedKeys = true, keyProperty = "configId")
+    int insertCustomJobConfig(CustomJobConfig customJobConfig);
 }

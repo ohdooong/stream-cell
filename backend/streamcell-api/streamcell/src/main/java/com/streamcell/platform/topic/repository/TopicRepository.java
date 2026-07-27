@@ -2,6 +2,7 @@ package com.streamcell.platform.topic.repository;
 
 import com.streamcell.platform.topic.vo.Topic;
 import java.util.List;
+import java.util.Optional;
 
 import com.streamcell.platform.topic.vo.TopicPermission;
 import org.apache.ibatis.annotations.Insert;
@@ -56,7 +57,7 @@ public interface TopicRepository {
         from platform.topic_metadata
        where topic_id = #{topicId}
     """)
-    Topic findById(Long topicId);
+    Optional<Topic> findById(Long topicId);
 
     @Update("""
         update platform.topic_metadata
