@@ -49,3 +49,7 @@ springdoc:
   swagger-ui:
     path: /swagger-ui
     doc-expansion: none
+
+jwt:
+  secret-key: 1baaf8271e1345245b0bc65f414d00d4d3cf3ac109e671f376fd233b28b48c37e7cf976cd6adb03214ec552b4c284bbae97f3c1e2eba9a1a4a9c3562d002c584
+  refresh-key: e0243e8635ab32136c9f45aa981d9b99dbe637584ddd2b45588929eb0aa8c18919529f5f776e204050e3c05016c8f025c468b6aa9b35f1781814501b23ccfaae
