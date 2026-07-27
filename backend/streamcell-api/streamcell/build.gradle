@@ -23,6 +23,7 @@ ext {
     mybatisVersion = '4.0.1'
     springdocVersion = '2.8.5'
     log4jdbcVersion = '1.16'
+    reactiveStreamVersion = '1.0.4'
 }
 
 dependencies {
@@ -49,6 +50,8 @@ dependencies {
 
     /* log4jdbc */
     implementation "org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:${log4jdbcVersion}"
+
+    implementation "org.reactivestreams:reactive-streams:${reactiveStreamVersion}"
 
     testImplementation 'org.springframework.boot:spring-boot-starter-thymeleaf-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
