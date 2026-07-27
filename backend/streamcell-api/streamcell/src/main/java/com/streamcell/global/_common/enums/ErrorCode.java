@@ -24,14 +24,16 @@ public enum ErrorCode {
 
     CONFLICT_PIPLINE_ARTIFACT(HttpStatus.CONFLICT, "artifact가 이미 존재합니다."),
     CONFLICT_CUSTOM_JOB_CONFIG(HttpStatus.CONFLICT, "custom job 설정이 이미 존재합니다."),
+    CONFLICT_FLINK_JAR_ID(HttpStatus.CONFLICT, "이미 배포한 Flink jar파일이 존재합니다."),
 
     // 5xx 에러
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류입니다."),
     FAILED_FILE_SAVE(HttpStatus.INSUFFICIENT_STORAGE, "파일 저장에 실패했습니다."),
+    FAILED_UPLOAD_JAR(HttpStatus.INTERNAL_SERVER_ERROR, "Jar 업로드에 실패했습니다."),
+
     JSON_PARSE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "JSON 파싱 에러"),
 
-    UNAVAILABLE_FLINK(HttpStatus.SERVICE_UNAVAILABLE, "Flink 서버 에러입니다."),
-    ;
+    UNAVAILABLE_FLINK(HttpStatus.SERVICE_UNAVAILABLE, "Flink 서버 에러입니다.");
 
     private final HttpStatus status;
     private final String message;
