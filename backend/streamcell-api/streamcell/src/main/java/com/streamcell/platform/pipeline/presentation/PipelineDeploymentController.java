@@ -35,7 +35,6 @@ public class PipelineDeploymentController {
     })
     @PostMapping(value = "/{pipelineId}/deploy")
     public ResponseEntity<BaseResponse<?>> deployCustomJarToFlink(@PathVariable Long pipelineId) {
-
         service.deploy(pipelineId);
         return ResponseEntity.ok(BaseResponse.success(null));
     }

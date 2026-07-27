@@ -162,4 +162,13 @@ public interface PipelineRepository {
     """)
     @Options(useGeneratedKeys = true, keyProperty = "configId")
     int insertCustomJobConfig(CustomJobConfig customJobConfig);
+
+    @Update("""
+        update platform.pipeline_artifact
+           set flink_jar_id = #{flinkJarId}
+             , updated_by = 'ADMIN'
+             , updated_at = now()
+         where pipeline_id = #{pipelineId}
+    """)
+    int updatePipelineArtifactForFlinkJarId(PipelineArtifact artifact);
 }

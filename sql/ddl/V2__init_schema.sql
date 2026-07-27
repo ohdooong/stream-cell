@@ -125,6 +125,7 @@ CREATE TABLE IF NOT EXISTS platform.pipeline_artifact (
     pipeline_id BIGINT NOT NULL REFERENCES platform.pipeline(pipeline_id) ON DELETE CASCADE,
     artifact_type VARCHAR(50) NOT NULL,
     original_file_name VARCHAR(255) NOT NULL,
+    stored_file_name VARCHAR(255) NOT NULL,
     stored_file_path TEXT NOT NULL,
     flink_jar_id VARCHAR(500),
     created_by               VARCHAR(255) NOT NULL,

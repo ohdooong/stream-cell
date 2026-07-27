@@ -3,6 +3,8 @@ package com.streamcell.platform.flink.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
+import java.util.Map;
+
 public class FlinkResponse {
 
     @Setter
@@ -42,7 +44,10 @@ public class FlinkResponse {
     @NoArgsConstructor(staticName = "from")
     @AllArgsConstructor(staticName = "from")
     public static class JarUploadResponse {
-
+        @JsonProperty("filename")
+        private String filename;
+        @JsonProperty("status")
+        private String status;
     }
 
 }
