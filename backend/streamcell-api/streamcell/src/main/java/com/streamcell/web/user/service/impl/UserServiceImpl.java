@@ -1,7 +1,8 @@
 package com.streamcell.web.user.service.impl;
 
+import com.streamcell.global._common.enums.ErrorCode;
+import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.web.user.converter.UserConverter;
-import com.streamcell.web.user.domain.User;
 import com.streamcell.web.user.dto.UserResponse;
 import com.streamcell.web.user.repository.UserRepository;
 import com.streamcell.web.user.service.UserService;
@@ -15,14 +16,29 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    private final UserRepository mapper;
+    private final UserRepository repository;
 
     @Override
     @Transactional(readOnly = true)
     public List<UserResponse> findAll() {
-        return mapper.findAll().stream()
+        return repository.findAll().stream()
                 .map(UserConverter::toDTO)
                 .toList();
+    }
+
+    @Override
+    public UserResponse findByUserId(Long userId) {
+        return repository.findById(userId)
+            .map(UserConverter::toDTO)
+            .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_USER));
+    }
+
+    @Override
+    public List<UserResponse> findByUserName(String userName) {
+        return repository.findByUserName(userName)
+            .stream()
+            .map(UserConverter::toDTO)
+            .toList();
     }
 }
 
