@@ -3,6 +3,7 @@ package com.streamcell.platform.pipeline.repository;
 import com.streamcell.platform.pipeline.vo.CustomJobConfig;
 import com.streamcell.platform.pipeline.vo.Pipeline;
 import com.streamcell.platform.pipeline.vo.PipelineArtifact;
+import com.streamcell.platform.pipeline.vo.PipelineDeployment;
 import org.apache.ibatis.annotations.*;
 import org.springframework.stereotype.Repository;
 
@@ -171,4 +172,47 @@ public interface PipelineRepository {
          where pipeline_id = #{pipelineId}
     """)
     int updatePipelineArtifactForFlinkJarId(PipelineArtifact artifact);
+
+    @Insert("""
+        insert into platform.pipeline_deployment
+        (
+            pipeline_id,
+            deployment_type,
+            flink_job_id,
+            flink_jar_id,
+            status,
+            started_by,
+            started_at,
+            stopped_by,
+            stopped_at,
+            finished_at,
+            last_checked_at,
+            error_message,
+            created_by,
+            created_at,
+            updated_by,
+            updated_at,
+        )
+        values
+        (
+            #{pipelineId},
+            #{deploymentType},
+            #{flinkJobId},
+            #{flinkJarId},
+            #{status},
+            'ADMIN',
+            now(),
+            'ADMIN',
+            now(),
+            #{finishedAt},
+            #{lastCheckedAt},
+            #{errorMessage},
+            'ADMIN',
+            now(),
+            'ADMIN',
+            now()
+        )
+    """)
+    @Options(useGeneratedKeys = true, keyProperty = "deploymentId")
+    int insertPipelineDeployment(PipelineDeployment pipelineDeployment);
 }

@@ -90,8 +90,9 @@ public class PipelineServiceImpl implements PipelineService {
         CustomJobConfig customJobConfig = PipelineConverter.toVO(createCustomJobConfig, pipelineId);
 
         // customJobConfig 유효성검증
-        PipelineValidator<CustomJobConfig> customJobConfigValidator =
-                (PipelineValidator<CustomJobConfig>) validatorMap.get("customJobConfigValidator");
+        PipelineValidator<CustomJobConfig, Void> customJobConfigValidator =
+                (PipelineValidator<CustomJobConfig, Void>) validatorMap.get("customJobConfigValidator");
+
         if (customJobConfigValidator == null) {
             throw new RuntimeException("validator Bean을 찾을 수 없습니다.");
         }

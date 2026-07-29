@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class PipelineDeploymentController {
     private final PipelineDeploymentService service;
 
-
     @Operation(summary = "Flink Jar 배포", description = "등록한 Custom Jar를 Flink로 배포합니다.")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE)
