@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 
 @Component("customJobConfigValidator")
 @RequiredArgsConstructor
-public class CustomJobConfigValidator implements PipelineValidator<CustomJobConfig>{
+public class CustomJobConfigValidator implements PipelineValidator<CustomJobConfig, Void>{
 
     private static final String PKG_REGEX = "^[a-zA-Z_$][a-zA-Z0-9_$]*(\\.[a-zA-Z_$][a-zA-Z0-9_$]*)*$";
     private static final Pattern PKG_PATTERN = Pattern.compile(PKG_REGEX);
