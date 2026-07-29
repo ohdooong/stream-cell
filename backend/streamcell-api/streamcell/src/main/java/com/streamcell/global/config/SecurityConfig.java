@@ -1,6 +1,6 @@
 package com.streamcell.global.config;
 
-import com.streamcell.global._common.constants.SecurityConstants;
+import com.streamcell.global.security.SecurityConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -22,15 +22,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         http.csrf(AbstractHttpConfigurer::disable)
-
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(SecurityConstants.PERMIT_ALL_END_POINTS).permitAll()
                 .anyRequest().authenticated())
-
             ;
-
-
-
         return http.build();
     }
 
