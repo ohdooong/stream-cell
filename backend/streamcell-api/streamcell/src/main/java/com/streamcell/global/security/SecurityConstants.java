@@ -1,9 +1,9 @@
-package com.streamcell.global._common.constants;
+package com.streamcell.global.security;
 
 public class SecurityConstants {
 
-    public static final String LOGIN_API_END_POINT = "/api/v1/web";
-    public static final String LOGOUT_API_END_POINT = "";
+    public static final String LOGIN_API_END_POINT = "/api/v1/web/user/login";
+    public static final String LOGOUT_API_END_POINT = "/api/v1/web/user/logout";
 
 
     // 인증이 필요하지 않은 웹리소스 엔드포인트를 등록한다.
