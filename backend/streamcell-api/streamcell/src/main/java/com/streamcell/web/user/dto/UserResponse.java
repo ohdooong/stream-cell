@@ -6,7 +6,8 @@ import lombok.Data;
 @Data
 @Builder
 public class UserResponse {
-    private String userId;
+    private Long userId;
+    private String loginId;
     private String email;
     private String password;
     private String name;
