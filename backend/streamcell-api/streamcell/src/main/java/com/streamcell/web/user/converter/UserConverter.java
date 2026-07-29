@@ -8,6 +8,7 @@ public class UserConverter {
     public static UserResponse toDTO(User user) {
         return UserResponse.builder()
             .userId(user.getUserId())
+            .loginId(user.getLoginId())
             .email(user.getEmail())
             .name(user.getName())
             .password(user.getPassword())
