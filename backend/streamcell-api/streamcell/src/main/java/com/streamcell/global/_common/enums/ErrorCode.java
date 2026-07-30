@@ -27,6 +27,7 @@ public enum ErrorCode {
     CONFLICT_PIPLINE_ARTIFACT(HttpStatus.CONFLICT, "artifact가 이미 존재합니다."),
     CONFLICT_CUSTOM_JOB_CONFIG(HttpStatus.CONFLICT, "custom job 설정이 이미 존재합니다."),
     CONFLICT_FLINK_JAR_ID(HttpStatus.CONFLICT, "이미 배포한 Flink jar파일이 존재합니다."),
+    CONFLICT_PIPELINE_DEPLOYMENT(HttpStatus.CONFLICT, "pipeline이 배포된 상태입니다."),
 
     // 5xx 에러
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류입니다."),
