@@ -5,6 +5,7 @@ import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.platform.flink.client.FlinkJarClient;
 import com.streamcell.platform.flink.dto.FlinkResponse;
 import com.streamcell.platform.flink.util.FlinkUtils;
+import com.streamcell.platform.pipeline.dto.PipelineResponse;
 import com.streamcell.platform.pipeline.enums.DeploymentStatus;
 import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.enums.PipelineType;
@@ -32,11 +33,11 @@ public class PipelineDeploymentServiceImpl implements PipelineDeploymentService 
     private final PipelineRepository repository;
     private final FlinkJarClient flinkJarClient;
 
-    private final Map<String, PipelineValidator<?>> validatorMap;
+    private final Map<String, PipelineValidator<?, ?>> validatorMap;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void deploy(Long pipelineId) {
+    public PipelineResponse.Deployment deploy(Long pipelineId) {
 
         Pipeline pipeline =
                 repository.findPipelineByPipelineId(pipelineId)
@@ -62,21 +63,44 @@ public class PipelineDeploymentServiceImpl implements PipelineDeploymentService 
         CustomJobConfig customJobConfig = repository.findCustomJobConfigByPipelineId(pipelineId)
                 .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE_ARTIFACT));
 
-        FlinkResponse.JarRunResponse runJarResponse = flinkJarClient.runJar(pipeline, artifact, customJobConfig);
-
+        // insert pipeline deployment
         PipelineDeployment pipelineDeployment = PipelineDeployment
                 .builder()
                 .pipelineId(pipelineId)
                 .deploymentType(PipelineType.AI_SQL)
-                .flinkJobId(runJarResponse.getJobId())
                 .flinkJarId(artifact.getFlinkJarId())
-                .status(DeploymentStatus.RUNNING)
+                .status(DeploymentStatus.DEPLOYING)
                 .startedAt(LocalDateTime.now())
                 .build();
-
         repository.insertPipelineDeployment(pipelineDeployment);
 
+        // upload 완료한 jar파일 run
+        FlinkResponse.JarRunResponse runJarResponse;
+        try {
+            runJarResponse = flinkJarClient.runJar(pipeline, artifact, customJobConfig);
+            pipelineDeployment.setFlinkJobId(runJarResponse.getJobId());
 
+            pipeline.setPipelineStatus(PipelineStatus.RUNNING);
+        } catch (Exception e) {
+            pipelineDeployment.setStatus(DeploymentStatus.FAILED);
+            pipelineDeployment.setErrorMessage(e.getMessage());
+
+            pipeline.setPipelineStatus(PipelineStatus.FAILED);
+
+            throw new BaseAPIException(ErrorCode.UNAVAILABLE_FLINK);
+        }
+        // update pipeline deployment status
+        repository.updatePipelineDeploymentStatus(pipelineDeployment);
+        // pipeline status update
+        repository.updatePipelineStatus(pipeline);
+
+        return PipelineResponse.Deployment.builder()
+                .pipelineId(pipeline.getPipelineId())
+                .deploymentId(pipelineDeployment.getDeploymentId())
+                .flinkJarId(pipelineDeployment.getFlinkJarId())
+                .flinkJobId(pipelineDeployment.getFlinkJobId())
+                .status(pipelineDeployment.getStatus())
+                .build();
     }
 
     private PipelineValidator<Pipeline, PipelineArtifact> getPipelineDeploymentValidator() {

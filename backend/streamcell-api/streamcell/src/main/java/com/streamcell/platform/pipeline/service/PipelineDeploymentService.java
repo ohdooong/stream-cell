@@ -1,5 +1,7 @@
 package com.streamcell.platform.pipeline.service;
 
+import com.streamcell.platform.pipeline.dto.PipelineResponse;
+
 public interface PipelineDeploymentService {
 
     /**
@@ -7,5 +9,5 @@ public interface PipelineDeploymentService {
      *
      * @param pipelinId
      */
-    void deploy(Long pipelinId);
+    PipelineResponse.Deployment deploy(Long pipelinId);
 }

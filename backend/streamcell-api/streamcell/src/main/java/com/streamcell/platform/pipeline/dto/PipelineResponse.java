@@ -1,6 +1,7 @@
 package com.streamcell.platform.pipeline.dto;
 
 import com.streamcell.platform.pipeline.enums.ArtifactType;
+import com.streamcell.platform.pipeline.enums.DeploymentStatus;
 import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.enums.PipelineType;
 import lombok.*;
@@ -57,6 +58,17 @@ public class PipelineResponse {
         private Map<String, Object> programArgs;
     }
 
-
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor(staticName = "from")
+    @AllArgsConstructor(staticName = "from")
+    public static class Deployment {
+        private Long pipelineId;
+        private Long deploymentId;
+        private String flinkJarId;
+        private String flinkJobId;
+        private DeploymentStatus status;
+    }
 }
 
