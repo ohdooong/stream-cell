@@ -2,11 +2,15 @@ package com.streamcell.global.exception;
 
 import com.streamcell.global._common.dto.BaseResponse;
 import com.streamcell.global._common.exception.BaseAPIException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.Arrays;
+
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
 
@@ -19,8 +23,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BaseAPIException.class)
     public ResponseEntity<BaseResponse<?>> handleBaseAPIException(BaseAPIException exception) {
+        //log.error(Arrays.toString(exception.getStackTrace()));
         String message = exception.getMessage();
-        return ResponseEntity.status(500).body(BaseResponse.error(message));
+        return ResponseEntity.status(exception.getErrorCode().getStatus())
+                .body(BaseResponse.error(exception.getErrorCode(), null));
     }
 
 }

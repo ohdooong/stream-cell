@@ -2,6 +2,8 @@ package com.streamcell.global._common.dto;
 
 
 import java.time.LocalDateTime;
+
+import com.streamcell.global._common.enums.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -42,4 +44,9 @@ public class BaseResponse<T> {
     public static <T> BaseResponse<T> error(String message) {
         return new BaseResponse<>(500, message, LocalDateTime.now(), null);
     }
+
+    public static <T> BaseResponse<T> error(ErrorCode errorCode, T body) {
+        return new BaseResponse<>(errorCode.getStatus().value(), errorCode.getMessage(), LocalDateTime.now(), body);
+    }
+
 }
