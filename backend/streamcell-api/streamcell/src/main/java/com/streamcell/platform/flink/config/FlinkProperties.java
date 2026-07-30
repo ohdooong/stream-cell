@@ -21,4 +21,8 @@ public class FlinkProperties {
         return baseUrl + EndPoint.UPLOAD_JAR.getPath();
     }
 
+    public String getRunJarUrl() {
+        return baseUrl + EndPoint.RUN_JAR.getPath();
+    }
+
 }

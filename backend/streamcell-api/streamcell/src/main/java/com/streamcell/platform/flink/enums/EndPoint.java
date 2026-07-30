@@ -5,7 +5,8 @@ import lombok.Getter;
 @Getter
 public enum EndPoint {
     OVERVIEW("/overview"),
-    UPLOAD_JAR("/jars/upload");
+    UPLOAD_JAR("/jars/upload"),
+    RUN_JAR("/jars/%s/run");
 
     EndPoint(String path) {
         this.path = path;
