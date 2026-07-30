@@ -25,7 +25,13 @@ public class PipelineDeploymentValidator implements PipelineValidator<Pipeline, 
             throw new BaseAPIException(ErrorCode.BAD_REQUEST_NOT_CUSTOM_JAR_TYPE);
         }
 
-        if (PipelineStatus.ARTIFACT_UPLOADED != pipeline.getPipelineStatus()) {
+        PipelineStatus pipelineStatus = pipeline.getPipelineStatus();
+        if (PipelineStatus.ARTIFACT_UPLOADED != pipelineStatus) {
+            if (PipelineStatus.DEPLOYING == pipelineStatus
+                    || PipelineStatus.RUNNING == pipelineStatus) {
+                throw new BaseAPIException(ErrorCode.CONFLICT_PIPELINE_DEPLOYMENT);
+            }
+
             throw new BaseAPIException(ErrorCode.BAD_REQUEST_NOT_UPLOADED_CUSTOM_JAR);
         }
 

@@ -31,7 +31,7 @@ public class PipelineServiceImpl implements PipelineService {
     private final UserLookupPort userLookupPort;
     private final FileService fileService;
 
-    private final Map<String, PipelineValidator<?>> validatorMap;
+    private final Map<String, PipelineValidator<?, ?>> validatorMap;
 
     @Override
     @Transactional(rollbackFor = Exception.class)

@@ -1,5 +1,7 @@
 package com.streamcell.platform.flink.client;
 
+import com.streamcell.global._common.enums.ErrorCode;
+import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.platform.flink.config.FlinkProperties;
 import com.streamcell.platform.flink.dto.FlinkRequest;
 import com.streamcell.platform.flink.dto.FlinkResponse;
@@ -10,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Component;
@@ -56,6 +59,9 @@ public class FlinkJarClient {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
+//                .onStatus(HttpStatusCode::isError, (httpRequest, httpResponse) -> {
+//                    throw new BaseAPIException(ErrorCode.UNAVAILABLE_FLINK);
+//                })
                 .body(FlinkResponse.JarRunResponse.class);
     }
 

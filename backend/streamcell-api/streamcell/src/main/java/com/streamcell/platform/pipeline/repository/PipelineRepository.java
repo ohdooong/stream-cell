@@ -191,7 +191,7 @@ public interface PipelineRepository {
             created_by,
             created_at,
             updated_by,
-            updated_at,
+            updated_at
         )
         values
         (
@@ -215,4 +215,13 @@ public interface PipelineRepository {
     """)
     @Options(useGeneratedKeys = true, keyProperty = "deploymentId")
     int insertPipelineDeployment(PipelineDeployment pipelineDeployment);
+
+    @Update("""
+        update platform.pipeline_deployment
+           set status = #{status}
+             , error_message = #{errorMessage}
+          where deployment_id = #{deploymentId}
+    """)
+    int updatePipelineDeploymentStatus(PipelineDeployment pipelineDeployment);
+
 }
