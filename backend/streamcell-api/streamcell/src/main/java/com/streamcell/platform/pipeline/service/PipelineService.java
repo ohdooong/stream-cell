@@ -36,4 +36,5 @@ public interface PipelineService {
      */
     PipelineResponse.Artifact createFlinkCustomJar(MultipartFile file, PipelineRequest.CreateCustomJobConfig createCustomJobConfig, Long pipelineId);
 
+    PipelineResponse.Pipeline updatePipelineStatus(Long pipelineId);
 }

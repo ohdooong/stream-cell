@@ -7,11 +7,12 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
     // 4xx 에러
     NOT_FOUND_TOPIC(HttpStatus.NOT_FOUND, "토픽정보를 찾을 수 없습니다."),
-    NOT_FOUND_PIPELINE(HttpStatus.NOT_FOUND,"파이프라인을 찾을 수 없습니다"),
+    NOT_FOUND_PIPELINE(HttpStatus.NOT_FOUND, "파이프라인을 찾을 수 없습니다"),
     NOT_FOUND_PIPELINE_ARTIFACT(HttpStatus.NOT_FOUND, "파이프라인 Artifact정보를 찾을 수 없습니다."),
     NOT_FOUND_CUSTOM_JOB_CONFIG(HttpStatus.NOT_FOUND, "Custom Job Config정보를 찾을 수 없습니다."),
     NOT_FOUND_FILE(HttpStatus.NOT_FOUND, "파일을 찾을 수 없습니다."),
     NOT_FOUND_USER(HttpStatus.NOT_FOUND, "사용자 정보를 찾을 수 없습니다."),
+    NOT_FOUND_PIPELINE_DEPLOYMENT(HttpStatus.NOT_FOUND, "Pipeline Deployment 정보를 찾을 수 없습니다."),
 
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
     INVALID_USER(HttpStatus.BAD_REQUEST, "존재하지 않는 사용자가 포함되어 있습니다."),
@@ -38,6 +39,7 @@ public enum ErrorCode {
 
     UNAVAILABLE_FLINK(HttpStatus.SERVICE_UNAVAILABLE, "Flink 서버 에러입니다.");
 
+
     private final HttpStatus status;
     private final String message;
 
@@ -45,4 +47,4 @@ public enum ErrorCode {
         this.status = httpStatus;
         this.message = message;
     }
-}
+    }

@@ -9,6 +9,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -18,7 +19,10 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class FlinkRestClient {
 
+    private final RestClient restClient;
+
     private final FlinkProperties flinkProperties;
+
 
     public FlinkResponse.ClusterOverview getClusterOverview() {
         RestTemplate restTemplate = new RestTemplate();
@@ -46,5 +50,17 @@ public class FlinkRestClient {
             // 네트워크 오류, 타임아웃 등
             throw new BaseAPIException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * flinkJob의 상태를 조회
+     * @param flinkJobId
+     * @return
+     */
+    public FlinkResponse.JobStatus getJobStatus(String flinkJobId) {
+        return restClient.get()
+            .uri(String.format(flinkProperties.getJobStatus(), flinkJobId))
+            .retrieve()
+            .body(FlinkResponse.JobStatus.class);
     }
 }

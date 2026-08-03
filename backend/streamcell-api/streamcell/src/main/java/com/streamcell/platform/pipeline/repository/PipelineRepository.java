@@ -4,6 +4,7 @@ import com.streamcell.platform.pipeline.vo.CustomJobConfig;
 import com.streamcell.platform.pipeline.vo.Pipeline;
 import com.streamcell.platform.pipeline.vo.PipelineArtifact;
 import com.streamcell.platform.pipeline.vo.PipelineDeployment;
+import java.util.List;
 import org.apache.ibatis.annotations.*;
 import org.springframework.stereotype.Repository;
 
@@ -105,6 +106,45 @@ public interface PipelineRepository {
         where pipeline_id = #{pipelineId}
     """)
     Optional<CustomJobConfig> findCustomJobConfigByPipelineId(Long pipelineId);
+
+    @Select("""
+        select
+            deployment_id,
+            pipeline_id,
+            deployment_type,
+            flink_job_id,
+            flink_jar_id,
+            status,
+            started_at,
+            stopped_at,
+            finished_at,
+            last_checked_at,
+            error_message
+        from platform.pipeline_deployment
+        where pipeline_id = #{pipelineId}
+    """)
+    List<PipelineDeployment> findPipelineDeploymentByPipelineId(Long pipelineId);
+
+
+    @Select("""
+            select
+                deployment_id,
+                pipeline_id,
+                deployment_type,
+                flink_job_id,
+                flink_jar_id,
+                status,
+                started_at,
+                stopped_at,
+                finished_at,
+                last_checked_at,
+                error_message
+            from platform.pipeline_deployment
+            where pipeline_id = #{pipelineId}
+            order by deployment_id desc
+            limit 1
+        """)
+    Optional<PipelineDeployment> findLatestPipelineDeployMentByPipelineId(Long pipelineId);
 
     @Insert("""
         insert into platform.pipeline_artifact

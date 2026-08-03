@@ -25,4 +25,8 @@ public class FlinkProperties {
         return baseUrl + EndPoint.RUN_JAR.getPath();
     }
 
+    public String getJobStatus() {
+        return baseUrl + EndPoint.JOB_STATUS.getPath();
+    }
+
 }

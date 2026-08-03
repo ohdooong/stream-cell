@@ -6,6 +6,7 @@ import com.streamcell.global._common.file.dto.FileResponse;
 import com.streamcell.global._common.file.service.FileService;
 import com.streamcell.platform._common.port.UserLookupPort;
 import com.streamcell.platform.pipeline.converter.PipelineConverter;
+import com.streamcell.platform.pipeline.service.PipelineDeploymentService;
 import com.streamcell.platform.pipeline.validator.PipelineValidator;
 import com.streamcell.platform.pipeline.dto.PipelineRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
@@ -16,6 +17,7 @@ import com.streamcell.platform.pipeline.service.PipelineService;
 import com.streamcell.platform.pipeline.vo.CustomJobConfig;
 import com.streamcell.platform.pipeline.vo.Pipeline;
 import com.streamcell.platform.pipeline.vo.PipelineArtifact;
+import com.streamcell.platform.pipeline.vo.PipelineDeployment;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -111,6 +113,22 @@ public class PipelineServiceImpl implements PipelineService {
                 .build());
 
         return PipelineConverter.toDTO(artifact);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public PipelineResponse.Pipeline updatePipelineStatus(Long pipelineId) {
+
+        Pipeline pipeline = repository.findPipelineByPipelineId(pipelineId)
+            .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
+
+        PipelineDeployment pipelineDeployment = repository.findLatestPipelineDeployMentByPipelineId(
+                pipelineId)
+            .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE_DEPLOYMENT));
+
+
+
+        return null;
     }
 
 

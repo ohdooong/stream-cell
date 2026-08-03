@@ -58,5 +58,14 @@ public class FlinkResponse {
         private String jobId;
     }
 
+    @Setter
+    @Getter
+    @Builder
+    @NoArgsConstructor(staticName = "from")
+    @AllArgsConstructor(staticName = "from")
+    public class JobStatus {
+        @JsonProperty("status")
+        private String status;
+    }
 }
 
