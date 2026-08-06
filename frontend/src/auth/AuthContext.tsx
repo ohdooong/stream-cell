@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { ApiError } from '../api/client';
 import * as authApi from '../api/auth';
 import type { User } from '../api/auth';
+import { demoUser, isDemoMode } from '../api/demo';
 
 type AuthContextValue = {
   user: User | null;
@@ -17,6 +18,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (isDemoMode) {
+      setIsLoading(false);
+      return;
+    }
     authApi.getCurrentUser()
       .then(setUser)
       .catch((error: unknown) => {
@@ -28,8 +33,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(() => ({
     user,
     isLoading,
-    signIn: async (username, password, rememberMe) => setUser(await authApi.login(username, password, rememberMe)),
+    signIn: async (username, password, rememberMe) => {
+      if (isDemoMode) {
+        if (!username.trim() || !password) throw new Error('Demo credentials are required.');
+        setUser(demoUser);
+        return;
+      }
+      setUser(await authApi.login(username, password, rememberMe));
+    },
     signOut: async () => {
+      if (isDemoMode) {
+        setUser(null);
+        return;
+      }
       await authApi.logout();
       setUser(null);
     },

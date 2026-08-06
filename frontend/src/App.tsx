@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState, type ReactNode } from 'react';
 import { api, ApiError, unwrap } from './api/client';
 import { useAuth } from './auth/AuthContext';
+import { demoPipelines, demoTopics, isDemoMode } from './api/demo';
 
 type Topic = { topicId: number; topicName: string; displayName?: string; description?: string; messageFormat?: string };
 type Pipeline = { pipelineId: number; pipelineName: string; description?: string; pipelineType?: string; pipelineStatus?: string };
@@ -70,6 +71,7 @@ function LoginScreen() {
         <div className="login-card">
           <div className="mobile-brand"><Brand /></div>
           <div className="login-heading"><p className="eyebrow">WELCOME BACK</p><h2>다시 만나서 반가워요.</h2><p>StreamCell 워크스페이스로 계속하세요.</p></div>
+          {isDemoMode && <p className="demo-login-hint">데모 모드 · 이메일과 비밀번호를 자유롭게 입력해 로그인해 보세요.</p>}
           <form onSubmit={handleSubmit} noValidate>
             <label htmlFor="username">아이디 또는 이메일</label>
             <div className="field"><Icon name="user" /><input id="username" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" placeholder="name@company.com" required /></div>
@@ -90,12 +92,13 @@ function Console() {
   const { user, signOut } = useAuth();
   if (!user) return null;
   const [view, setView] = useState<View>('overview');
-  const [topics, setTopics] = useState<Topic[]>([]);
-  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
+  const [topics, setTopics] = useState<Topic[]>(isDemoMode ? demoTopics : []);
+  const [pipelines, setPipelines] = useState<Pipeline[]>(isDemoMode ? demoPipelines : []);
   const [notice, setNotice] = useState('');
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
+    if (isDemoMode) return;
     if (!user.userId) return;
     Promise.all([
       api<Topic[] | { data: Topic[] }>('/api/v1/platform/topic/topics').then(unwrap),
@@ -116,10 +119,11 @@ function Console() {
     </aside>
     <main className="workspace">
       <header className="topbar"><div><p className="breadcrumb">워크스페이스 <span>/</span> {pageTitle}</p><h1>{pageTitle}</h1></div><div className="top-actions"><button className="round-button" aria-label="알림"><Icon name="bell" /><b /></button><button className="signout" onClick={() => void signOut()}>로그아웃</button></div></header>
+      {isDemoMode && <div className="demo-banner"><Icon name="spark" />데모 모드입니다. 현재 표시되는 데이터는 샘플이며, 실제 API를 호출하지 않습니다.</div>}
       {notice && <div className="toast" role="status">{notice}</div>}
       {loadError && <div className="api-notice"><Icon name="alert" /><span>운영 데이터를 불러오지 못했습니다. 로그인 후 API 권한과 엔드포인트를 확인해 주세요.</span></div>}
       {view === 'overview' && <Overview topics={topics} pipelines={pipelines} activePipelines={activePipelines} setView={setView} />}
-      {view === 'topics' && <TopicsView topics={topics} onSync={async () => { await api('/api/v1/platform/topic/sync', { method: 'POST' }); setNotice('토픽 동기화가 시작되었습니다.'); }} />}
+      {view === 'topics' && <TopicsView topics={topics} onSync={async () => { if (!isDemoMode) await api('/api/v1/platform/topic/sync', { method: 'POST' }); setNotice(isDemoMode ? '데모 토픽은 이미 최신 상태입니다.' : '토픽 동기화가 시작되었습니다.'); }} />}
       {view === 'pipelines' && <PipelinesView pipelines={pipelines} />}
     </main>
   </div>;
