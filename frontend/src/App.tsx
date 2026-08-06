@@ -2,10 +2,11 @@ import { FormEvent, useEffect, useState, type ReactNode } from 'react';
 import { api, ApiError, unwrap } from './api/client';
 import { useAuth } from './auth/AuthContext';
 import { demoPipelines, demoTopics, isDemoMode } from './api/demo';
+import { PipelineCreateView, type PipelineDraft } from './PipelineCreateView';
 
 type Topic = { topicId: number; topicName: string; displayName?: string; description?: string; messageFormat?: string };
 type Pipeline = { pipelineId: number; pipelineName: string; description?: string; pipelineType?: string; pipelineStatus?: string };
-type View = 'overview' | 'topics' | 'pipelines';
+type View = 'overview' | 'topics' | 'pipelines' | 'pipeline-create';
 
 const navItems: { id: View; label: string; icon: string }[] = [
   { id: 'overview', label: '개요', icon: 'grid' },
@@ -91,6 +92,7 @@ function LoginScreen() {
 function Console() {
   const { user, signOut } = useAuth();
   if (!user) return null;
+  const currentUser = user;
   const [view, setView] = useState<View>('overview');
   const [topics, setTopics] = useState<Topic[]>(isDemoMode ? demoTopics : []);
   const [pipelines, setPipelines] = useState<Pipeline[]>(isDemoMode ? demoPipelines : []);
@@ -109,7 +111,22 @@ function Console() {
   }, [user?.userId]);
 
   const activePipelines = pipelines.filter((item) => item.pipelineStatus === 'RUNNING' || item.pipelineStatus === 'DEPLOYED').length;
-  const pageTitle = navItems.find((item) => item.id === view)?.label ?? '개요';
+  const pageTitle = view === 'pipeline-create' ? '새 파이프라인' : navItems.find((item) => item.id === view)?.label ?? '개요';
+
+  async function createPipeline(draft: PipelineDraft) {
+    let created: Pipeline;
+    if (isDemoMode) {
+      created = { pipelineId: Date.now(), pipelineName: draft.pipelineName, description: draft.description, pipelineType: draft.pipelineType, pipelineStatus: 'DRAFT' };
+    } else {
+      created = unwrap(await api<Pipeline | { data: Pipeline }>('/api/v1/platform/pipeline/pipelines', {
+        method: 'POST',
+        body: JSON.stringify({ ownerUserId: currentUser.userId, pipelineName: draft.pipelineName, description: draft.description, pipelineType: draft.pipelineType }),
+      }));
+    }
+    setPipelines((current) => [created, ...current]);
+    setNotice(isDemoMode ? '데모 파이프라인이 등록되었습니다.' : '파이프라인이 등록되었습니다.');
+    setView('pipelines');
+  }
 
   return <div className="app-shell">
     <aside className="sidebar">
@@ -124,7 +141,8 @@ function Console() {
       {loadError && <div className="api-notice"><Icon name="alert" /><span>운영 데이터를 불러오지 못했습니다. 로그인 후 API 권한과 엔드포인트를 확인해 주세요.</span></div>}
       {view === 'overview' && <Overview topics={topics} pipelines={pipelines} activePipelines={activePipelines} setView={setView} />}
       {view === 'topics' && <TopicsView topics={topics} onSync={async () => { if (!isDemoMode) await api('/api/v1/platform/topic/sync', { method: 'POST' }); setNotice(isDemoMode ? '데모 토픽은 이미 최신 상태입니다.' : '토픽 동기화가 시작되었습니다.'); }} />}
-      {view === 'pipelines' && <PipelinesView pipelines={pipelines} />}
+      {view === 'pipelines' && <PipelinesView pipelines={pipelines} onCreate={() => setView('pipeline-create')} />}
+      {view === 'pipeline-create' && <PipelineCreateView topics={topics} onCancel={() => setView('pipelines')} onCreate={createPipeline} />}
     </main>
   </div>;
 }
@@ -135,7 +153,7 @@ function Overview({ topics, pipelines, activePipelines, setView }: { topics: Top
     { label: '실행 중 파이프라인', value: activePipelines, hint: `${pipelines.length}개 전체 파이프라인`, icon: 'activity', tone: 'green' },
     { label: '검토 필요', value: pipelines.filter((item) => item.pipelineStatus === 'FAILED').length, hint: '실패한 작업', icon: 'alert', tone: 'amber' },
   ];
-  return <section className="page-content"><div className="welcome-row"><div><h2>좋은 하루예요, 데이터가 흐르고 있습니다.</h2><p>StreamCell 워크스페이스의 현재 상태를 확인하세요.</p></div><button className="primary-button compact" onClick={() => setView('pipelines')}>새 파이프라인 <Icon name="plus" /></button></div><div className="stats-grid">{cards.map((card) => <article className="stat-card" key={card.label}><div className={`stat-icon ${card.tone}`}><Icon name={card.icon} /></div><p>{card.label}</p><strong>{card.value}</strong><small>{card.hint}</small></article>)}</div><div className="dashboard-grid"><section className="panel activity-panel"><div className="panel-heading"><div><h3>파이프라인 현황</h3><p>최근 등록된 작업</p></div><button className="text-button" onClick={() => setView('pipelines')}>전체 보기 <Icon name="arrow" /></button></div>{pipelines.length ? <div className="pipeline-list">{pipelines.slice(0, 4).map((pipeline) => <PipelineRow pipeline={pipeline} key={pipeline.pipelineId} />)}</div> : <EmptyState icon="flow" title="아직 파이프라인이 없습니다" text="첫 파이프라인을 만들고 데이터 흐름을 시작해 보세요." action="파이프라인 만들기" onAction={() => setView('pipelines')} />}</section><section className="panel flow-panel"><div className="panel-heading"><div><h3>데이터 흐름</h3><p>워크스페이스 리소스</p></div><span className="live-pill"><i /> LIVE</span></div><div className="flow-visual"><div><b>{topics.length}</b><span>Topics</span></div><i /><div><b>{pipelines.length}</b><span>Pipelines</span></div><i /><div><b>{activePipelines}</b><span>Running</span></div></div><p className="flow-caption">Kafka 토픽에서 파이프라인까지 연결 상태를 관리합니다.</p></section></div></section>;
+  return <section className="page-content"><div className="welcome-row"><div><h2>좋은 하루예요, 데이터가 흐르고 있습니다.</h2><p>StreamCell 워크스페이스의 현재 상태를 확인하세요.</p></div><button className="primary-button compact" onClick={() => setView('pipeline-create')}>새 파이프라인 <Icon name="plus" /></button></div><div className="stats-grid">{cards.map((card) => <article className="stat-card" key={card.label}><div className={`stat-icon ${card.tone}`}><Icon name={card.icon} /></div><p>{card.label}</p><strong>{card.value}</strong><small>{card.hint}</small></article>)}</div><div className="dashboard-grid"><section className="panel activity-panel"><div className="panel-heading"><div><h3>파이프라인 현황</h3><p>최근 등록된 작업</p></div><button className="text-button" onClick={() => setView('pipelines')}>전체 보기 <Icon name="arrow" /></button></div>{pipelines.length ? <div className="pipeline-list">{pipelines.slice(0, 4).map((pipeline) => <PipelineRow pipeline={pipeline} key={pipeline.pipelineId} />)}</div> : <EmptyState icon="flow" title="아직 파이프라인이 없습니다" text="첫 파이프라인을 만들고 데이터 흐름을 시작해 보세요." action="파이프라인 만들기" onAction={() => setView('pipeline-create')} />}</section><section className="panel flow-panel"><div className="panel-heading"><div><h3>데이터 흐름</h3><p>워크스페이스 리소스</p></div><span className="live-pill"><i /> LIVE</span></div><div className="flow-visual"><div><b>{topics.length}</b><span>Topics</span></div><i /><div><b>{pipelines.length}</b><span>Pipelines</span></div><i /><div><b>{activePipelines}</b><span>Running</span></div></div><p className="flow-caption">Kafka 토픽에서 파이프라인까지 연결 상태를 관리합니다.</p></section></div></section>;
 }
 
 function TopicsView({ topics, onSync }: { topics: Topic[]; onSync: () => Promise<void> }) {
@@ -144,8 +162,8 @@ function TopicsView({ topics, onSync }: { topics: Topic[]; onSync: () => Promise
   return <section className="page-content"><div className="welcome-row"><div><h2>Kafka 토픽</h2><p>파이프라인에서 사용할 데이터 소스를 관리하세요.</p></div><button className="secondary-button" disabled={isSyncing} onClick={() => void sync()}><Icon name="refresh" />{isSyncing ? '동기화 중…' : '토픽 동기화'}</button></div><section className="panel table-panel">{topics.length ? <table><thead><tr><th>토픽</th><th>형식</th><th>설명</th><th /></tr></thead><tbody>{topics.map((topic) => <tr key={topic.topicId}><td><strong>{topic.displayName ?? topic.topicName}</strong><small>{topic.topicName}</small></td><td><span className="format-chip">{topic.messageFormat ?? 'JSON'}</span></td><td>{topic.description ?? '설명 없음'}</td><td><button className="row-action">상세 <Icon name="chevron" /></button></td></tr>)}</tbody></table> : <EmptyState icon="database" title="표시할 토픽이 없습니다" text="Kafka에서 토픽을 가져오려면 동기화를 실행하세요." action="토픽 동기화" onAction={() => void sync()} />}</section></section>;
 }
 
-function PipelinesView({ pipelines }: { pipelines: Pipeline[] }) {
-  return <section className="page-content"><div className="welcome-row"><div><h2>파이프라인</h2><p>실시간 데이터 처리 작업을 설계하고 운영하세요.</p></div><button className="primary-button compact"><Icon name="plus" />새 파이프라인</button></div><section className="panel table-panel">{pipelines.length ? <table><thead><tr><th>파이프라인</th><th>유형</th><th>상태</th><th /></tr></thead><tbody>{pipelines.map((pipeline) => <tr key={pipeline.pipelineId}><td><strong>{pipeline.pipelineName}</strong><small>{pipeline.description ?? '설명 없음'}</small></td><td>{pipeline.pipelineType ?? '—'}</td><td><Status status={pipeline.pipelineStatus} /></td><td><button className="row-action">열기 <Icon name="chevron" /></button></td></tr>)}</tbody></table> : <EmptyState icon="flow" title="아직 파이프라인이 없습니다" text="SQL 또는 Custom Job 기반의 새 처리 흐름을 만드세요." action="새 파이프라인" />}</section></section>;
+function PipelinesView({ pipelines, onCreate }: { pipelines: Pipeline[]; onCreate: () => void }) {
+  return <section className="page-content"><div className="welcome-row"><div><h2>파이프라인</h2><p>실시간 데이터 처리 작업을 설계하고 운영하세요.</p></div><button className="primary-button compact" onClick={onCreate}><Icon name="plus" />새 파이프라인</button></div><section className="panel table-panel">{pipelines.length ? <table><thead><tr><th>파이프라인</th><th>유형</th><th>상태</th><th /></tr></thead><tbody>{pipelines.map((pipeline) => <tr key={pipeline.pipelineId}><td><strong>{pipeline.pipelineName}</strong><small>{pipeline.description ?? '설명 없음'}</small></td><td>{pipeline.pipelineType ?? '—'}</td><td><Status status={pipeline.pipelineStatus} /></td><td><button className="row-action">열기 <Icon name="chevron" /></button></td></tr>)}</tbody></table> : <EmptyState icon="flow" title="아직 파이프라인이 없습니다" text="SQL 또는 Custom Job 기반의 새 처리 흐름을 만드세요." action="새 파이프라인" onAction={onCreate} />}</section></section>;
 }
 
 function PipelineRow({ pipeline }: { pipeline: Pipeline }) { return <div className="pipeline-row"><span className="pipeline-mark"><Icon name="flow" /></span><div><strong>{pipeline.pipelineName}</strong><small>{pipeline.pipelineType ?? 'Pipeline'} · {pipeline.description ?? '설명 없음'}</small></div><Status status={pipeline.pipelineStatus} /><button className="row-action" aria-label={`${pipeline.pipelineName} 열기`}><Icon name="chevron" /></button></div>; }
