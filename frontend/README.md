@@ -27,3 +27,14 @@ npm run dev
 Spring Security의 세션 쿠키 방식이면 응답에 `Set-Cookie`를 설정하면 됩니다. JWT 방식이면 응답 JSON의 `accessToken`, `access_token`, 또는 `token` 속성을 반환하세요. 토큰은 페이지 세션 동안에만 메모리에 유지되고, 이후 API 호출의 `Authorization: Bearer` 헤더에 자동으로 붙습니다.
 
 로그인 상태 확인은 `GET /api/v1/auth/me`, 로그아웃은 `POST /api/v1/auth/logout`입니다. `/me` 응답은 `{ "userId": 1, "username": "...", "displayName": "...", "roles": ["ROLE_USER"] }` 형태를 권장합니다. 실제 엔드포인트가 달라질 경우 환경 변수의 경로만 바꾸면 됩니다.
+
+## Management Console 데모 범위
+
+- Flink Cluster, TaskManager, Slot 및 실행 중 Job Dashboard
+- Kafka Topic Sync, Schema 편집 및 Event Time 설정
+- Topic별 사용자 권한 조회·추가와 내 사용 가능 Topic
+- AI_SQL 자연어 요청, Pipeline Plan 및 Flink SQL Preview
+- Custom JAR, Entry Class, Topic, Parallelism 및 Program Arguments 입력
+- Pipeline 실행·중지, 상태와 Deployment 이력
+- 실시간 처리 결과 Table·Chart Dashboard
+- 원본 Exception, AI 원인 분석 및 권장 조치

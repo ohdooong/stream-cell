@@ -3,6 +3,7 @@ import { api, ApiError, unwrap } from './api/client';
 import { useAuth } from './auth/AuthContext';
 import { demoPipelines, demoTopics, isDemoMode } from './api/demo';
 import { PipelineCreateView, type PipelineDraft } from './PipelineCreateView';
+import { ManagementConsole } from './management/ManagementConsole';
 
 type Topic = { topicId: number; topicName: string; displayName?: string; description?: string; messageFormat?: string };
 type Pipeline = { pipelineId: number; pipelineName: string; description?: string; pipelineType?: string; pipelineStatus?: string };
@@ -17,7 +18,7 @@ const navItems: { id: View; label: string; icon: string }[] = [
 export function App() {
   const { user, isLoading } = useAuth();
   if (isLoading) return <LoadingScreen />;
-  return user ? <Console /> : <LoginScreen />;
+  return user ? (isDemoMode ? <ManagementConsole /> : <Console />) : <LoginScreen />;
 }
 
 function LoadingScreen() {
