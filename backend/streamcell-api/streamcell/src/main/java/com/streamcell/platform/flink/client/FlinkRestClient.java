@@ -4,6 +4,7 @@ import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.platform.flink.config.FlinkProperties;
 import com.streamcell.platform.flink.dto.FlinkResponse;
+import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
@@ -57,10 +58,11 @@ public class FlinkRestClient {
      * @param flinkJobId
      * @return
      */
-    public FlinkResponse.JobStatus getJobStatus(String flinkJobId) {
-        return restClient.get()
-            .uri(String.format(flinkProperties.getJobStatus(), flinkJobId))
-            .retrieve()
-            .body(FlinkResponse.JobStatus.class);
+    public FlinkJobStatus getJobStatus(String flinkJobId) {
+        FlinkResponse.JobStatus body = restClient.get()
+                .uri(String.format(flinkProperties.getJobStatus(), flinkJobId))
+                .retrieve()
+                .body(FlinkResponse.JobStatus.class);
+        return FlinkJobStatus.from(body.getStatus());
     }
 }

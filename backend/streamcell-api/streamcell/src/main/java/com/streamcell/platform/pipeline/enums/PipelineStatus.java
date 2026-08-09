@@ -7,6 +7,8 @@ public enum PipelineStatus {
     DEPLOYING,
     RUNNING,
     FAILED,
+    STOPPING,
     STOPPED,
-    FINISHED
+    FINISHED,
+    SUSPENDED
 }

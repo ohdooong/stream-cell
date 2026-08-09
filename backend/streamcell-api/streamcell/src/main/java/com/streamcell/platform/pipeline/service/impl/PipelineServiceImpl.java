@@ -5,6 +5,9 @@ import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.global._common.file.dto.FileResponse;
 import com.streamcell.global._common.file.service.FileService;
 import com.streamcell.platform._common.port.UserLookupPort;
+import com.streamcell.platform.flink.client.FlinkRestClient;
+import com.streamcell.platform.flink.dto.FlinkResponse;
+import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.pipeline.converter.PipelineConverter;
 import com.streamcell.platform.pipeline.service.PipelineDeploymentService;
 import com.streamcell.platform.pipeline.validator.PipelineValidator;
@@ -32,6 +35,8 @@ public class PipelineServiceImpl implements PipelineService {
     private final PipelineRepository repository;
     private final UserLookupPort userLookupPort;
     private final FileService fileService;
+
+    private final FlinkRestClient flinkRestClient;
 
     private final Map<String, PipelineValidator<?, ?>> validatorMap;
 
@@ -126,6 +131,8 @@ public class PipelineServiceImpl implements PipelineService {
                 pipelineId)
             .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE_DEPLOYMENT));
 
+        FlinkJobStatus jobStatus = flinkRestClient.getJobStatus(pipelineDeployment.getFlinkJobId());
+        
 
 
         return null;
