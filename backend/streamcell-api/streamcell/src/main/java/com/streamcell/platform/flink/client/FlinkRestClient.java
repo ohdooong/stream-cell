@@ -4,21 +4,27 @@ import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.platform.flink.config.FlinkProperties;
 import com.streamcell.platform.flink.dto.FlinkResponse;
+import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
 public class FlinkRestClient {
 
+    private final RestClient restClient;
+
     private final FlinkProperties flinkProperties;
+
 
     public FlinkResponse.ClusterOverview getClusterOverview() {
         RestTemplate restTemplate = new RestTemplate();
@@ -46,5 +52,29 @@ public class FlinkRestClient {
             // 네트워크 오류, 타임아웃 등
             throw new BaseAPIException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * flinkJob의 상태를 조회
+     * @param flinkJobId
+     * @return
+     */
+    public FlinkJobStatus getJobStatus(String flinkJobId) {
+        if (flinkJobId == null || flinkJobId.isBlank()) {
+            throw new BaseAPIException(ErrorCode.INVALID_FLINK_JOB_ID);
+        }
+
+        FlinkResponse.JobStatus body = restClient.get()
+                .uri(String.format(flinkProperties.getJobStatus(), flinkJobId))
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, (httpRequest, httpResponse) -> {
+                    throw new BaseAPIException(ErrorCode.NOT_FOUND_FLINK_JOB_ID);
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, (httpRequest, httpResponse) -> {
+                    throw new BaseAPIException(ErrorCode.UNAVAILABLE_FLINK);
+                })
+                .body(FlinkResponse.JobStatus.class);
+        return Optional.ofNullable(FlinkJobStatus.from(body.getStatus()))
+                .orElseThrow(() -> new BaseAPIException(ErrorCode.INVALID_FLINK_JOB_STATUS));
     }
 }

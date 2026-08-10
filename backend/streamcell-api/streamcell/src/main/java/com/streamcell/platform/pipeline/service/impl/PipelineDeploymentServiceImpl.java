@@ -6,6 +6,7 @@ import com.streamcell.platform.flink.client.FlinkJarClient;
 import com.streamcell.platform.flink.dto.FlinkResponse;
 import com.streamcell.platform.flink.util.FlinkUtils;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
+import com.streamcell.platform.pipeline.dto.PipelineResponse.Deployment;
 import com.streamcell.platform.pipeline.enums.DeploymentStatus;
 import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.enums.PipelineType;
@@ -16,6 +17,7 @@ import com.streamcell.platform.pipeline.vo.CustomJobConfig;
 import com.streamcell.platform.pipeline.vo.Pipeline;
 import com.streamcell.platform.pipeline.vo.PipelineArtifact;
 import com.streamcell.platform.pipeline.vo.PipelineDeployment;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
@@ -101,6 +103,12 @@ public class PipelineDeploymentServiceImpl implements PipelineDeploymentService 
                 .flinkJobId(pipelineDeployment.getFlinkJobId())
                 .status(pipelineDeployment.getStatus())
                 .build();
+    }
+
+    @Override
+    public List<Deployment> findByPipelineId(Long pipelineId) {
+
+        return List.of();
     }
 
     private PipelineValidator<Pipeline, PipelineArtifact> getPipelineDeploymentValidator() {

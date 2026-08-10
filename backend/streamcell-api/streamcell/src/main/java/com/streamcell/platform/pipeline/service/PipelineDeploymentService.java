@@ -1,6 +1,8 @@
 package com.streamcell.platform.pipeline.service;
 
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
+import com.streamcell.platform.pipeline.dto.PipelineResponse.Deployment;
+import java.util.List;
 
 public interface PipelineDeploymentService {
 
@@ -10,4 +12,6 @@ public interface PipelineDeploymentService {
      * @param pipelinId
      */
     PipelineResponse.Deployment deploy(Long pipelinId);
+
+    List<Deployment> findByPipelineId(Long pipelineId);
 }
