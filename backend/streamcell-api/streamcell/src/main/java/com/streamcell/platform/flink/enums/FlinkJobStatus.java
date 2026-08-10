@@ -21,12 +21,13 @@ public enum FlinkJobStatus {
         if (flinkJobStatus == null || flinkJobStatus.isBlank()) {
             return null;
         }
+
         for (FlinkJobStatus status : FlinkJobStatus.values()) {
             if (flinkJobStatus.equals(status.name())) {
                 return status;
             }
         }
 
-        throw new BaseAPIException(ErrorCode.INVALID_FLINK_JOB_STATUS);
+        return null;
     }
 }

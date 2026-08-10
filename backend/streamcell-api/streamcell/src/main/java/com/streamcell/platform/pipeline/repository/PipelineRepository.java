@@ -260,6 +260,11 @@ public interface PipelineRepository {
         update platform.pipeline_deployment
            set status = #{status}
              , error_message = #{errorMessage}
+             , finshed_at = #{finishedAt}
+             , stopped_at = #{stoppedAt}
+             , last_checked_at = #{lastCheckedAt}
+             , updated_by = 'ADMIN'
+             , updated_at = now()
           where deployment_id = #{deploymentId}
     """)
     int updatePipelineDeploymentStatus(PipelineDeployment pipelineDeployment);

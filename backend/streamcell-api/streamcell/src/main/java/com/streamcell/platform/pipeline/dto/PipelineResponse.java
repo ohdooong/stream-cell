@@ -1,5 +1,6 @@
 package com.streamcell.platform.pipeline.dto;
 
+import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.pipeline.enums.ArtifactType;
 import com.streamcell.platform.pipeline.enums.DeploymentStatus;
 import com.streamcell.platform.pipeline.enums.PipelineStatus;
@@ -70,5 +71,20 @@ public class PipelineResponse {
         private String flinkJobId;
         private DeploymentStatus status;
     }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor(staticName = "from")
+    @AllArgsConstructor(staticName = "from")
+    public static class PipelineStatus {
+        private Long pipelineId;
+        private Long deploymentId;
+        private String flinkJobId;
+        private FlinkJobStatus flinkJobStatus;
+        private com.streamcell.platform.pipeline.enums.PipelineStatus pipelineStatus;
+        private DeploymentStatus deploymentStatus;
+    }
+
 }
 

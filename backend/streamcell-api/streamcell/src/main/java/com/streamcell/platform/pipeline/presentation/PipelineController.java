@@ -90,7 +90,7 @@ public class PipelineController {
     }
 
 
-    @Operation(summary = "Pipeline Job 상태 업데이트", description = "Pipeline Flink Job 상태를 업데이트합니다.")
+    @Operation(summary = "Pipeline Job 상태 업데이트", description = "Pipeline Flink Job 상태를 업데이트합니다. Flink job과 동기화")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "처리성공"),
         @ApiResponse(responseCode = "400", description = "Bad Request"),
@@ -98,14 +98,9 @@ public class PipelineController {
         @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @PutMapping("/pipelines/{pipelineId}/status")
-    public ResponseEntity<BaseResponse<?>> putPipelineStatus(
+    public ResponseEntity<BaseResponse<PipelineResponse.PipelineStatus>> putPipelineStatus(
         @PathVariable Long pipelineId) {
-
-        service.updatePipelineStatus(pipelineId);
-
         return ResponseEntity.ok(
-            BaseResponse.success(service.findPipelineByPipelineId(pipelineId)));
+                BaseResponse.success(service.updatePipelineStatus(pipelineId)));
     }
-
-
 }

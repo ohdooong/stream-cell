@@ -9,6 +9,8 @@ import com.streamcell.platform.flink.client.FlinkRestClient;
 import com.streamcell.platform.flink.dto.FlinkResponse;
 import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.pipeline.converter.PipelineConverter;
+import com.streamcell.platform.pipeline.domain.JobStatusConvertPolicy;
+import com.streamcell.platform.pipeline.enums.DeploymentStatus;
 import com.streamcell.platform.pipeline.service.PipelineDeploymentService;
 import com.streamcell.platform.pipeline.validator.PipelineValidator;
 import com.streamcell.platform.pipeline.dto.PipelineRequest;
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Service
@@ -35,6 +38,8 @@ public class PipelineServiceImpl implements PipelineService {
     private final PipelineRepository repository;
     private final UserLookupPort userLookupPort;
     private final FileService fileService;
+
+    private final JobStatusConvertPolicy jobStatusConvertPolicy;
 
     private final FlinkRestClient flinkRestClient;
 
@@ -122,20 +127,41 @@ public class PipelineServiceImpl implements PipelineService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public PipelineResponse.Pipeline updatePipelineStatus(Long pipelineId) {
+    public PipelineResponse.PipelineStatus updatePipelineStatus(Long pipelineId) {
 
         Pipeline pipeline = repository.findPipelineByPipelineId(pipelineId)
             .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
 
-        PipelineDeployment pipelineDeployment = repository.findLatestPipelineDeployMentByPipelineId(
-                pipelineId)
+        PipelineDeployment pipelineDeployment = repository.findLatestPipelineDeployMentByPipelineId(pipelineId)
             .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE_DEPLOYMENT));
 
         FlinkJobStatus jobStatus = flinkRestClient.getJobStatus(pipelineDeployment.getFlinkJobId());
-        
 
+        PipelineStatus convertedStatus = jobStatusConvertPolicy.convertToPipelineStatusFrom(jobStatus);
+        pipeline.setPipelineStatus(convertedStatus);
+        repository.updatePipelineStatus(pipeline);
 
-        return null;
+        DeploymentStatus deploymentStatus = jobStatusConvertPolicy.convertToDeploymentStatusFrom(jobStatus);
+        pipelineDeployment.setStatus(deploymentStatus);
+
+        LocalDateTime now = LocalDateTime.now();
+        if (DeploymentStatus.STOPPED == deploymentStatus
+                || DeploymentStatus.STOPPING == deploymentStatus) {
+            pipelineDeployment.setStoppedAt(now);
+            pipelineDeployment.setFinishedAt(now);
+        }
+        pipelineDeployment.setLastCheckedAt(now);
+        repository.updatePipelineDeploymentStatus(pipelineDeployment);
+
+        return PipelineResponse.PipelineStatus
+                .builder()
+                .pipelineId(pipeline.getPipelineId())
+                .deploymentId(pipelineDeployment.getDeploymentId())
+                .flinkJobId(pipelineDeployment.getFlinkJobId())
+                .deploymentStatus(pipelineDeployment.getStatus())
+                .pipelineStatus(pipeline.getPipelineStatus())
+                .build();
+
     }
 
 

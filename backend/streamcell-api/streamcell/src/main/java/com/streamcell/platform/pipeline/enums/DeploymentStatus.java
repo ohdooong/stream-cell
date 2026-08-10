@@ -4,6 +4,8 @@ public enum DeploymentStatus {
     DEPLOYING,
     RUNNING,
     FAILED,
+    STOPPING,
     STOPPED,
-    FINISHED
+    FINISHED,
+    SUSPENDED
 }

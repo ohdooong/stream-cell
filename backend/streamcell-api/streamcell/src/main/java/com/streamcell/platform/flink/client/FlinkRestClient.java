@@ -15,6 +15,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -59,10 +60,21 @@ public class FlinkRestClient {
      * @return
      */
     public FlinkJobStatus getJobStatus(String flinkJobId) {
+        if (flinkJobId == null || flinkJobId.isBlank()) {
+            throw new BaseAPIException(ErrorCode.INVALID_FLINK_JOB_ID);
+        }
+
         FlinkResponse.JobStatus body = restClient.get()
                 .uri(String.format(flinkProperties.getJobStatus(), flinkJobId))
                 .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, (httpRequest, httpResponse) -> {
+                    throw new BaseAPIException(ErrorCode.NOT_FOUND_FLINK_JOB_ID);
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, (httpRequest, httpResponse) -> {
+                    throw new BaseAPIException(ErrorCode.UNAVAILABLE_FLINK);
+                })
                 .body(FlinkResponse.JobStatus.class);
-        return FlinkJobStatus.from(body.getStatus());
+        return Optional.ofNullable(FlinkJobStatus.from(body.getStatus()))
+                .orElseThrow(() -> new BaseAPIException(ErrorCode.INVALID_FLINK_JOB_STATUS));
     }
 }
