@@ -13,6 +13,7 @@ CREATE SCHEMA IF NOT EXISTS platform;
 
 CREATE TABLE IF NOT EXISTS web.users (
     user_id BIGSERIAL PRIMARY KEY,
+    login_id varchar(255) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     name VARCHAR(100) NOT NULL,
@@ -208,12 +209,12 @@ VALUES
     ('ENGINEER', 'Custom Flink job user', 'ADMIN', now(), 'ADMIN', now())
     ON CONFLICT (role_name) DO NOTHING;
 
-INSERT INTO web.users (email, password, name, status, created_by, created_at, updated_by, updated_at)
+INSERT INTO web.users (login_id, email, password, name, status, created_by, created_at, updated_by, updated_at)
 VALUES
-    ('admin@streamcell.local', 'admin1234', 'Admin User', 'ACTIVE', 'ADMIN', now(), 'ADMIN', now()),
-    ('analyst@streamcell.local', 'analyst1234', 'Analyst User', 'ACTIVE', 'ADMIN', now(), 'ADMIN', now()),
-    ('engineer@streamcell.local', 'engineer1234', 'Engineer User', 'ACTIVE', 'ADMIN', now(), 'ADMIN', now())
-    ON CONFLICT (email) DO NOTHING;
+    ('admin123','admin@streamcell.local', 'admin1234', 'Admin User', 'ACTIVE', 'ADMIN', now(), 'ADMIN', now()),
+    ('analyst123','analyst@streamcell.local', 'analyst1234', 'Analyst User', 'ACTIVE', 'ADMIN', now(), 'ADMIN', now()),
+    ('engineer123','engineer@streamcell.local', 'engineer1234', 'Engineer User', 'ACTIVE', 'ADMIN', now(), 'ADMIN', now())
+    ON CONFLICT (login_id) DO NOTHING;
 
 INSERT INTO web.user_roles (user_id, role_id, created_by, created_at, updated_by, updated_at)
 SELECT u.user_id, r.role_id, 'ADMIN', now(), 'ADMIN', now()
