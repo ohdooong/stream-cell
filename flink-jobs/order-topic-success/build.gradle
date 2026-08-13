@@ -1,0 +1,44 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.streamcell'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    flinkVersion = '1.19.1'
+    flinkKafkaConnectorVersion = '3.2.0-1.19'
+    junitVersion = '5.11.4'
+    junitPlatformVersion = '1.11.4'
+}
+
+dependencies {
+    // Flink and the Kafka connector are supplied by the StreamCell Flink cluster.
+    compileOnly "org.apache.flink:flink-streaming-java:${flinkVersion}"
+    compileOnly "org.apache.flink:flink-clients:${flinkVersion}"
+    compileOnly "org.apache.flink:flink-connector-kafka:${flinkKafkaConnectorVersion}"
+
+    testImplementation "org.apache.flink:flink-java:${flinkVersion}"
+    testImplementation "org.junit.jupiter:junit-jupiter:${junitVersion}"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:${junitPlatformVersion}"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 17
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+tasks.named('jar') {
+    archiveBaseName = 'order-topic-success-job'
+    manifest {
+        attributes 'Main-Class': 'com.streamcell.jobs.order.OrderTopicSuccessJob'
+    }
+}
