@@ -21,6 +21,7 @@ public enum ErrorCode {
     INVALID_PARALLELISM(HttpStatus.BAD_REQUEST, "병렬도는 1 ~ 8사이값만 입력가능합니다."),
     INVALID_FLINK_JOB_STATUS(HttpStatus.BAD_REQUEST, "유효하지 않은 Flink Job 상태입니다."),
     INVALID_FLINK_JOB_ID(HttpStatus.BAD_REQUEST, "유효하지 않은 Flink Job ID 입니다."),
+    INVALID_CANCEL_FLINK_JOB(HttpStatus.BAD_REQUEST, "Job을 중지할 수 있는 상태가 아닙니다."),
 
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
     BAD_REQUEST_NOT_CUSTOM_JAR_TYPE(HttpStatus.BAD_REQUEST, "Pipeline Type CUSTOM_JAR가 아닙니다."),
@@ -37,10 +38,12 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류입니다."),
     FAILED_FILE_SAVE(HttpStatus.INSUFFICIENT_STORAGE, "파일 저장에 실패했습니다."),
     FAILED_UPLOAD_JAR(HttpStatus.INTERNAL_SERVER_ERROR, "Jar 업로드에 실패했습니다."),
+    FAILED_CANCEL_JOB(HttpStatus.INTERNAL_SERVER_ERROR, "Job Cancel에 실패하였습니다."),
 
     JSON_PARSE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "JSON 파싱 에러"),
 
-    UNAVAILABLE_FLINK(HttpStatus.SERVICE_UNAVAILABLE, "Flink 서버 에러입니다.");
+    UNAVAILABLE_FLINK(HttpStatus.SERVICE_UNAVAILABLE, "Flink 서버 에러입니다.")
+    ;
 
 
     private final HttpStatus status;

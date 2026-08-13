@@ -29,4 +29,8 @@ public class FlinkProperties {
         return baseUrl + EndPoint.JOB_STATUS.getPath();
     }
 
+    public String getCancelJobUrl() {
+        return baseUrl + EndPoint.CANCEL_JOB.getPath() + "?mode=cancel";
+    }
+
 }

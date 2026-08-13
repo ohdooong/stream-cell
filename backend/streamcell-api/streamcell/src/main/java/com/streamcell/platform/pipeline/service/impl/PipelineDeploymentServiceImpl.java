@@ -3,8 +3,13 @@ package com.streamcell.platform.pipeline.service.impl;
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.platform.flink.client.FlinkJarClient;
+import com.streamcell.platform.flink.client.FlinkRestClient;
 import com.streamcell.platform.flink.dto.FlinkResponse;
+import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.flink.util.FlinkUtils;
+import com.streamcell.platform.pipeline.converter.PipelineConverter;
+import com.streamcell.platform.pipeline.domain.DeploymentStatusPolicy;
+import com.streamcell.platform.pipeline.domain.JobStatusConvertPolicy;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
 import com.streamcell.platform.pipeline.dto.PipelineResponse.Deployment;
 import com.streamcell.platform.pipeline.enums.DeploymentStatus;
@@ -17,16 +22,13 @@ import com.streamcell.platform.pipeline.vo.CustomJobConfig;
 import com.streamcell.platform.pipeline.vo.Pipeline;
 import com.streamcell.platform.pipeline.vo.PipelineArtifact;
 import com.streamcell.platform.pipeline.vo.PipelineDeployment;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +36,10 @@ public class PipelineDeploymentServiceImpl implements PipelineDeploymentService 
 
     private final PipelineRepository repository;
     private final FlinkJarClient flinkJarClient;
+    private final FlinkRestClient flinkRestClient;
+
+    private final DeploymentStatusPolicy deploymentStatusPolicy;
+    private final JobStatusConvertPolicy jobStatusConvertPolicy;
 
     private final Map<String, PipelineValidator<?, ?>> validatorMap;
 
@@ -111,6 +117,45 @@ public class PipelineDeploymentServiceImpl implements PipelineDeploymentService 
         return List.of();
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public PipelineResponse.StopPipeline cancelPipelineFlinkJob(Long pipelineId) {
+
+        Pipeline pipeline = repository.findPipelineByPipelineId(pipelineId)
+                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
+
+        // todo 사용자 권한/소유자 검증
+        PipelineDeployment pipelineDeployment = repository.findLatestPipelineDeployMentByPipelineId(pipelineId)
+                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE_DEPLOYMENT));
+
+        // 중지 가능한 상태인지 검증
+        boolean availableStop = deploymentStatusPolicy.isAvailableStop(pipelineDeployment.getStatus());
+        if (!availableStop) {
+            throw new BaseAPIException(ErrorCode.INVALID_CANCEL_FLINK_JOB);
+        }
+
+        // cancel job 호출
+        FlinkJobStatus flinkJobStatus = flinkRestClient.cancelJob(pipelineDeployment.getFlinkJobId());
+
+        // pipeline STOPPING update
+        PipelineStatus pipelineStatus = jobStatusConvertPolicy.convertToPipelineStatusFrom(flinkJobStatus);
+        pipeline.setPipelineStatus(pipelineStatus);
+        repository.updatePipelineStatus(pipeline);
+
+        // pipeline deployment STOPPING update
+        DeploymentStatus deploymentStatus = jobStatusConvertPolicy.convertToDeploymentStatusFrom(flinkJobStatus);
+        pipelineDeployment.setStatus(deploymentStatus);
+        pipelineDeployment.setStoppedAt(LocalDateTime.now());
+        repository.updatePipelineDeploymentStatus(pipelineDeployment);
+
+        return PipelineResponse.StopPipeline.builder()
+                .pipelineId(pipelineId)
+                .deploymentId(pipelineDeployment.getDeploymentId())
+                .flinkJobId(pipelineDeployment.getFlinkJobId())
+                .pipelineStatus(PipelineStatus.STOPPING)
+                .build();
+    }
+
     private PipelineValidator<Pipeline, PipelineArtifact> getPipelineDeploymentValidator() {
         PipelineValidator<Pipeline, PipelineArtifact> pipelineDeploymentValidator =
                 (PipelineValidator<Pipeline, PipelineArtifact>) validatorMap.get("pipelineDeploymentValidator");
@@ -119,6 +164,8 @@ public class PipelineDeploymentServiceImpl implements PipelineDeploymentService 
         }
         return pipelineDeploymentValidator;
     }
+
+
 
 
 //    private String getFlinkJobId(FlinkResponse.JarUploadResponse jarUploadResponse) {

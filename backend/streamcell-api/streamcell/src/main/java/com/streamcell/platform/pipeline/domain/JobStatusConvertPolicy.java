@@ -16,7 +16,11 @@ public class JobStatusConvertPolicy {
             FlinkJobStatus.RECONCILING,
             FlinkJobStatus.RESTARTING
     );
+
     private final List<FlinkJobStatus> failed = List.of(FlinkJobStatus.FAILING, FlinkJobStatus.FAILED);
+
+
+
 
     public PipelineStatus convertToPipelineStatusFrom(FlinkJobStatus flinkJobStatus) {
 

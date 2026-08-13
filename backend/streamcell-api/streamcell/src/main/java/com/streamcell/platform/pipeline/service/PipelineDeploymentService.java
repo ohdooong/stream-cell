@@ -14,4 +14,12 @@ public interface PipelineDeploymentService {
     PipelineResponse.Deployment deploy(Long pipelinId);
 
     List<Deployment> findByPipelineId(Long pipelineId);
+
+    /**
+     * pipeline의 Flink Job을 Cancel 시킴.
+     *
+     * @param pipelineId
+     * @return
+     */
+    PipelineResponse.StopPipeline cancelPipelineFlinkJob(Long pipelineId);
 }

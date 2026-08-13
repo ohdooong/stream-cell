@@ -86,5 +86,17 @@ public class PipelineResponse {
         private DeploymentStatus deploymentStatus;
     }
 
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor(staticName = "from")
+    @AllArgsConstructor(staticName = "from")
+    public static class StopPipeline {
+        private Long pipelineId;
+        private Long deploymentId;
+        private String flinkJobId;
+        private com.streamcell.platform.pipeline.enums.PipelineStatus pipelineStatus;
+    }
+
 }
 

@@ -26,6 +26,10 @@ public class FlinkRestClient {
     private final FlinkProperties flinkProperties;
 
 
+    /**
+     * flink cluster 정보 조회
+     * @return
+     */
     public FlinkResponse.ClusterOverview getClusterOverview() {
         RestTemplate restTemplate = new RestTemplate();
 
@@ -76,5 +80,26 @@ public class FlinkRestClient {
                 .body(FlinkResponse.JobStatus.class);
         return Optional.ofNullable(FlinkJobStatus.from(body.getStatus()))
                 .orElseThrow(() -> new BaseAPIException(ErrorCode.INVALID_FLINK_JOB_STATUS));
+    }
+
+    /**
+     * flink job을 cancel 요청한다.
+     * @param flinkJobId
+     * @return
+     */
+    public FlinkJobStatus cancelJob(String flinkJobId) {
+        if (flinkJobId == null || flinkJobId.isBlank()) {
+            throw new BaseAPIException(ErrorCode.INVALID_FLINK_JOB_ID);
+        }
+
+        restClient.post()
+                .uri(String.format(flinkProperties.getCancelJobUrl(), flinkJobId))
+                .retrieve()
+                .onStatus(status -> !status.isSameCodeAs(HttpStatusCode.valueOf(202))
+                        , (request, response) -> {
+                            throw new BaseAPIException(ErrorCode.FAILED_CANCEL_JOB);
+                });
+
+        return FlinkJobStatus.CANCELLING;
     }
 }

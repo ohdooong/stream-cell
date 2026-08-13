@@ -9,10 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Platform Pipeline Deployment API", description = "Pipeline Deployment 관리 API 컨트롤러")
 @RestController
@@ -31,5 +28,21 @@ public class PipelineDeploymentController {
     @PostMapping(value = "/{pipelineId}/deploy")
     public ResponseEntity<BaseResponse<PipelineResponse.Deployment>> deployCustomJarToFlink(@PathVariable Long pipelineId) {
         return ResponseEntity.ok(BaseResponse.success(service.deploy(pipelineId)));
+    }
+
+
+    @Operation(summary = "Flink Jar 배포", description = "등록한 Custom Jar를 Flink로 배포합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "202", description = "Job Cancel 성공"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "404", description = "Not Found"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error."),
+    })
+    @PostMapping("/{pipelineId}/stop")
+    public ResponseEntity<BaseResponse<?>> cancelPipelineFlinkJob(
+            @PathVariable Long pipelineId
+    ) {
+        return ResponseEntity.ok(
+                BaseResponse.success(service.cancelPipelineFlinkJob(pipelineId)));
     }
 }
