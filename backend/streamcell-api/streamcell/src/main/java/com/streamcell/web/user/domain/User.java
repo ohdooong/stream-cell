@@ -1,9 +1,7 @@
 package com.streamcell.web.user.domain;
 
-
 import lombok.Getter;
 import lombok.Setter;
-
 
 @Getter
 public class User {
