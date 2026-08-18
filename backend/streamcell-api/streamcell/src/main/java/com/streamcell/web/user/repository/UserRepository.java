@@ -18,6 +18,7 @@ public interface UserRepository {
     @Select("""
         select
                 user_id,
+                login_id,
                 name,
                 email,
                 password,
@@ -26,6 +27,19 @@ public interface UserRepository {
             where user_id = #{userId};
     """)
     Optional<User> findById(Long userId);
+
+    @Select("""
+        select
+                user_id,
+                login_id,
+                name,
+                email,
+                password,
+                status
+            from web.users
+            where login_id = #{LoginId};
+    """)
+    Optional<User> findByLoginId(String LoginId);
 
     @Select("""
         select
