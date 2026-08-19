@@ -26,13 +26,16 @@ public class PipelineDeploymentValidator implements PipelineValidator<Pipeline, 
         }
 
         PipelineStatus pipelineStatus = pipeline.getPipelineStatus();
-        if (PipelineStatus.ARTIFACT_UPLOADED != pipelineStatus) {
-            if (PipelineStatus.DEPLOYING == pipelineStatus
-                    || PipelineStatus.RUNNING == pipelineStatus) {
-                throw new BaseAPIException(ErrorCode.CONFLICT_PIPELINE_DEPLOYMENT);
-            }
 
+        if (pipelineStatus == null
+        || PipelineStatus.DRAFT == pipelineStatus
+        || PipelineStatus.CREATED == pipelineStatus) {
             throw new BaseAPIException(ErrorCode.BAD_REQUEST_NOT_UPLOADED_CUSTOM_JAR);
+        }
+
+        if (PipelineStatus.DEPLOYING == pipelineStatus
+                || PipelineStatus.RUNNING == pipelineStatus) {
+            throw new BaseAPIException(ErrorCode.CONFLICT_PIPELINE_DEPLOYMENT);
         }
 
         String storedFilePath = artifact.getStoredFilePath();
@@ -40,7 +43,8 @@ public class PipelineDeploymentValidator implements PipelineValidator<Pipeline, 
             throw new BaseAPIException(ErrorCode.NOT_FOUND_FILE);
         }
 
-        if (artifact.getFlinkJarId() != null) {
+        if (artifact.getFlinkJarId() != null
+         && PipelineStatus.FAILED != pipelineStatus) { // 실패상태면 재시도 가능하게
             throw new BaseAPIException(ErrorCode.CONFLICT_FLINK_JAR_ID);
         }
     }
