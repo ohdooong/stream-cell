@@ -155,7 +155,8 @@ public class PipelineServiceImpl implements PipelineService {
         }
         pipelineDeployment.setLastCheckedAt(now);
 
-        if (DeploymentStatus.FAILED == deploymentStatus) {
+        if (DeploymentStatus.FAILED == deploymentStatus
+            && pipelineDeployment.getErrorMessage() == null) {
 
             try {
                 JobExceptionsHistory jobExceptions =
@@ -163,6 +164,7 @@ public class PipelineServiceImpl implements PipelineService {
 
                 JobExceptionsEntry rootExceptionEntry = jobExceptions.getExceptionEntries().get(0);
 
+                
                 pipelineDeployment.setErrorMessage(
                     rootExceptionEntry.getExceptionName() + " : " + rootExceptionEntry.getStacktrace());
 
