@@ -33,4 +33,8 @@ public class FlinkProperties {
         return baseUrl + EndPoint.CANCEL_JOB.getPath() + "?mode=cancel";
     }
 
+    public String getExceptionsUrl() {
+        return baseUrl + EndPoint.GET_EXCEPTIONS.getPath();
+    }
+
 }
