@@ -260,7 +260,7 @@ public interface PipelineRepository {
         update platform.pipeline_deployment
            set status = #{status}
              , error_message = #{errorMessage}
-             , finshed_at = #{finishedAt}
+             , finished_at = #{finishedAt}
              , stopped_at = #{stoppedAt}
              , last_checked_at = #{lastCheckedAt}
              , updated_by = 'ADMIN'
