@@ -23,9 +23,13 @@ public enum ErrorCode {
     INVALID_FLINK_JOB_ID(HttpStatus.BAD_REQUEST, "유효하지 않은 Flink Job ID 입니다."),
     INVALID_CANCEL_FLINK_JOB(HttpStatus.BAD_REQUEST, "Job을 중지할 수 있는 상태가 아닙니다."),
 
+
+
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
     BAD_REQUEST_NOT_CUSTOM_JAR_TYPE(HttpStatus.BAD_REQUEST, "Pipeline Type CUSTOM_JAR가 아닙니다."),
     BAD_REQUEST_NOT_UPLOADED_CUSTOM_JAR(HttpStatus.BAD_REQUEST, "Custom Jar파일이 업로드 되지 않았습니다."),
+
+    FAILED_FLINK_DEPLOY(HttpStatus.BAD_REQUEST, "Flink 배포에 실패했습니다."),
 
     FORBIDDEN_TOPICS(HttpStatus.FORBIDDEN, "접근 불가능한 Topic이 포함되어 있습니다."),
 

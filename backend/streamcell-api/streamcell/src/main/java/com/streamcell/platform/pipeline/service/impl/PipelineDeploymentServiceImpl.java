@@ -23,6 +23,7 @@ import com.streamcell.platform.pipeline.vo.Pipeline;
 import com.streamcell.platform.pipeline.vo.PipelineArtifact;
 import com.streamcell.platform.pipeline.vo.PipelineDeployment;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PipelineDeploymentServiceImpl implements PipelineDeploymentService {
 
     private final PipelineRepository repository;
@@ -89,18 +91,27 @@ public class PipelineDeploymentServiceImpl implements PipelineDeploymentService 
             pipelineDeployment.setFlinkJobId(runJarResponse.getJobId());
 
             pipeline.setPipelineStatus(PipelineStatus.RUNNING);
+
+            // update pipeline deployment status
+            repository.updatePipelineDeploymentStatus(pipelineDeployment);
+            // pipeline status update
+            repository.updatePipelineStatus(pipeline);
+
         } catch (Exception e) {
+            log.error(e.getMessage());
+
             pipelineDeployment.setStatus(DeploymentStatus.FAILED);
             pipelineDeployment.setErrorMessage(e.getMessage());
 
             pipeline.setPipelineStatus(PipelineStatus.FAILED);
 
-            throw new BaseAPIException(ErrorCode.UNAVAILABLE_FLINK);
+            // update pipeline deployment status
+            repository.updatePipelineDeploymentStatus(pipelineDeployment);
+            // pipeline status update
+            repository.updatePipelineStatus(pipeline);
+
+            // throw new BaseAPIException(ErrorCode.UNAVAILABLE_FLINK);
         }
-        // update pipeline deployment status
-        repository.updatePipelineDeploymentStatus(pipelineDeployment);
-        // pipeline status update
-        repository.updatePipelineStatus(pipeline);
 
         return PipelineResponse.Deployment.builder()
                 .pipelineId(pipeline.getPipelineId())

@@ -157,7 +157,8 @@ public class PipelineServiceImpl implements PipelineService {
         pipelineDeployment.setLastCheckedAt(now);
 
         if (DeploymentStatus.FAILED == deploymentStatus
-            && pipelineDeployment.getErrorMessage() == null) {
+            && pipelineDeployment.getErrorMessage() == null
+            && pipelineDeployment.getErrorExceptionName() == null) {
 
             try {
                 JobExceptionsHistory jobExceptions =
