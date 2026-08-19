@@ -259,7 +259,7 @@ public interface PipelineRepository {
     @Update("""
         update platform.pipeline_deployment
            set status = #{status}
-             , error_message = #{errorMessage}
+             , flink_job_id = #{flinkJobId}
              , finished_at = #{finishedAt}
              , stopped_at = #{stoppedAt}
              , last_checked_at = #{lastCheckedAt}
@@ -268,5 +268,19 @@ public interface PipelineRepository {
           where deployment_id = #{deploymentId}
     """)
     int updatePipelineDeploymentStatus(PipelineDeployment pipelineDeployment);
+
+    @Update("""
+        update platform.pipeline_deployment
+           set status = #{status}
+             , error_exception_name = #{errorExceptionName}
+             , error_message = #{errorMessage}
+             , error_timestamp = #{errorTimestamp}
+             , stopped_at = #{stoppedAt}
+             , last_checked_at = #{lastCheckedAt}
+             , updated_by = 'ADMIN'
+             , updated_at = now()
+          where deployment_id = #{deploymentId}
+    """)
+    int updatePipelineDeploymentError(PipelineDeployment pipelineDeployment);
 
 }

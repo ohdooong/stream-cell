@@ -1,6 +1,7 @@
 package com.streamcell.platform.flink.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 import lombok.*;
 
 public class FlinkResponse {
@@ -67,5 +68,29 @@ public class FlinkResponse {
         @JsonProperty("status")
         private String status;
     }
+
+    @Setter
+    @Getter
+    @Builder
+    @NoArgsConstructor(staticName = "from")
+    @AllArgsConstructor(staticName = "from")
+    public static class JobExceptionsHistory {
+        private List<JobExceptionsEntry> exceptionEntries;
+        private boolean truncated;
+    }
+
+    @Setter
+    @Getter
+    @Builder
+    @NoArgsConstructor(staticName = "from")
+    @AllArgsConstructor(staticName = "from")
+    public static class JobExceptionsEntry {
+        private String exceptionName;
+        private String stacktrace;
+        private Long timestamp;
+        private String taskName;
+        private String taskManagerId;
+    }
+
 }
 

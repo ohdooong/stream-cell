@@ -102,4 +102,22 @@ public class FlinkRestClient {
 
         return FlinkJobStatus.CANCELLING;
     }
+
+
+    public FlinkResponse.JobExceptionsHistory getExceptionsByJobId(String flinkJobId) {
+        if (flinkJobId == null || flinkJobId.isBlank()) {
+            throw new BaseAPIException(ErrorCode.INVALID_FLINK_JOB_ID);
+        }
+
+        return restClient.get()
+            .uri(String.format(flinkProperties.getExceptionsUrl(), flinkJobId))
+            .retrieve()
+            .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                throw new BaseAPIException(ErrorCode.INVALID_REQUEST);
+            })
+            .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
+                throw new BaseAPIException(ErrorCode.UNAVAILABLE_FLINK);
+            })
+            .body(FlinkResponse.JobExceptionsHistory.class);
+    }
 }

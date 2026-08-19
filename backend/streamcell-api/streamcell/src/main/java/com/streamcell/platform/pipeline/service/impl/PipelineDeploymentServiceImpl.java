@@ -75,7 +75,7 @@ public class PipelineDeploymentServiceImpl implements PipelineDeploymentService 
         PipelineDeployment pipelineDeployment = PipelineDeployment
                 .builder()
                 .pipelineId(pipelineId)
-                .deploymentType(PipelineType.AI_SQL)
+                .deploymentType(PipelineType.CUSTOM_JAR)
                 .flinkJarId(artifact.getFlinkJarId())
                 .status(DeploymentStatus.DEPLOYING)
                 .startedAt(LocalDateTime.now())

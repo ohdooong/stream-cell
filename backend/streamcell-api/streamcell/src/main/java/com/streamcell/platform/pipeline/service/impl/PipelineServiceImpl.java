@@ -7,9 +7,12 @@ import com.streamcell.global._common.file.service.FileService;
 import com.streamcell.platform._common.port.UserLookupPort;
 import com.streamcell.platform.flink.client.FlinkRestClient;
 import com.streamcell.platform.flink.dto.FlinkResponse;
+import com.streamcell.platform.flink.dto.FlinkResponse.JobExceptionsEntry;
+import com.streamcell.platform.flink.dto.FlinkResponse.JobExceptionsHistory;
 import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.pipeline.converter.PipelineConverter;
 import com.streamcell.platform.pipeline.domain.JobStatusConvertPolicy;
+import com.streamcell.platform.pipeline.dto.PipelineResponse.PipelineStatus.Failure;
 import com.streamcell.platform.pipeline.enums.DeploymentStatus;
 import com.streamcell.platform.pipeline.service.PipelineDeploymentService;
 import com.streamcell.platform.pipeline.validator.PipelineValidator;
@@ -24,6 +27,7 @@ import com.streamcell.platform.pipeline.vo.Pipeline;
 import com.streamcell.platform.pipeline.vo.PipelineArtifact;
 import com.streamcell.platform.pipeline.vo.PipelineDeployment;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,6 +37,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PipelineServiceImpl implements PipelineService {
 
     private final PipelineRepository repository;
@@ -139,7 +144,6 @@ public class PipelineServiceImpl implements PipelineService {
 
         PipelineStatus convertedStatus = jobStatusConvertPolicy.convertToPipelineStatusFrom(jobStatus);
         pipeline.setPipelineStatus(convertedStatus);
-        repository.updatePipelineStatus(pipeline);
 
         DeploymentStatus deploymentStatus = jobStatusConvertPolicy.convertToDeploymentStatusFrom(jobStatus);
         pipelineDeployment.setStatus(deploymentStatus);
@@ -151,6 +155,30 @@ public class PipelineServiceImpl implements PipelineService {
             pipelineDeployment.setFinishedAt(now);
         }
         pipelineDeployment.setLastCheckedAt(now);
+
+        if (DeploymentStatus.FAILED == deploymentStatus
+            && pipelineDeployment.getErrorMessage() == null) {
+
+            try {
+                JobExceptionsHistory jobExceptions =
+                    flinkRestClient.getExceptionsByJobId(pipelineDeployment.getFlinkJobId());
+
+                JobExceptionsEntry rootExceptionEntry = jobExceptions.getExceptionEntries().get(0);
+
+                pipelineDeployment.setErrorExceptionName(rootExceptionEntry.getExceptionName());
+                pipelineDeployment.setErrorMessage(rootExceptionEntry.getStacktrace());
+                pipelineDeployment.setErrorTimestamp(rootExceptionEntry.getTimestamp());
+
+                repository.updatePipelineDeploymentError(pipelineDeployment);
+
+            } catch (Exception e) {
+                pipeline.setPipelineStatus(PipelineStatus.FAILED);
+                pipelineDeployment.setStatus(DeploymentStatus.FAILED);
+                log.error(e.getMessage());
+            }
+        }
+
+        repository.updatePipelineStatus(pipeline);
         repository.updatePipelineDeploymentStatus(pipelineDeployment);
 
         return PipelineResponse.PipelineStatus
@@ -160,8 +188,14 @@ public class PipelineServiceImpl implements PipelineService {
                 .flinkJobId(pipelineDeployment.getFlinkJobId())
                 .deploymentStatus(pipelineDeployment.getStatus())
                 .pipelineStatus(pipeline.getPipelineStatus())
+                .failure(
+                    pipelineDeployment.getErrorMessage() != null ?
+                    PipelineResponse.PipelineStatus.Failure.from(
+                        pipelineDeployment.getErrorExceptionName(),
+                        pipelineDeployment.getErrorMessage(),
+                        pipelineDeployment.getErrorTimestamp()
+                    ) : null)
                 .build();
-
     }
 
 
