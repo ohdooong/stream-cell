@@ -164,9 +164,11 @@ public class PipelineServiceImpl implements PipelineService {
 
                 JobExceptionsEntry rootExceptionEntry = jobExceptions.getExceptionEntries().get(0);
 
-                
-                pipelineDeployment.setErrorMessage(
-                    rootExceptionEntry.getExceptionName() + " : " + rootExceptionEntry.getStacktrace());
+                pipelineDeployment.setErrorExceptionName(rootExceptionEntry.getExceptionName());
+                pipelineDeployment.setErrorMessage(rootExceptionEntry.getStacktrace());
+                pipelineDeployment.setErrorTimestamp(rootExceptionEntry.getTimestamp());
+
+                repository.updatePipelineDeploymentError(pipelineDeployment);
 
             } catch (Exception e) {
                 pipeline.setPipelineStatus(PipelineStatus.FAILED);
