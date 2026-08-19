@@ -143,7 +143,6 @@ public class PipelineServiceImpl implements PipelineService {
 
         PipelineStatus convertedStatus = jobStatusConvertPolicy.convertToPipelineStatusFrom(jobStatus);
         pipeline.setPipelineStatus(convertedStatus);
-        repository.updatePipelineStatus(pipeline);
 
         DeploymentStatus deploymentStatus = jobStatusConvertPolicy.convertToDeploymentStatusFrom(jobStatus);
         pipelineDeployment.setStatus(deploymentStatus);
@@ -154,6 +153,7 @@ public class PipelineServiceImpl implements PipelineService {
             pipelineDeployment.setStoppedAt(now);
             pipelineDeployment.setFinishedAt(now);
         }
+        pipelineDeployment.setLastCheckedAt(now);
 
         if (DeploymentStatus.FAILED == deploymentStatus) {
 
@@ -167,11 +167,13 @@ public class PipelineServiceImpl implements PipelineService {
                     rootExceptionEntry.getExceptionName() + " : " + rootExceptionEntry.getStacktrace());
 
             } catch (Exception e) {
+                pipeline.setPipelineStatus(PipelineStatus.FAILED);
+                pipelineDeployment.setStatus(DeploymentStatus.FAILED);
                 log.error(e.getMessage());
             }
         }
 
-        pipelineDeployment.setLastCheckedAt(now);
+        repository.updatePipelineStatus(pipeline);
         repository.updatePipelineDeploymentStatus(pipelineDeployment);
 
         return PipelineResponse.PipelineStatus
