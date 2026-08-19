@@ -23,7 +23,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         http.csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
-                //.requestMatchers(SecurityConstants.PERMIT_ALL_END_POINTS).permitAll()
+                .requestMatchers(SecurityConstants.PERMIT_ALL_END_POINTS).permitAll()
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/api/v1/**").permitAll()
                 .anyRequest().authenticated())
