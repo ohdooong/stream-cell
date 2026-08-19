@@ -259,8 +259,9 @@ public interface PipelineRepository {
     @Update("""
         update platform.pipeline_deployment
            set status = #{status}
+             , flink_job_id = #{flinkJobId}
              , error_message = #{errorMessage}
-             , finshed_at = #{finishedAt}
+             , finished_at = #{finishedAt}
              , stopped_at = #{stoppedAt}
              , last_checked_at = #{lastCheckedAt}
              , updated_by = 'ADMIN'
