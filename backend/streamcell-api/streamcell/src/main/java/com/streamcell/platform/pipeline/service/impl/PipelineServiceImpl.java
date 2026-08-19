@@ -12,6 +12,7 @@ import com.streamcell.platform.flink.dto.FlinkResponse.JobExceptionsHistory;
 import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.pipeline.converter.PipelineConverter;
 import com.streamcell.platform.pipeline.domain.JobStatusConvertPolicy;
+import com.streamcell.platform.pipeline.dto.PipelineResponse.PipelineStatus.Failure;
 import com.streamcell.platform.pipeline.enums.DeploymentStatus;
 import com.streamcell.platform.pipeline.service.PipelineDeploymentService;
 import com.streamcell.platform.pipeline.validator.PipelineValidator;
@@ -187,8 +188,14 @@ public class PipelineServiceImpl implements PipelineService {
                 .flinkJobId(pipelineDeployment.getFlinkJobId())
                 .deploymentStatus(pipelineDeployment.getStatus())
                 .pipelineStatus(pipeline.getPipelineStatus())
+                .failure(
+                    pipelineDeployment.getErrorMessage() != null ?
+                    PipelineResponse.PipelineStatus.Failure.from(
+                        pipelineDeployment.getErrorExceptionName(),
+                        pipelineDeployment.getErrorMessage(),
+                        pipelineDeployment.getErrorTimestamp()
+                    ) : null)
                 .build();
-
     }
 
 

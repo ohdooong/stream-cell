@@ -5,6 +5,7 @@ import com.streamcell.platform.pipeline.enums.ArtifactType;
 import com.streamcell.platform.pipeline.enums.DeploymentStatus;
 import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.enums.PipelineType;
+import java.time.LocalDateTime;
 import lombok.*;
 
 import java.util.List;
@@ -84,6 +85,14 @@ public class PipelineResponse {
         private FlinkJobStatus flinkJobStatus;
         private com.streamcell.platform.pipeline.enums.PipelineStatus pipelineStatus;
         private DeploymentStatus deploymentStatus;
+        private Failure failure;
+
+        @AllArgsConstructor(staticName = "from")
+        public static class Failure {
+            private String errorExceptionName;
+            private String errorMessage;
+            private Long errorTimestamp;
+        }
     }
 
     @Getter
