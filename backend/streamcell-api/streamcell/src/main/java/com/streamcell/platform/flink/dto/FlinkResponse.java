@@ -63,7 +63,7 @@ public class FlinkResponse {
     @Builder
     @NoArgsConstructor(staticName = "from")
     @AllArgsConstructor(staticName = "from")
-    public class JobStatus {
+    public static class JobStatus {
         @JsonProperty("status")
         private String status;
     }

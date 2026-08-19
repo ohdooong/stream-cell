@@ -23,7 +23,7 @@ public class PipelineResponse {
         private String pipelineName;
         private String description;
         private PipelineType pipelineType;
-        private PipelineStatus pipelineStatus;
+        private com.streamcell.platform.pipeline.enums.PipelineStatus pipelineStatus;
         private String naturalLanguageRequest;
         private String pipelinePlanJson;
         private String generatedSql;
