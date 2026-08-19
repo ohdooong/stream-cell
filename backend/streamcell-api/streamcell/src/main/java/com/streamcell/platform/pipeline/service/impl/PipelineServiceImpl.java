@@ -7,6 +7,8 @@ import com.streamcell.global._common.file.service.FileService;
 import com.streamcell.platform._common.port.UserLookupPort;
 import com.streamcell.platform.flink.client.FlinkRestClient;
 import com.streamcell.platform.flink.dto.FlinkResponse;
+import com.streamcell.platform.flink.dto.FlinkResponse.JobExceptionsEntry;
+import com.streamcell.platform.flink.dto.FlinkResponse.JobExceptionsHistory;
 import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.pipeline.converter.PipelineConverter;
 import com.streamcell.platform.pipeline.domain.JobStatusConvertPolicy;
@@ -24,6 +26,7 @@ import com.streamcell.platform.pipeline.vo.Pipeline;
 import com.streamcell.platform.pipeline.vo.PipelineArtifact;
 import com.streamcell.platform.pipeline.vo.PipelineDeployment;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,6 +36,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PipelineServiceImpl implements PipelineService {
 
     private final PipelineRepository repository;
@@ -150,6 +154,23 @@ public class PipelineServiceImpl implements PipelineService {
             pipelineDeployment.setStoppedAt(now);
             pipelineDeployment.setFinishedAt(now);
         }
+
+        if (DeploymentStatus.FAILED == deploymentStatus) {
+
+            try {
+                JobExceptionsHistory jobExceptions =
+                    flinkRestClient.getExceptionsByJobId(pipelineDeployment.getFlinkJobId());
+
+                JobExceptionsEntry rootExceptionEntry = jobExceptions.getExceptionEntries().get(0);
+
+                pipelineDeployment.setErrorMessage(
+                    rootExceptionEntry.getExceptionName() + " : " + rootExceptionEntry.getStacktrace());
+
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
+        }
+
         pipelineDeployment.setLastCheckedAt(now);
         repository.updatePipelineDeploymentStatus(pipelineDeployment);
 

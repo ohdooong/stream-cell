@@ -31,7 +31,7 @@ public class PipelineDeploymentController {
     }
 
 
-    @Operation(summary = "Flink Jar 배포", description = "등록한 Custom Jar를 Flink로 배포합니다.")
+    @Operation(summary = "Flink Job 중지", description = "배포한 Flink Job을 중지합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "202", description = "Job Cancel 성공"),
             @ApiResponse(responseCode = "400", description = "Bad Request"),
