@@ -53,6 +53,10 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "2"
       KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
       KAFKA_MIN_INSYNC_REPLICAS: "2"
+    deploy:
+      resources:
+        limits:
+          memory: 3GB
     volumes:
       - kafka-1-confluent-data:/var/lib/kafka/data
 
@@ -81,6 +85,10 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "2"
       KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
       KAFKA_MIN_INSYNC_REPLICAS: "2"
+    deploy:
+      resources:
+        limits:
+          memory: 3GB
     volumes:
       - kafka-2-confluent-data:/var/lib/kafka/data
 
@@ -109,6 +117,10 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "2"
       KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
       KAFKA_MIN_INSYNC_REPLICAS: "2"
+    deploy:
+      resources:
+        limits:
+          memory: 3GB
     volumes:
       - kafka-3-confluent-data:/var/lib/kafka/data
 
@@ -193,6 +205,14 @@ services:
         rest.bind-address: 0.0.0.0
         taskmanager.numberOfTaskSlots: 4
         parallelism.default: 1
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2GB
+        reservations:
+          cpus: '1.0'
+          memory: 1GB
     depends_on:
       kafka-init:
         condition: service_completed_successfully
@@ -216,6 +236,11 @@ services:
         jobmanager.rpc.address: flink-jobmanager
         taskmanager.numberOfTaskSlots: 4
         parallelism.default: 1
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4GB
     depends_on:
       - flink-jobmanager
     volumes:
