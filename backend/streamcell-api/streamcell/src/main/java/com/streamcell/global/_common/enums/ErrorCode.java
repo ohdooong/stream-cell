@@ -13,7 +13,8 @@ public enum ErrorCode {
     NOT_FOUND_FILE(HttpStatus.NOT_FOUND, "파일을 찾을 수 없습니다."),
     NOT_FOUND_USER(HttpStatus.NOT_FOUND, "사용자 정보를 찾을 수 없습니다."),
     NOT_FOUND_PIPELINE_DEPLOYMENT(HttpStatus.NOT_FOUND, "Pipeline Deployment 정보를 찾을 수 없습니다."),
-    NOT_FOUND_FLINK_JOB_ID(HttpStatus.NOT_FOUND, "Flink Cluster에서 Flink Job 정보를 찾을 수 없습니다."),
+    NOT_FOUND_FLINK_JOB_ID(HttpStatus.NOT_FOUND, "Flink Job ID가 존재하지 않습니다. 정상적으로 배포되었는지 확인하십시오."),
+    NOT_FOUND_FLINK_JOB_ID_FROM_CLUSTER(HttpStatus.NOT_FOUND, "Flink Cluster에서 Flink Job 정보를 찾을 수 없습니다."),
 
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
     INVALID_USER(HttpStatus.BAD_REQUEST, "존재하지 않는 사용자가 포함되어 있습니다."),
@@ -22,8 +23,6 @@ public enum ErrorCode {
     INVALID_FLINK_JOB_STATUS(HttpStatus.BAD_REQUEST, "유효하지 않은 Flink Job 상태입니다."),
     INVALID_FLINK_JOB_ID(HttpStatus.BAD_REQUEST, "유효하지 않은 Flink Job ID 입니다."),
     INVALID_CANCEL_FLINK_JOB(HttpStatus.BAD_REQUEST, "Job을 중지할 수 있는 상태가 아닙니다."),
-
-
 
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
     BAD_REQUEST_NOT_CUSTOM_JAR_TYPE(HttpStatus.BAD_REQUEST, "Pipeline Type CUSTOM_JAR가 아닙니다."),

@@ -1,0 +1,4 @@
+file:
+  upload:
+    dir: /hansol/scell/data/upload/backend/
+    custom-jar-path: /hansol/scell/data/upload/flink/artifacts

@@ -26,6 +26,7 @@ import com.streamcell.platform.pipeline.vo.CustomJobConfig;
 import com.streamcell.platform.pipeline.vo.Pipeline;
 import com.streamcell.platform.pipeline.vo.PipelineArtifact;
 import com.streamcell.platform.pipeline.vo.PipelineDeployment;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -140,7 +141,12 @@ public class PipelineServiceImpl implements PipelineService {
         PipelineDeployment pipelineDeployment = repository.findLatestPipelineDeployMentByPipelineId(pipelineId)
             .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE_DEPLOYMENT));
 
-        FlinkJobStatus jobStatus = flinkRestClient.getJobStatus(pipelineDeployment.getFlinkJobId());
+        String deployedFlinkJobId = pipelineDeployment.getFlinkJobId();
+        if (deployedFlinkJobId == null) {
+            throw new BaseAPIException(ErrorCode.NOT_FOUND_FLINK_JOB_ID);
+        }
+
+        FlinkJobStatus jobStatus = flinkRestClient.getJobStatus(deployedFlinkJobId);
 
         PipelineStatus convertedStatus = jobStatusConvertPolicy.convertToPipelineStatusFrom(jobStatus);
         pipeline.setPipelineStatus(convertedStatus);
@@ -162,7 +168,7 @@ public class PipelineServiceImpl implements PipelineService {
 
             try {
                 JobExceptionsHistory jobExceptions =
-                    flinkRestClient.getExceptionsByJobId(pipelineDeployment.getFlinkJobId());
+                    flinkRestClient.getExceptionsByJobId(deployedFlinkJobId);
 
                 JobExceptionsEntry rootExceptionEntry = jobExceptions.getExceptionEntries().get(0);
 
@@ -186,7 +192,7 @@ public class PipelineServiceImpl implements PipelineService {
                 .builder()
                 .pipelineId(pipeline.getPipelineId())
                 .deploymentId(pipelineDeployment.getDeploymentId())
-                .flinkJobId(pipelineDeployment.getFlinkJobId())
+                .flinkJobId(deployedFlinkJobId)
                 .deploymentStatus(pipelineDeployment.getStatus())
                 .pipelineStatus(pipeline.getPipelineStatus())
                 .failure(

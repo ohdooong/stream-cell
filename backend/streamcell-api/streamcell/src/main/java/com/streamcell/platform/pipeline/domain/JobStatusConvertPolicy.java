@@ -19,9 +19,6 @@ public class JobStatusConvertPolicy {
 
     private final List<FlinkJobStatus> failed = List.of(FlinkJobStatus.FAILING, FlinkJobStatus.FAILED);
 
-
-
-
     public PipelineStatus convertToPipelineStatusFrom(FlinkJobStatus flinkJobStatus) {
 
         if (deploying.contains(flinkJobStatus)) {

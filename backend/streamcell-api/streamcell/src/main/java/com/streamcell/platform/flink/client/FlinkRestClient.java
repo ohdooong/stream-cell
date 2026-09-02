@@ -72,7 +72,7 @@ public class FlinkRestClient {
                 .uri(String.format(flinkProperties.getJobStatus(), flinkJobId))
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, (httpRequest, httpResponse) -> {
-                    throw new BaseAPIException(ErrorCode.NOT_FOUND_FLINK_JOB_ID);
+                    throw new BaseAPIException(ErrorCode.NOT_FOUND_FLINK_JOB_ID_FROM_CLUSTER);
                 })
                 .onStatus(HttpStatusCode::is5xxServerError, (httpRequest, httpResponse) -> {
                     throw new BaseAPIException(ErrorCode.UNAVAILABLE_FLINK);
