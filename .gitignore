@@ -13,4 +13,5 @@ $RECYCLE.BIN/
 /archive/
 archive
 .idea
-ai
+*-api-key.txt
+producer/order-producer/.venv
