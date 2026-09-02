@@ -12,6 +12,7 @@ import java.util.Set;
 public class FileUploadValidator {
 
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jar", "png", "jpg");
+    private static final String FLINK_ARTIFACT_EXTENSIONS = "jar";
     private static final long MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
     public void validateFile(MultipartFile file) {
@@ -41,7 +42,7 @@ public class FileUploadValidator {
         String originalFilename = Optional.ofNullable(file.getOriginalFilename())
                 .orElse("");
         String extension = FileUtils.getExtension(originalFilename);
-        if (!"jar".equals(extension)) {
+        if (!FLINK_ARTIFACT_EXTENSIONS.equals(extension)) {
             throw new RuntimeException("jar 파일만 업로드 할 수 있습니다.");
         }
     }
