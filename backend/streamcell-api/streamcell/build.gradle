@@ -24,6 +24,7 @@ ext {
     springdocVersion = '2.8.5'
     log4jdbcVersion = '1.16'
     reactiveStreamVersion = '1.0.4'
+    mapstructVersion = '1.6.3'
 }
 
 dependencies {
@@ -53,6 +54,10 @@ dependencies {
     implementation "org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:${log4jdbcVersion}"
 
     implementation "org.reactivestreams:reactive-streams:${reactiveStreamVersion}"
+
+    /* map struct */
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
 
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.assertj:assertj-guava'

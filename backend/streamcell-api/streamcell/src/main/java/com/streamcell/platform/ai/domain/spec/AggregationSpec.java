@@ -5,9 +5,7 @@ import lombok.Getter;
 
 @Getter
 public class AggregationSpec {
-
     private AggregationFunction function;
     private String field;
     private String alias;
-
 }

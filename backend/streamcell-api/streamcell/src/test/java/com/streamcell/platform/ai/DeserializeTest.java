@@ -2,8 +2,7 @@ package com.streamcell.platform.ai;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.streamcell.platform.ai.domain.PipelinePlan;
-import com.streamcell.platform.ai.domain.spec.AggregationSpec;
+import com.streamcell.platform.ai.dto.PipelinePlan;
 import com.streamcell.platform.ai.enums.WindowType;
 import com.streamcell.platform.ai.enums.WindowUnit;
 import org.assertj.core.api.Assertions;

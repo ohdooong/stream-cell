@@ -1,11 +1,11 @@
 package com.streamcell.platform.ai.domain.validator;
 
-import com.streamcell.platform.topic.vo.Topic;
+import com.streamcell.platform.ai.dto.IntegratedValidationDto;
 
-public class TopicValidator implements Validator<Topic> {
+public class TopicValidator implements Validator<IntegratedValidationDto> {
 
     @Override
-    public void validate(Topic target) {
+    public void validate(IntegratedValidationDto target) {
 
     }
 }
