@@ -1,5 +1,6 @@
 package com.streamcell.platform.topic.vo;
 
+import com.streamcell.platform.topic.enums.MessageFormat;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,5 +15,5 @@ public class Topic {
     private String description;
     private String schemaJson;
     private String timeField;
-    private String messageFormat;
+    private MessageFormat messageFormat;
 }

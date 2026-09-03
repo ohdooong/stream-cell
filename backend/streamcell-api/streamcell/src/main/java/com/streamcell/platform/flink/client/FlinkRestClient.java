@@ -6,6 +6,7 @@ import com.streamcell.platform.flink.config.FlinkProperties;
 import com.streamcell.platform.flink.dto.FlinkResponse;
 import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
@@ -15,10 +16,12 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class FlinkRestClient {
 
     private final RestClient restClient;
@@ -92,15 +95,23 @@ public class FlinkRestClient {
             throw new BaseAPIException(ErrorCode.INVALID_FLINK_JOB_ID);
         }
 
-        restClient.post()
-                .uri(String.format(flinkProperties.getCancelJobUrl(), flinkJobId))
-                .retrieve()
-                .onStatus(status -> !status.isSameCodeAs(HttpStatusCode.valueOf(202))
-                        , (request, response) -> {
-                            throw new BaseAPIException(ErrorCode.FAILED_CANCEL_JOB);
-                });
+        try {
+             org.springframework.http.ResponseEntity<String> responseResult = restClient.post()
+                    .uri(String.format(flinkProperties.getCancelJobUrl(), flinkJobId))
+                    .retrieve()
+                    .onStatus(status -> !status.isSameCodeAs(HttpStatusCode.valueOf(202))
+                            , (request, response) -> {
+                                throw new BaseAPIException(ErrorCode.FAILED_CANCEL_JOB);
+                            })
+                    .toEntity(String.class);
 
-        return FlinkJobStatus.CANCELLING;
+            log.info("responseResult headers: {}", responseResult.getHeaders());
+
+
+            return FlinkJobStatus.CANCELLING;
+        } catch (Exception e) {
+            throw new BaseAPIException(ErrorCode.FAILED_CANCEL_JOB);
+        }
     }
 
 
