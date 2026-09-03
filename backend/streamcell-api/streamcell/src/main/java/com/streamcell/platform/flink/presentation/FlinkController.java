@@ -33,17 +33,4 @@ public class FlinkController {
         return ResponseEntity.ok(BaseResponse.success(response));
     }
 
-    @Operation(summary = "Flink Cluster에 등록된 jar run", description = "Flink Cluster에 등록된 jar를 실제로 run한다.")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "성공"),
-        @ApiResponse(responseCode = "400", description = "Bad Request"),
-        @ApiResponse(responseCode = "500", description = "Internal Server Error."),
-    })
-    @PostMapping("/jars/{flinkJarId}/run")
-    public ResponseEntity<BaseResponse<?>> runFlinkJarById(
-        @PathVariable String flinkJarId
-    ) {
-
-        return ResponseEntity.ok(null);
-    }
 }

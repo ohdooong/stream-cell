@@ -16,4 +16,9 @@ public class BaseAPIException extends RuntimeException {
         super(errorCode.getMessage());
         this.errorCode = errorCode;
     }
+
+    public BaseAPIException(ErrorCode errorCode, Object reference) {
+        super(String.format(errorCode.getMessage(), reference));
+        this.errorCode = errorCode;
+    }
 }

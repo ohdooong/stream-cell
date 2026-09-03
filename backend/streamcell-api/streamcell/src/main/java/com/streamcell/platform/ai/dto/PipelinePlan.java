@@ -36,16 +36,4 @@ public class PipelinePlan {
 
     private List<FilterSpec> filters;
 
-    public void validate() {
-
-        CompositeValidator<Pipeline> pipelineCompositeValidator =
-            new CompositeValidator<Pipeline>()
-                .add(new PipelineValidator());
-
-        CompositeValidator<Topic> topicCompositeValidator =
-            new CompositeValidator<Topic>()
-                .add(new TopicValidator());
-
-
-    }
 }
