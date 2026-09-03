@@ -1,8 +1,13 @@
-package com.streamcell.platform.ai.domain;
+package com.streamcell.platform.ai.dto;
 
 import com.streamcell.platform.ai.domain.spec.AggregationSpec;
 import com.streamcell.platform.ai.domain.spec.FilterSpec;
 import com.streamcell.platform.ai.domain.spec.WindowSpec;
+import com.streamcell.platform.ai.domain.validator.CompositeValidator;
+import com.streamcell.platform.ai.domain.validator.PipelineValidator;
+import com.streamcell.platform.ai.domain.validator.TopicValidator;
+import com.streamcell.platform.pipeline.vo.Pipeline;
+import com.streamcell.platform.topic.vo.Topic;
 import java.util.List;
 import lombok.Getter;
 import lombok.ToString;
@@ -32,6 +37,15 @@ public class PipelinePlan {
     private List<FilterSpec> filters;
 
     public void validate() {
+
+        CompositeValidator<Pipeline> pipelineCompositeValidator =
+            new CompositeValidator<Pipeline>()
+                .add(new PipelineValidator());
+
+        CompositeValidator<Topic> topicCompositeValidator =
+            new CompositeValidator<Topic>()
+                .add(new TopicValidator());
+
 
     }
 }
