@@ -56,6 +56,8 @@ public enum ErrorCode {
     FAILED_FLINK_DEPLOY(HttpStatus.BAD_REQUEST, "Flink 배포에 실패했습니다."),
 
     FORBIDDEN_TOPICS(HttpStatus.FORBIDDEN, "접근 불가능한 Topic이 포함되어 있습니다."),
+    FORBIDDEN_PIPELINE(HttpStatus.FORBIDDEN, "해당 Pipeline의 소유자가 아닙니다."),
+    FORBIDDEN_AI_SQL(HttpStatus.FORBIDDEN, "AI SQL 분석 권한이 없습니다."),
 
     CONFLICT_PIPLINE_ARTIFACT(HttpStatus.CONFLICT, "artifact가 이미 존재합니다."),
     CONFLICT_CUSTOM_JOB_CONFIG(HttpStatus.CONFLICT, "custom job 설정이 이미 존재합니다."),
