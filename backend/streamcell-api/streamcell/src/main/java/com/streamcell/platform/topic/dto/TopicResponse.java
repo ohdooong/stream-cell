@@ -1,6 +1,7 @@
 package com.streamcell.platform.topic.dto;
 
 import com.streamcell.platform._common.enums.TopicPermissionType;
+import com.streamcell.platform.topic.enums.MessageFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,7 +23,7 @@ public class TopicResponse {
         private String description;
         private String schemaJson;
         private String timeField;
-        private String messageFormat;
+        private MessageFormat messageFormat;
     }
 
     @Getter

@@ -34,7 +34,9 @@ public class AIServiceImpl implements AIService {
                         .add(new TopicValidator())
                         .add(new TopicPermissionValidator())
                         .add(new WindowValidator())
-                        .add(new SchemaValidator());
+                        .add(new SchemaValidator())
+                        .add(new AggregationValidator())
+                        .add(new FilterValidator());
 
         compositeValidator.validate(context);
     }

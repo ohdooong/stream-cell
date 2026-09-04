@@ -9,6 +9,7 @@ import com.streamcell.platform.ai.domain.validator.TopicValidator;
 import com.streamcell.platform.pipeline.vo.Pipeline;
 import com.streamcell.platform.topic.vo.Topic;
 import java.util.List;
+import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -22,8 +23,7 @@ import lombok.ToString;
  * @see FilterSpec
  *
  */
-@ToString
-@Getter
+@Data
 public class PipelinePlan {
 
     private Long sourceTopicId;

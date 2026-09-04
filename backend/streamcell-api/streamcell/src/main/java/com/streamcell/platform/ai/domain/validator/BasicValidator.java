@@ -3,7 +3,9 @@ package com.streamcell.platform.ai.domain.validator;
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.platform.ai.domain.PipelinePlanValidationContext;
+import com.streamcell.platform.ai.domain.spec.AggregationSpec;
 import com.streamcell.platform.ai.dto.PipelinePlan;
+import java.util.List;
 
 /**
  * 필수요소들이 필수적으로 값이 있는지 간단히 검증
@@ -18,6 +20,10 @@ public class BasicValidator implements Validator<PipelinePlanValidationContext> 
 
         if (context.getSourceTopic() == null) {
             throw new BaseAPIException(ErrorCode.NOT_FOUND_TOPIC);
+        }
+
+        if (context.getParsedTopicSchema() == null) {
+            throw new BaseAPIException(ErrorCode.NOT_FOUND_TOPIC_SCHEMA, context.getSourceTopic().getTopicId());
         }
 
         if (context.getTopicPermissions() == null || context.getTopicPermissions().isEmpty()) {
@@ -43,6 +49,23 @@ public class BasicValidator implements Validator<PipelinePlanValidationContext> 
 
         if (pipelinePlan.getWindow().getSize() == null) {
             throw new BaseAPIException(ErrorCode.NOT_FOUND_WINDOW_SIZE);
+        }
+
+        List<AggregationSpec> aggregations = pipelinePlan.getAggregations();
+        if (aggregations.isEmpty()) {
+            throw new BaseAPIException(ErrorCode.NOT_FOUND_AGGREGATIONS);
+        }
+
+        for (AggregationSpec aggregation : aggregations) {
+            if (aggregation.getFunction() == null) {
+                throw new BaseAPIException(ErrorCode.NOT_FOUND_AGGREGATION_FUNCTION);
+            }
+            if (aggregation.getField() == null) {
+                throw new BaseAPIException(ErrorCode.NOT_FOUND_AGGREGATION_FIELD);
+            }
+            if (aggregation.getAlias() == null) {
+                throw new BaseAPIException(ErrorCode.NOT_FOUND_AGGREGATION_ALIAS);
+            }
         }
     }
 }
