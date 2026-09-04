@@ -1,0 +1,30 @@
+{
+  "sourceTopicId": 1,
+  "window": {
+    "type": "TUMBLE",
+    "size": 5,
+    "unit": "MINUTE"
+  },
+  "groupBy": [
+    "product_id"
+  ],
+  "aggregations": [
+    {
+      "function": "COUNT",
+      "field": "*",
+      "alias": "order_count"
+    },
+    {
+      "function": "AVG",
+      "field": "payment_amount",
+      "alias": "avg_payment_amount"
+    }
+  ],
+  "filters": [
+    {
+      "field": "payment_amount",
+      "operator": "GTE",
+      "value": 10000
+    }
+  ]
+}

@@ -23,6 +23,5 @@ public class TopicPermissionValidator implements Validator<PipelinePlanValidatio
             throw new BaseAPIException(ErrorCode.FORBIDDEN_AI_SQL);
         }
 
-
     }
 }

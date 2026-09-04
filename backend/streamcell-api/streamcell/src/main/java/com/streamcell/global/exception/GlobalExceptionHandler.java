@@ -13,7 +13,6 @@ import java.util.Arrays;
 @Slf4j
 public class GlobalExceptionHandler {
 
-
 //    @ExceptionHandler(HttpMessageNotReadableException.class)
 //    public ResponseEntity<BaseResponse<?>> handleHttpMessageNotReadableException(HttpMessageNotReadableException exception) {
 //        String message = exception.getMessage();
@@ -23,10 +22,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BaseAPIException.class)
     public ResponseEntity<BaseResponse<?>> handleBaseAPIException(BaseAPIException exception) {
-        //log.error(Arrays.toString(exception.getStackTrace()));
+        log.error(Arrays.toString(exception.getStackTrace()));
         String message = exception.getMessage();
         return ResponseEntity.status(exception.getErrorCode().getStatus())
                 .body(BaseResponse.error(exception.getErrorCode(), null));
     }
 
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<BaseResponse<?>> handleException(Exception exception) {
+        log.error(Arrays.toString(exception.getStackTrace()));
+        String message = "시스템 오류입니다.\\n관리자에게 문의하세요.";
+        return ResponseEntity.internalServerError()
+            .body(BaseResponse.error(message));
+    }
 }
