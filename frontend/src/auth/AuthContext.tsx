@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { ApiError } from '../api/client';
 import * as authApi from '../api/auth';
 import type { User } from '../api/auth';
-import { demoUser, isDemoMode } from '../api/demo';
 
 type AuthContextValue = {
   user: User | null;
@@ -12,16 +11,20 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const authEnabled = import.meta.env.VITE_AUTH_ENABLED === 'true';
+const developmentUser: User = {
+  userId: Number(import.meta.env.VITE_DEFAULT_USER_ID ?? 1),
+  username: 'development-user',
+  displayName: 'Development User',
+  roles: ['ROLE_ADMIN'],
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(authEnabled ? null : developmentUser);
+  const [isLoading, setIsLoading] = useState(authEnabled);
 
   useEffect(() => {
-    if (isDemoMode) {
-      setIsLoading(false);
-      return;
-    }
+    if (!authEnabled) return;
     authApi.getCurrentUser()
       .then(setUser)
       .catch((error: unknown) => {
@@ -33,19 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(() => ({
     user,
     isLoading,
-    signIn: async (username, password, rememberMe) => {
-      if (isDemoMode) {
-        if (!username.trim() || !password) throw new Error('Demo credentials are required.');
-        setUser(demoUser);
-        return;
-      }
-      setUser(await authApi.login(username, password, rememberMe));
-    },
+    signIn: async (username, password, rememberMe) => setUser(await authApi.login(username, password, rememberMe)),
     signOut: async () => {
-      if (isDemoMode) {
-        setUser(null);
-        return;
-      }
+      if (!authEnabled) return;
       await authApi.logout();
       setUser(null);
     },

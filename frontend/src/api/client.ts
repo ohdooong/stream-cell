@@ -27,14 +27,17 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   if (!response.ok) {
     const body = await response.json().catch(() => null) as { message?: string; error?: string } | null;
-    throw new ApiError(response.status, body?.message ?? body?.error ?? '요청을 처리하지 못했습니다.');
+    throw new ApiError(response.status, body?.message ?? body?.error ?? `요청을 처리하지 못했습니다. (${response.status})`);
   }
 
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
 
-export function unwrap<T>(payload: T | { data?: T }): T {
+export function unwrap<T>(payload: T | { body?: T; data?: T }): T {
+  if (payload && typeof payload === 'object' && 'body' in payload) {
+    return (payload as { body?: T }).body as T;
+  }
   if (payload && typeof payload === 'object' && 'data' in payload) {
     return (payload as { data?: T }).data as T;
   }
