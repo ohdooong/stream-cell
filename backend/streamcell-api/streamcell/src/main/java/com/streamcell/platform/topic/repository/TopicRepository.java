@@ -1,5 +1,6 @@
 package com.streamcell.platform.topic.repository;
 
+import com.streamcell.platform._common.enums.TopicPermissionType;
 import com.streamcell.platform.topic.vo.Topic;
 import java.util.List;
 import java.util.Optional;
@@ -63,7 +64,7 @@ public interface TopicRepository {
         update platform.topic_metadata
            set display_name = #{displayName}
              , description = #{description}
-             , message_format = #{description}
+             , message_format = #{messageFormat}
              , time_field = #{timeField}
              , schema_json = #{schemaJson}::jsonb
          where topic_id = #{topicId}
@@ -111,12 +112,12 @@ public interface TopicRepository {
                    #{userId} as user_id) b
         on a.topic_id = b.topic_id and a.user_id = b.user_id
         when matched then
-            update set a.permission_type = #{permissionType}
-                     , a.updated_by = 'SYSTEM'
-                     , a.updated_at = now()
+            update set permission_type = #{permissionType}
+                     , updated_by = 'SYSTEM'
+                     , updated_at = now()
         when not matched then
             insert (topic_id, user_id, permission_type, created_by, created_at, updated_by, updated_at)
             values (b.topic_id, b.user_id, #{permissionType}, 'SYSTEM', now(), 'SYSTEM', now())
     """)
-    int mergeIntoTopicPermission(Long topicId, Long userId);
+    int mergeIntoTopicPermission(Long topicId, Long userId, TopicPermissionType permissionType);
 }

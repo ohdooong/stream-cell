@@ -99,7 +99,7 @@ public class TopicServiceImpl implements TopicService {
         validateUsers(userIds);
 
         for (Long userId : userIds) {
-            repository.mergeIntoTopicPermission(topicId, userId);
+            repository.mergeIntoTopicPermission(topicId, userId, topicPermission.getTopicPermissionType());
         }
 
         return getPermissionsOfTopic(topicId);
