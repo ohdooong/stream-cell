@@ -17,7 +17,7 @@ import java.util.concurrent.ExecutionException;
 public class KafkaManager {
 
     private final AdminClient adminClient;
-
+    
     public KafkaManager(KafkaAdmin kafkaAdmin) {
         this.adminClient = AdminClient.create(kafkaAdmin.getConfigurationProperties());
     }

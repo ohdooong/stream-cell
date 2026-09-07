@@ -2,15 +2,12 @@ package com.streamcell.platform.ai.generator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.streamcell.platform.ai.domain.FlinkSQLGenerationContext;
+import com.streamcell.platform.ai.domain.context.FlinkSQLGenerationContext;
 import com.streamcell.platform.ai.domain.generator.FlinkSQLGenerator;
 import com.streamcell.platform.ai.dto.PipelinePlan;
 import com.streamcell.platform.topic.enums.MessageFormat;
 import com.streamcell.platform.topic.vo.Topic;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 public class FlinkSQLGeneratorTest {
 

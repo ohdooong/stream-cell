@@ -1,6 +1,6 @@
 package com.streamcell.platform.ai.helper;
 
-import com.streamcell.platform.ai.domain.PipelinePlanValidationContext;
+import com.streamcell.platform.ai.domain.context.PipelinePlanValidationContext;
 import com.streamcell.platform.ai.domain.spec.AggregationSpec;
 import com.streamcell.platform.ai.domain.spec.FilterSpec;
 import com.streamcell.platform.ai.domain.spec.WindowSpec;

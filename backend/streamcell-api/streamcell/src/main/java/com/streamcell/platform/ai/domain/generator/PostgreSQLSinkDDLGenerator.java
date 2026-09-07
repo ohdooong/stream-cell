@@ -1,6 +1,6 @@
 package com.streamcell.platform.ai.domain.generator;
 
-import com.streamcell.platform.ai.domain.PostgreSQLSinkDDLGenerationContext;
+import com.streamcell.platform.ai.domain.context.PostgreSQLSinkDDLGenerationContext;
 
 public class PostgreSQLSinkDDLGenerator {
 
