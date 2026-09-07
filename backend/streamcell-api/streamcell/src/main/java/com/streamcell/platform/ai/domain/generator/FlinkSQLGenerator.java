@@ -1,6 +1,6 @@
 package com.streamcell.platform.ai.domain.generator;
 
-import com.streamcell.platform.ai.domain.FlinkSQLGenerationContext;
+import com.streamcell.platform.ai.domain.context.FlinkSQLGenerationContext;
 import com.streamcell.platform.ai.domain.spec.AggregationSpec;
 import com.streamcell.platform.ai.domain.spec.FilterSpec;
 import com.streamcell.platform.ai.domain.spec.WindowSpec;

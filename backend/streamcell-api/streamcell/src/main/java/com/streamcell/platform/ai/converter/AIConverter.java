@@ -1,9 +1,9 @@
 package com.streamcell.platform.ai.converter;
 
-import com.streamcell.platform.ai.domain.FlinkSQLGenerationContext;
-import com.streamcell.platform.ai.domain.PipelinePlanValidationContext;
-import com.streamcell.platform.ai.domain.PostgreSQLSinkDDLGenerationContext;
-import com.streamcell.platform.pipeline.vo.Pipeline;
+import com.streamcell.platform.ai.domain.context.FlinkSQLGenerationContext;
+import com.streamcell.platform.ai.domain.context.KafkaSourceDDLGenerationContext;
+import com.streamcell.platform.ai.domain.context.PipelinePlanValidationContext;
+import com.streamcell.platform.ai.domain.context.PostgreSQLSinkDDLGenerationContext;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 
@@ -12,6 +12,7 @@ public interface AIConverter {
 
     FlinkSQLGenerationContext toGenerationContext(PipelinePlanValidationContext validationContext);
 
-    PostgreSQLSinkDDLGenerationContext toPostgreSQLGenerationContext(
-        FlinkSQLGenerationContext flinkSQLGenerationContext);
+    KafkaSourceDDLGenerationContext toKafkaSourceDDLGenerationContext(PipelinePlanValidationContext validationContext);
+
+    PostgreSQLSinkDDLGenerationContext toPostgreSQLGenerationContext(PipelinePlanValidationContext validationContext);
 }

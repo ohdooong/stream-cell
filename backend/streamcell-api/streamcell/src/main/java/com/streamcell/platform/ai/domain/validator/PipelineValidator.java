@@ -2,7 +2,7 @@ package com.streamcell.platform.ai.domain.validator;
 
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
-import com.streamcell.platform.ai.domain.PipelinePlanValidationContext;
+import com.streamcell.platform.ai.domain.context.PipelinePlanValidationContext;
 import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.enums.PipelineType;
 import com.streamcell.platform.pipeline.vo.Pipeline;

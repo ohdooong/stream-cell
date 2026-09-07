@@ -1,4 +1,4 @@
-package com.streamcell.platform.ai.domain;
+package com.streamcell.platform.ai.domain.context;
 
 import com.streamcell.platform.ai.dto.PipelinePlan;
 import com.streamcell.platform.pipeline.vo.Pipeline;
