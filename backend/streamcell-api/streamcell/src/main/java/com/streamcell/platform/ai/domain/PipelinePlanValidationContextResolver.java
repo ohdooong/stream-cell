@@ -12,6 +12,7 @@ import com.streamcell.platform.topic.repository.TopicRepository;
 import com.streamcell.platform.topic.vo.Topic;
 import com.streamcell.platform.topic.vo.TopicPermission;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -44,7 +45,7 @@ public class PipelinePlanValidationContextResolver {
         Map<String, Object> parsedTopicSchema;
         try {
             parsedTopicSchema =
-                jsonMapper.readValue(topic.getSchemaJson(), new TypeReference<HashMap<String, Object>>() {});
+                jsonMapper.readValue(topic.getSchemaJson(), new TypeReference<LinkedHashMap<String, Object>>() {});
 
         } catch (Exception e) {
             throw new BaseAPIException(ErrorCode.JSON_PARSE_ERROR);

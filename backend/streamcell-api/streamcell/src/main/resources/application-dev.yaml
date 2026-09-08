@@ -1,3 +1,10 @@
+flink:
+  kafka:
+    bootstrap-servers:
+      - kafka-1:9092
+      - kafka-2:9092
+      - kafka-3:9092
+
 file:
   upload:
     dir: /hansol/scell/data/upload/backend/
