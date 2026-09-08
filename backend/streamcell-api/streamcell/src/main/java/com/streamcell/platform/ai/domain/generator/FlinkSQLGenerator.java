@@ -1,6 +1,7 @@
 package com.streamcell.platform.ai.domain.generator;
 
 import com.streamcell.platform.ai.domain.context.FlinkSQLGenerationContext;
+import com.streamcell.platform.ai.domain.policy.FlinkSQLPolicy;
 import com.streamcell.platform.ai.domain.spec.AggregationSpec;
 import com.streamcell.platform.ai.domain.spec.FilterSpec;
 import com.streamcell.platform.ai.domain.spec.WindowSpec;
@@ -57,7 +58,9 @@ public class FlinkSQLGenerator {
 
         return "FROM TABLE(\n    "
                     + windowType.name() + "(\n        "
-                        + "TABLE source_p_" + pipeline.getPipelineId() + "_t_" + topic.getTopicId() + ",\n        "
+                        + "TABLE " + String.format(FlinkSQLPolicy.SOURCE_TABLE_NAME_CONVENTION
+                                                 , pipeline.getPipelineId()
+                                                 , topic.getTopicId()) + ",\n        "
                         + "DESCRIPTOR" + "(" + topic.getTimeField() + "),\n        "
                         + "INTERVAL " + "'" + window.getSize() + "'" + " " + windowUnit.name() + "\n    "
                     + ")\n"
