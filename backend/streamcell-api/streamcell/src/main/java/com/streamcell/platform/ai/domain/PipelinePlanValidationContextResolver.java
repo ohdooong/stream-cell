@@ -45,6 +45,7 @@ public class PipelinePlanValidationContextResolver {
         Map<String, Object> parsedTopicSchema;
         try {
             parsedTopicSchema =
+                                                                // 스키마 순서를 위해 LinkedHashMap으로 변경
                 jsonMapper.readValue(topic.getSchemaJson(), new TypeReference<LinkedHashMap<String, Object>>() {});
 
         } catch (Exception e) {
