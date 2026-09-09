@@ -18,6 +18,12 @@ repositories {
     mavenCentral()
 }
 
+configurations {
+    all {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+    }
+}
+
 ext {
     starterKafkaVersion =   '4.1.0'
     mybatisVersion = '4.0.1'
@@ -49,6 +55,9 @@ dependencies {
 
     /* kafka */
     implementation "org.springframework.boot:spring-boot-starter-kafka:${starterKafkaVersion}"
+
+    /* log4j2 */
+    implementation 'org.springframework.boot:spring-boot-starter-log4j2'
 
     /* log4jdbc */
     implementation "org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:${log4jdbcVersion}"
