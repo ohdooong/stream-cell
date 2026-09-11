@@ -1,4 +1,4 @@
-package com.streamcell.platform.ai.domain;
+package com.streamcell.platform.ai.domain.resolver;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -11,7 +11,6 @@ import com.streamcell.platform.pipeline.vo.Pipeline;
 import com.streamcell.platform.topic.repository.TopicRepository;
 import com.streamcell.platform.topic.vo.Topic;
 import com.streamcell.platform.topic.vo.TopicPermission;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
