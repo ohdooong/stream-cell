@@ -4,7 +4,7 @@ import com.streamcell.platform.ai.converter.AIConverter;
 import com.streamcell.platform.ai.domain.context.FlinkSQLGenerationContext;
 import com.streamcell.platform.ai.domain.context.KafkaSourceDDLGenerationContext;
 import com.streamcell.platform.ai.domain.context.PipelinePlanValidationContext;
-import com.streamcell.platform.ai.domain.PipelinePlanValidationContextResolver;
+import com.streamcell.platform.ai.domain.resolver.PipelinePlanValidationContextResolver;
 import com.streamcell.platform.ai.domain.generator.FlinkSQLGenerator;
 import com.streamcell.platform.ai.domain.generator.KafkaSourceDDLGenerator;
 import com.streamcell.platform.ai.domain.validator.AggregationValidator;
