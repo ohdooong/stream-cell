@@ -1,26 +1,25 @@
 package com.streamcell.platform.ai.domain.generator;
 
+import com.streamcell.global.config.DBConfig;
 import com.streamcell.platform.ai.domain.context.PostgreSQLSinkDDLGenerationContext;
 import com.streamcell.platform.ai.domain.policy.FlinkSQLPolicy;
 import com.streamcell.platform.ai.domain.policy.PostgreSQLSinkPolicy;
 import com.streamcell.platform.ai.domain.resolver.AggregationTypeResolver;
 import com.streamcell.platform.ai.domain.spec.AggregationSpec;
 import com.streamcell.platform.ai.dto.PipelinePlan;
-import com.streamcell.platform.ai.enums.AggregationFunction;
 import com.streamcell.platform.pipeline.vo.Pipeline;
-import com.streamcell.platform.topic.vo.Topic;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
-import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
-import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class PostgreSQLSinkDDLGenerator {
 
-    private final KafkaProperties kafkaProperties;
+    private final DBConfig dbConfig;
 
     private final AggregationTypeResolver aggregationTypeResolver;
 
@@ -54,43 +53,35 @@ public class PostgreSQLSinkDDLGenerator {
         List<String> groupByItems = pipelinePlan.getGroupBy();
         for (String item : groupByItems) {
             Object schema = parsedTopicSchema.get(item);
-            columnItems.add(item + " " + aggregationTypeResolver.resolveSinkResultType(schema));
+            columnItems.add(item + " " + schema);
         }
 
         List<AggregationSpec> aggregations = pipelinePlan.getAggregations();
         for (AggregationSpec aggregation : aggregations) {
-
+            String field = aggregation.getField();
             String alias = aggregation.getAlias();
-            String sinkResultType = aggregationTypeResolver.resolveSinkResultType(aggregation);
+            String sinkResultType = aggregationTypeResolver.resolveSinkResultType(
+                    aggregation, parsedTopicSchema.getOrDefault(field, "").toString());
 
             columnItems.add(alias + " " + sinkResultType);
-            if (AggregationFunction.COUNT == aggregation.getFunction()) {
-                columnItems.add(alias + " " + "BIGINT");
-                continue;
-            }
-
-            // COUNT제외 나머지는 원본타입 그대로
-            columnItems.add(alias + " " + parsedTopicSchema.get(aggregation.getField()));
         }
 
         return String.join(",\n    ", columnItems);
     }
 
     private String generateConnectorOptions(PostgreSQLSinkDDLGenerationContext context) {
-        Topic sourceTopic = context.getSourceTopic();
         Pipeline pipeline = context.getPipeline();
         return """
-               'connector' = 'kafka',
-               'topic' = '%s',
-               'properties.bootstrap.servers' = '%s',
-               'properties.group.id' = 'streamcell-pipeline-%s',
-               'scan.startup.mode' = 'latest-offset',
-               'format' = 'json'
+                'connector' = 'jdbc',
+                'url' = '%s',
+                'table-name' = 'platform.%s',
+                'username' = '%s',
+                'password' = '%s'
                """.formatted(
-            sourceTopic.getTopicName(),
-            String.join(",", kafkaProperties.getBootstrapServers()),
-
-            pipeline.getPipelineId());
+                dbConfig.getUrl(),
+                String.format(PostgreSQLSinkPolicy.RESULT_TABLE_NAME_CONVENTION, pipeline.getPipelineId()),
+                dbConfig.getUsername(),
+                dbConfig.getPassword());
     }
 
 }
