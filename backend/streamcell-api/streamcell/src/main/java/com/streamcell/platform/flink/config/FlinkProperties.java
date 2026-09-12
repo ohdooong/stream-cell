@@ -37,4 +37,12 @@ public class FlinkProperties {
         return baseUrl + EndPoint.GET_EXCEPTIONS.getPath();
     }
 
+    public String getCreateSessionUrl() {
+        return baseUrl + EndPoint.CREATE_SESSION;
+    }
+
+    public String createSourceOrSinkUrl() {
+        return baseUrl + EndPoint.CREATE_SOURCE_OR_SINK;
+    }
+
 }
