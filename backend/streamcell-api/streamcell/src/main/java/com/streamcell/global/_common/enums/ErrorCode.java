@@ -27,6 +27,8 @@ public enum ErrorCode {
     NOT_FOUND_AGGREGATION_ALIAS(HttpStatus.NOT_FOUND, "aggregations 별칭(alias)값을 찾을 수 없습니다."),
 
 
+
+
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
     INVALID_USER(HttpStatus.BAD_REQUEST, "존재하지 않는 사용자가 포함되어 있습니다."),
     INVALID_ENTRY_CLASS(HttpStatus.BAD_REQUEST, "유효하지않은 entry class 경로입니다."),
@@ -49,6 +51,8 @@ public enum ErrorCode {
     NOT_IMPLEMENTED_WINDOW_TYPE(HttpStatus.NOT_IMPLEMENTED, "아직 지원하지 않는 Window Type 입니다."),
     NOT_IMPLEMENTED_WINDOW_UNIT(HttpStatus.NOT_IMPLEMENTED, "아직 지원하지 않는 Window Unit 입니다."),
     NOT_IMPLEMENTED_FIELD_TYPE(HttpStatus.NOT_IMPLEMENTED, "아직 지원하지 않는 Field Type 입니다. 숫자데이터만 요청해주세요."),
+    NOT_IMPLEMENTED_RESULT_TYPE(HttpStatus.NOT_IMPLEMENTED, "DECIMAL은 아직 지원하지 않는 타입 입니다."),
+    NOT_SUPPORTED_DATA_TYPE(HttpStatus.NOT_IMPLEMENTED, "지원하지 않는 데이터 타입입니다."),
 
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
     BAD_REQUEST_NOT_CUSTOM_JAR_TYPE(HttpStatus.BAD_REQUEST, "Pipeline Type CUSTOM_JAR가 아닙니다."),

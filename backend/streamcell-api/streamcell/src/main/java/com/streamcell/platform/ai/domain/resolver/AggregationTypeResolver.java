@@ -9,38 +9,23 @@ import org.springframework.stereotype.Component;
 @Component
 public class AggregationTypeResolver {
 
-    public String resolveSinkResultType(Object schema) {
-
-
-
-
-
-
-        return null;
-    }
-
-    public String resolveSinkResultType(AggregationSpec aggregationSpec) {
+    public String resolveSinkResultType(AggregationSpec aggregationSpec, String sourceType) {
         AggregationFunction function = aggregationSpec.getFunction();
 
         switch (function) {
             case COUNT -> {
                 return "BIGINT";
             }
-            case AVG -> {
-
+            case SUM, AVG -> {
+                if (sourceType.startsWith("DECIMAL")) {
+                    throw new BaseAPIException(ErrorCode.NOT_IMPLEMENTED_RESULT_TYPE);
+                }
+                return sourceType;
             }
-            case SUM -> {
-
+            case MIN, MAX -> {
+                return sourceType;
             }
-            case MAX -> {
-
-            }
-            case MIN -> {
-
-            }
-            default -> throw new BaseAPIException(ErrorCode.INTERNAL_SERVER_ERROR);
+            default -> throw new BaseAPIException(ErrorCode.NOT_FOUND_AGGREGATION_FUNCTION);
         }
-
-        return null;
     }
 }

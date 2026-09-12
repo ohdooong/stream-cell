@@ -32,7 +32,9 @@ public class AggregationValidator implements Validator<PipelinePlanValidationCon
         for (AggregationSpec aggregation : aggregations) {
             String targetField = aggregation.getField();
 
-            if (targetField.equals("*") && AggregationFunction.COUNT != aggregation.getFunction()) {
+            AggregationFunction function = aggregation.getFunction();
+
+            if (targetField.equals("*") && AggregationFunction.COUNT != function) {
                 throw new BaseAPIException(ErrorCode.INVALID_AGGREGATION_FUNCTION);
             }
 
@@ -41,6 +43,7 @@ public class AggregationValidator implements Validator<PipelinePlanValidationCon
             boolean anyMatch = numericTypePrefix
                 .stream()
                 .anyMatch(valueType::startsWith);
+
             if (!anyMatch) {
                 throw new BaseAPIException(ErrorCode.NOT_IMPLEMENTED_FIELD_TYPE);
             }
@@ -48,6 +51,12 @@ public class AggregationValidator implements Validator<PipelinePlanValidationCon
             if (!seenAlias.add(aggregation.getAlias())) {
                 throw new BaseAPIException(ErrorCode.CONFLICT_ALIAS, aggregation.getAlias());
             }
+
+            if ((AggregationFunction.SUM == function || AggregationFunction.AVG == function)
+                    && valueType.startsWith("DECIMAL")) {
+                throw new BaseAPIException(ErrorCode.NOT_IMPLEMENTED_RESULT_TYPE);
+            }
+
         }
     }
 }
