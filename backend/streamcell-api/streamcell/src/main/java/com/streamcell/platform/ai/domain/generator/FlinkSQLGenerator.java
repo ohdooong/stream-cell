@@ -20,10 +20,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class FlinkSQLGenerator {
     public String generate(FlinkSQLGenerationContext context) {
-        return generateSelectClause(context) + "\n"
+        return generateInsertClause(context) + "\n"
+             + generateSelectClause(context) + "\n"
              + generateFromClause(context) + "\n"
              + generateWhereClause(context) + "\n"
-             + generateGroupByClause(context);
+             + generateGroupByClause(context) + ";";
+    }
+
+    private String generateInsertClause(FlinkSQLGenerationContext context) {
+        Pipeline pipeline = context.getPipeline();
+        Long pipelineId = pipeline.getPipelineId();
+        return "INSERT INTO " + String.format(FlinkSQLPolicy.SINK_TABLE_NAME_CONVENTION, pipelineId);
     }
 
     private String generateSelectClause(FlinkSQLGenerationContext context) {
