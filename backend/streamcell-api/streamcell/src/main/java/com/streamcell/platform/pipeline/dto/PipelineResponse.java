@@ -16,7 +16,7 @@ public class PipelineResponse {
     @Getter
     @Setter
     @Builder
-    @NoArgsConstructor
+    @NoArgsConstructor(staticName = "from")
     @AllArgsConstructor(staticName = "from")
     public static class Pipeline {
         private Long pipelineId;

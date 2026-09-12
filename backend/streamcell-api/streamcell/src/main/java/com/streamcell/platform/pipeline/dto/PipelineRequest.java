@@ -14,7 +14,7 @@ public class PipelineRequest {
     @Getter
     @Setter
     @Builder
-    @NoArgsConstructor
+    @NoArgsConstructor(staticName = "from")
     @AllArgsConstructor(staticName = "from")
     public static class Create {
 
@@ -35,7 +35,7 @@ public class PipelineRequest {
     @Getter
     @Setter
     @Builder
-    @NoArgsConstructor
+    @NoArgsConstructor(staticName = "from")
     @AllArgsConstructor(staticName = "from")
     public static class Update {
         @NotNull
@@ -56,7 +56,7 @@ public class PipelineRequest {
     @Getter
     @Setter
     @Builder
-    @NoArgsConstructor
+    @NoArgsConstructor(staticName = "from")
     @AllArgsConstructor(staticName = "from")
     public static class CreateCustomJobConfig {
         @Schema(description = "userId", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
