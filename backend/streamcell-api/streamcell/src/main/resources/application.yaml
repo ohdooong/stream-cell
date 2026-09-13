@@ -22,12 +22,15 @@ spring:
 
 flink:
   base-url: ${FLINK_JOB_MANAGER_URL}
+  sql-gateway:
+    base-url: ${FLINK_SQL_GATEWAY}
+    api-version: v2
   kafka:
     bootstrap-servers:
       - http://192.168.245.184:19092
       - http://192.168.245.184:19093
       - http://192.168.245.184:19094
-  
+
 file:
   upload:
     dir: C:\streamcell_workspace\upload

@@ -10,7 +10,7 @@ public class FlinkSQLGatewayResponse {
     @NoArgsConstructor(staticName = "from")
     @AllArgsConstructor(staticName = "from")
     public static class CreateSession {
-        private String sessionId;
+        private String sessionHandle;
     }
 
     @Getter
@@ -19,7 +19,7 @@ public class FlinkSQLGatewayResponse {
     @NoArgsConstructor(staticName = "from")
     @AllArgsConstructor(staticName = "from")
     public static class CreateSource {
-        private String operationId;
+        private String operationHandle;
     }
 
     @Getter
@@ -28,7 +28,7 @@ public class FlinkSQLGatewayResponse {
     @NoArgsConstructor(staticName = "from")
     @AllArgsConstructor(staticName = "from")
     public static class CreateSink {
-        private String operationId;
+        private String operationHandle;
     }
 
     @Getter
@@ -37,7 +37,7 @@ public class FlinkSQLGatewayResponse {
     @NoArgsConstructor(staticName = "from")
     @AllArgsConstructor(staticName = "from")
     public static class SubmitSQL {
-        
+        private String operationHandle;
     }
 
 
@@ -47,6 +47,16 @@ public class FlinkSQLGatewayResponse {
     @NoArgsConstructor(staticName = "from")
     @AllArgsConstructor(staticName = "from")
     public static class FetchJobId {
+        private String jobId;
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor(staticName = "from")
+    @AllArgsConstructor(staticName = "from")
+    public static class CloseSession {
+        private String sessionHandle;
     }
 
 
