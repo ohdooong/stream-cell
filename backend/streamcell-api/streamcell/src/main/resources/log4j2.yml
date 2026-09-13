@@ -10,7 +10,7 @@ Config:
             target: SYSTEM_OUT
             PatternLayout:
                 disableAnsi: false
-                pattern: "%style{%d{MM-dd HH:mm:ss}}{magenta} %highlight${LOG_LEVEL_PATTERN} %style{[%c{1.1.1.*}]}{cyan} %m%n"
+                pattern: "%style{%d{yyyy-MM-dd HH:mm:ss.SSS}}{magenta} %highlight${LOG_LEVEL_PATTERN} %style{[%c{1.1.1.*}]}{cyan} %m%n"
 
         RollingFile:
             name: FILE
