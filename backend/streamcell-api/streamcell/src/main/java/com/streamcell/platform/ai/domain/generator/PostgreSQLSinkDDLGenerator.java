@@ -1,6 +1,7 @@
 package com.streamcell.platform.ai.domain.generator;
 
 import com.streamcell.global.config.DBConfig;
+import com.streamcell.platform._common.config.FlinkJdbcConfig;
 import com.streamcell.platform.ai.domain.context.PostgreSQLSinkDDLGenerationContext;
 import com.streamcell.platform.ai.domain.policy.FlinkSQLPolicy;
 import com.streamcell.platform.ai.domain.policy.PostgreSQLSinkPolicy;
@@ -19,7 +20,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PostgreSQLSinkDDLGenerator {
 
-    private final DBConfig dbConfig;
+    private final FlinkJdbcConfig flinkJdbcConfig;
 
     private final AggregationTypeResolver aggregationTypeResolver;
 
@@ -78,10 +79,10 @@ public class PostgreSQLSinkDDLGenerator {
                 'username' = '%s',
                 'password' = '%s'
                """.formatted(
-                dbConfig.getUrl(),
+                flinkJdbcConfig.getUrl(),
                 String.format(PostgreSQLSinkPolicy.RESULT_TABLE_NAME_CONVENTION, pipeline.getPipelineId()),
-                dbConfig.getUsername(),
-                dbConfig.getPassword());
+                flinkJdbcConfig.getUsername(),
+                flinkJdbcConfig.getPassword());
     }
 
 }

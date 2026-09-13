@@ -30,6 +30,10 @@ flink:
       - http://192.168.245.184:19092
       - http://192.168.245.184:19093
       - http://192.168.245.184:19094
+  jdbc:
+    url: ${FLINK_JDBC_URL}
+    username: ${POSTGRES_USERNAME}
+    password: ${POSTGRES_PASSWORD}
 
 file:
   upload:
