@@ -8,8 +8,8 @@ import org.apache.ibatis.annotations.Update;
 public interface PipelineResultRepository {
 
     @Update("""
-            CREATE TABLE IF NOT EXISTS platform.#{tableName} (
-                #{columns}
+            CREATE TABLE IF NOT EXISTS platform.${tableName} (
+                ${columns}
             );
             """)
     void createPipelineResultTable(PipelineResultTable dto);

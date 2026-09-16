@@ -9,6 +9,7 @@ import com.streamcell.platform.ai.domain.context.KafkaSourceDDLGenerationContext
 import com.streamcell.platform.ai.domain.context.PipelinePlanValidationContext;
 import com.streamcell.platform.ai.domain.context.PostgreSQLSinkDDLGenerationContext;
 import com.streamcell.platform.ai.domain.generator.PostgreSQLSinkDDLGenerator;
+import com.streamcell.platform.ai.domain.manager.PipelineResultTableManager;
 import com.streamcell.platform.ai.domain.resolver.PipelinePlanValidationContextResolver;
 import com.streamcell.platform.ai.domain.generator.FlinkSQLGenerator;
 import com.streamcell.platform.ai.domain.generator.KafkaSourceDDLGenerator;
@@ -24,21 +25,25 @@ import com.streamcell.platform.ai.domain.validator.WindowValidator;
 import com.streamcell.platform.ai.dto.FlinkSQLGatewayRequest;
 import com.streamcell.platform.ai.dto.FlinkSQLGatewayResponse;
 import com.streamcell.platform.ai.dto.PipelinePlan;
+import com.streamcell.platform.ai.dto.PipelineResultTable;
 import com.streamcell.platform.ai.service.AIService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class AIServiceImpl implements AIService {
 
     private final AIConverter aiConverter;
     private final PipelinePlanValidationContextResolver pipelinePlanValidationContextResolver;
 
-
     private final FlinkSQLGenerator flinkSQLGenerator;
     private final KafkaSourceDDLGenerator kafkaSourceDDLGenerator;
     private final PostgreSQLSinkDDLGenerator postgreSQLSinkDDLGenerator;
+
+    private final PipelineResultTableManager pipelineResultTableManager;
 
     private final FlinkSQLGatewayClient flinkSQLGatewayClient;
 
@@ -116,6 +121,9 @@ public class AIServiceImpl implements AIService {
                 flinkSQLGatewayClient.createSink(
                         session.getSessionHandle(), FlinkSQLGatewayRequest.CreateSink.from(generatedSinkSql));
 
+
+        PipelineResultTable.Response table = pipelineResultTableManager.createTable(postgreSQLGenerationContext);
+        log.info("created table name: {}", table.getCreatedTableName());
 
         FlinkSQLGenerationContext flinkSQLGenerationContext
                 = aiConverter.toGenerationContext(pipelinePlanValidationContext);
