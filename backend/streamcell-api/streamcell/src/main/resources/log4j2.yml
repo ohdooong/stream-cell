@@ -31,9 +31,18 @@ Config:
                 - ref: CONSOLE
                 - ref: FILE
         Logger:
-            - name: com.example.project
+            # 애플리케이션 로그
+            - name: com.streamcell
               level: DEBUG
               additivity: false
               AppenderRef:
                   - ref: CONSOLE
                   - ref: FILE
+            - name: org.springframework
+              level: INFO
+            - name: jdbc.sqlonly
+              level: "OFF"
+            - name: jdbc.audit
+              level: "OFF"
+            - name: com.zaxxer.hikari
+              level: INFO

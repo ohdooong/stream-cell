@@ -29,7 +29,6 @@ public class RestClientLoggingInterceptor implements ClientHttpRequestIntercepto
         log.info("--> Method: {}", request.getMethod());
         log.info("--> Headers: {}", request.getHeaders());
         log.info("--> Body: {}", new String(body, StandardCharsets.UTF_8));
-        log.info("====== HTTP Request End ======");
     }
 
     private void logResponse(ClientHttpResponse response) throws IOException {
@@ -40,6 +39,5 @@ public class RestClientLoggingInterceptor implements ClientHttpRequestIntercepto
         log.info("--> Status: {}", response.getStatusCode());
         log.info("--> Headers: {}", response.getHeaders());
         log.info("--> Body: {}", body);
-        log.info("====== HTTP Response End ======");
     }
 }

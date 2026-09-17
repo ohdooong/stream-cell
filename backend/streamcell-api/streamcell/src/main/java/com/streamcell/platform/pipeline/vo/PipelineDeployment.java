@@ -20,6 +20,7 @@ public class PipelineDeployment {
     private String flinkJarId;
     private DeploymentStatus status;
     private LocalDateTime startedAt;
+    private String stoppedBy;
     private LocalDateTime stoppedAt;
     private LocalDateTime finishedAt;
     private LocalDateTime lastCheckedAt;

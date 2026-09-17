@@ -1,4 +1,4 @@
-package com.streamcell.platform.ai.dto;
+package com.streamcell.platform.flink.dto;
 
 import lombok.*;
 

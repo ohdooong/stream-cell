@@ -1,9 +1,8 @@
-package com.streamcell.platform.ai.client;
+package com.streamcell.platform.flink.client;
 
-import com.streamcell.platform.ai.dto.FlinkSQLGatewayRequest;
-import com.streamcell.platform.ai.dto.FlinkSQLGatewayResponse;
+import com.streamcell.platform.flink.dto.FlinkSQLGatewayRequest;
+import com.streamcell.platform.flink.dto.FlinkSQLGatewayResponse;
 import com.streamcell.platform.flink.config.FlinkSQLGatewayProperties;
-import com.streamcell.platform.flink.dto.FlinkResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -51,8 +50,18 @@ public class FlinkSQLGatewayClient {
                 .body(FlinkSQLGatewayResponse.SubmitSQL.class);
     }
 
-    public FlinkSQLGatewayResponse.FetchJobId fetchJobId(String sessionHandle, String operationHandle) {
-        return null;
+    public FlinkSQLGatewayResponse.FetchResult fetchResult(String sessionHandle, String operationHandle) {
+        return restClient.get()
+            .uri(String.format(flinkSQLGatewayProperties.getExecuteResultUrl(), sessionHandle, operationHandle))
+            .retrieve()
+            .body(FlinkSQLGatewayResponse.FetchResult.class);
+    }
+
+    public FlinkSQLGatewayResponse.FetchStatus fetchStatus(String sessionHandle, String operationHandle) {
+        return restClient.get()
+            .uri(String.format(flinkSQLGatewayProperties.getExecuteStatusUrl(), sessionHandle, operationHandle))
+            .retrieve()
+            .body(FlinkSQLGatewayResponse.FetchStatus.class);
     }
 
     public FlinkSQLGatewayResponse.CloseSession closeSession(String sessionHandle) {

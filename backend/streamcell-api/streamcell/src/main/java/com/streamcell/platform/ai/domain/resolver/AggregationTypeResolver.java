@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 public class AggregationTypeResolver {
 
     public String resolveSinkResultType(AggregationSpec aggregationSpec, String sourceType) {
-        AggregationFunction function = aggregationSpec.getFunction();
+            AggregationFunction function = aggregationSpec.getFunction();
 
         switch (function) {
             case COUNT -> {
