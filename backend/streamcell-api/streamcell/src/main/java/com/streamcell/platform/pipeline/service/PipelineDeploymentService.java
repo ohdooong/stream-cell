@@ -1,5 +1,6 @@
 package com.streamcell.platform.pipeline.service;
 
+import com.streamcell.platform.pipeline.dto.PipelineDeploymentRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
 import com.streamcell.platform.pipeline.dto.PipelineResponse.Deployment;
 import java.util.List;
@@ -14,6 +15,9 @@ public interface PipelineDeploymentService {
     PipelineResponse.Deployment deploy(Long pipelinId);
 
     List<Deployment> findByPipelineId(Long pipelineId);
+
+
+    PipelineResponse.Deployment createPipelineDeployment(PipelineDeploymentRequest.Create create);
 
     /**
      * pipeline의 Flink Job을 Cancel 시킴.

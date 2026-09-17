@@ -2,7 +2,9 @@ package com.streamcell.platform.ai.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.streamcell.platform.ai.client.FlinkSQLGatewayClient;
+import com.streamcell.global._common.enums.ErrorCode;
+import com.streamcell.global._common.exception.BaseAPIException;
+import com.streamcell.platform.flink.client.FlinkSQLGatewayClient;
 import com.streamcell.platform.ai.converter.AIConverter;
 import com.streamcell.platform.ai.domain.context.FlinkSQLGenerationContext;
 import com.streamcell.platform.ai.domain.context.KafkaSourceDDLGenerationContext;
@@ -22,11 +24,22 @@ import com.streamcell.platform.ai.domain.validator.SchemaValidator;
 import com.streamcell.platform.ai.domain.validator.TopicPermissionValidator;
 import com.streamcell.platform.ai.domain.validator.TopicValidator;
 import com.streamcell.platform.ai.domain.validator.WindowValidator;
-import com.streamcell.platform.ai.dto.FlinkSQLGatewayRequest;
-import com.streamcell.platform.ai.dto.FlinkSQLGatewayResponse;
+import com.streamcell.platform.flink.dto.FlinkSQLGatewayRequest;
+import com.streamcell.platform.flink.dto.FlinkSQLGatewayResponse;
+import com.streamcell.platform.flink.dto.FlinkSQLGatewayResponse.FetchResult;
 import com.streamcell.platform.ai.dto.PipelinePlan;
 import com.streamcell.platform.ai.dto.PipelineResultTable;
+import com.streamcell.platform.ai.enums.ResultType;
 import com.streamcell.platform.ai.service.AIService;
+import com.streamcell.platform.flink.dto.FlinkSQLGatewayResponse.FetchStatus;
+import com.streamcell.platform.flink.enums.OperationStatus;
+import com.streamcell.platform.pipeline.dto.PipelineDeploymentRequest;
+import com.streamcell.platform.pipeline.dto.PipelineResponse;
+import com.streamcell.platform.pipeline.dto.PipelineResponse.Deployment;
+import com.streamcell.platform.pipeline.enums.DeploymentStatus;
+import com.streamcell.platform.pipeline.enums.PipelineType;
+import com.streamcell.platform.pipeline.service.PipelineDeploymentService;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,6 +60,8 @@ public class AIServiceImpl implements AIService {
 
     private final FlinkSQLGatewayClient flinkSQLGatewayClient;
 
+    private final PipelineDeploymentService pipelineDeploymentService;
+
     @Override
     public void requestPipelinePlan() {
         PipelinePlanValidationContext validationContext =
@@ -65,7 +80,7 @@ public class AIServiceImpl implements AIService {
     }
 
     @Override
-    public FlinkSQLGatewayResponse.SubmitSQL flinkSqlGatewayTest() throws JsonProcessingException {
+    public PipelineResponse.Deployment flinkSqlGatewayTest() throws JsonProcessingException {
         JsonMapper jsonMapper = new JsonMapper();
         String sourceJson = """
                 {
@@ -110,19 +125,20 @@ public class AIServiceImpl implements AIService {
         String generatedSql = kafkaSourceDDLGenerator.generate(kafkaSourceDDLGenerationContext);
 
         FlinkSQLGatewayResponse.CreateSession session = flinkSQLGatewayClient.createSession();
-        FlinkSQLGatewayResponse.CreateSource source =
-                flinkSQLGatewayClient.createSource(session.getSessionHandle(), FlinkSQLGatewayRequest.CreateSource.from(generatedSql));
+        FlinkSQLGatewayResponse.CreateSource source = flinkSQLGatewayClient.createSource(
+            session.getSessionHandle(),
+            FlinkSQLGatewayRequest.CreateSource.from(generatedSql));
 
         PostgreSQLSinkDDLGenerationContext postgreSQLGenerationContext =
                 aiConverter.toPostgreSQLGenerationContext(pipelinePlanValidationContext);
         String generatedSinkSql = postgreSQLSinkDDLGenerator.generate(postgreSQLGenerationContext);
 
-        FlinkSQLGatewayResponse.CreateSink sink =
-                flinkSQLGatewayClient.createSink(
-                        session.getSessionHandle(), FlinkSQLGatewayRequest.CreateSink.from(generatedSinkSql));
+        FlinkSQLGatewayResponse.CreateSink sink = flinkSQLGatewayClient.createSink(
+            session.getSessionHandle(),
+            FlinkSQLGatewayRequest.CreateSink.from(generatedSinkSql));
 
-
-        PipelineResultTable.Response table = pipelineResultTableManager.createTable(postgreSQLGenerationContext);
+        PipelineResultTable.Response table =
+            pipelineResultTableManager.createTable(postgreSQLGenerationContext);
         log.info("created table name: {}", table.getCreatedTableName());
 
         FlinkSQLGenerationContext flinkSQLGenerationContext
@@ -130,9 +146,29 @@ public class AIServiceImpl implements AIService {
         String generatedFlinkSql = flinkSQLGenerator.generate(flinkSQLGenerationContext);
 
         FlinkSQLGatewayResponse.SubmitSQL submitSQL =
-                flinkSQLGatewayClient.submitSQL(session.getSessionHandle(), FlinkSQLGatewayRequest.SubmitSQL.from(generatedFlinkSql));
+                flinkSQLGatewayClient.submitSQL(
+                    session.getSessionHandle(),
+                    FlinkSQLGatewayRequest.SubmitSQL.from(generatedFlinkSql));
 
-        return submitSQL;
+        FetchResult fetchResult = flinkSQLGatewayClient.fetchResult(
+            session.getSessionHandle(),
+            submitSQL.getOperationHandle());
+
+        fetchResult = checkResultStatusUntilPayloadAndGet(fetchResult, session.getSessionHandle(),
+            submitSQL.getOperationHandle());
+
+        PipelineDeploymentRequest.Create create = PipelineDeploymentRequest.Create
+            .builder()
+            .pipelineId(1L)
+            .deploymentType(PipelineType.AI_SQL)
+            .flinkJobId(fetchResult.getJobId())
+            .status(DeploymentStatus.RUNNING)
+            .startedAt(LocalDateTime.now())
+            .lastCheckedAt(LocalDateTime.now())
+            .build();
+        Deployment pipelineDeployment = pipelineDeploymentService.createPipelineDeployment(create);
+
+        return pipelineDeployment;
     }
 
     private PipelinePlanValidationContext validateForPipelinePlan(PipelinePlan pipelinePlan) {
@@ -153,4 +189,40 @@ public class AIServiceImpl implements AIService {
         compositeValidator.validate(context);
         return context;
     }
+
+    private FetchResult checkResultStatusUntilPayloadAndGet(FetchResult fetchResult, String sessionHandle, String operationHandle) {
+        int maxCount = 20;
+        int currentCount = 1;
+        int delayMillis = 1000;
+        ResultType resultType = fetchResult.getResultType();
+        while (ResultType.PAYLOAD != resultType && maxCount > currentCount) {
+
+            FetchStatus fetchStatus = flinkSQLGatewayClient.fetchStatus(sessionHandle, operationHandle);
+
+            if (OperationStatus.ERROR == fetchStatus.getStatus()
+                || OperationStatus.TIMEOUT == fetchStatus.getStatus()) {
+                throw new BaseAPIException(ErrorCode.FAILED_FLINK_SQL_JOB);
+            }
+
+            String nextResultUrl = fetchResult.getNextResultUrl();
+            fetchResult = flinkSQLGatewayClient.fetchResult(sessionHandle, operationHandle);
+
+            resultType = fetchResult.getResultType();
+
+            currentCount++;
+
+            try {
+                Thread.sleep(delayMillis);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        if (ResultType.EOS == resultType) {
+            throw new BaseAPIException(ErrorCode.FAILED_FLINK_SQL_JOB);
+        }
+
+        return fetchResult;
+    }
+
 }

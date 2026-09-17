@@ -8,8 +8,10 @@ import com.streamcell.platform.flink.dto.FlinkResponse;
 import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.flink.util.FlinkUtils;
 import com.streamcell.platform.pipeline.converter.PipelineConverter;
+import com.streamcell.platform.pipeline.converter.PipelineDeploymentConverter;
 import com.streamcell.platform.pipeline.domain.DeploymentStatusPolicy;
 import com.streamcell.platform.pipeline.domain.JobStatusConvertPolicy;
+import com.streamcell.platform.pipeline.dto.PipelineDeploymentRequest.Create;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
 import com.streamcell.platform.pipeline.dto.PipelineResponse.Deployment;
 import com.streamcell.platform.pipeline.enums.DeploymentStatus;
@@ -42,6 +44,7 @@ public class PipelineDeploymentServiceImpl implements PipelineDeploymentService 
 
     private final DeploymentStatusPolicy deploymentStatusPolicy;
     private final JobStatusConvertPolicy jobStatusConvertPolicy;
+    private final PipelineDeploymentConverter converter;
 
     private final Map<String, PipelineValidator<?, ?>> validatorMap;
 
@@ -126,6 +129,20 @@ public class PipelineDeploymentServiceImpl implements PipelineDeploymentService 
     public List<Deployment> findByPipelineId(Long pipelineId) {
 
         return List.of();
+    }
+
+    @Override
+    public Deployment createPipelineDeployment(Create create) {
+
+        PipelineDeployment pipelineDeployment = converter.toVo(create);
+
+        repository.insertPipelineDeployment(pipelineDeployment);
+
+        return Deployment.builder()
+            .deploymentId(pipelineDeployment.getDeploymentId())
+            .pipelineId(pipelineDeployment.getPipelineId())
+            .flinkJobId(pipelineDeployment.getFlinkJobId())
+            .status(pipelineDeployment.getStatus()).build();
     }
 
     @Override

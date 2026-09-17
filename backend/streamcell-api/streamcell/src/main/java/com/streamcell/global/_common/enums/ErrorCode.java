@@ -26,9 +26,6 @@ public enum ErrorCode {
     NOT_FOUND_AGGREGATION_FIELD(HttpStatus.NOT_FOUND, "aggregation 필드(field)값을 찾을 수 없습니다."),
     NOT_FOUND_AGGREGATION_ALIAS(HttpStatus.NOT_FOUND, "aggregations 별칭(alias)값을 찾을 수 없습니다."),
 
-
-
-
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
     INVALID_USER(HttpStatus.BAD_REQUEST, "존재하지 않는 사용자가 포함되어 있습니다."),
     INVALID_ENTRY_CLASS(HttpStatus.BAD_REQUEST, "유효하지않은 entry class 경로입니다."),
@@ -75,6 +72,9 @@ public enum ErrorCode {
     FAILED_FILE_SAVE(HttpStatus.INSUFFICIENT_STORAGE, "파일 저장에 실패했습니다."),
     FAILED_UPLOAD_JAR(HttpStatus.INTERNAL_SERVER_ERROR, "Jar 업로드에 실패했습니다."),
     FAILED_CANCEL_JOB(HttpStatus.INTERNAL_SERVER_ERROR, "Job Cancel에 실패하였습니다."),
+
+    FAILED_FLINK_SQL_JOB(HttpStatus.INTERNAL_SERVER_ERROR, "Job EOS상태."),
+
 
     JSON_PARSE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "JSON 파싱 에러"),
 

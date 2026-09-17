@@ -1,5 +1,8 @@
-package com.streamcell.platform.ai.dto;
+package com.streamcell.platform.flink.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.streamcell.platform.ai.enums.ResultType;
+import com.streamcell.platform.flink.enums.OperationStatus;
 import lombok.*;
 
 public class FlinkSQLGatewayResponse {
@@ -46,9 +49,42 @@ public class FlinkSQLGatewayResponse {
     @Builder
     @NoArgsConstructor(staticName = "from")
     @AllArgsConstructor(staticName = "from")
-    public static class FetchJobId {
+    public static class FetchResult {
+        private ResultType resultType;
+        private Boolean isQueryResult;
+        @JsonProperty("jobID")
         private String jobId;
+        private String resultKind;
+        private String nextResultUrl;
+//        private Result results;
+//
+//        public static class Result {
+//
+//            private List<Column> columns;
+//
+//            @JsonProperty("data")
+//            private List<ResultData> datas;
+//
+//            public static class Column {
+//                private String name;
+//            }
+//
+//            public static class ResultData {
+//                private String kind;
+//                private List<String> fields;
+//            }
+//        }
     }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor(staticName = "from")
+    @AllArgsConstructor(staticName = "from")
+    public static class FetchStatus {
+        private OperationStatus status;
+    }
+
 
     @Getter
     @Setter

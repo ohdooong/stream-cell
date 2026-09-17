@@ -23,8 +23,11 @@ public enum EndPoint {
             " CREATE TABLE, DROP TABLE, ALTER TABLE, CREATE DATABASE, DROP DATABASE, ALTER DATABASE, CREATE FUNCTION, DROP FUNCTION, ALTER FUNCTION, CREATE CATALOG, DROP CATALOG, USE CATALOG," +
             " USE [CATALOG.]DATABASE, CREATE VIEW, DROP VIEW, LOAD MODULE, UNLOAD MODULE, USE MODULE, ADD JAR."),
 
-    SUBMIT_SQL("/sessions/%s/statements", "/sessions/:session_handle/statements -> Execute a statement. ex) INSERT INTO SINK ~ SELECT ~")
+    SUBMIT_SQL("/sessions/%s/statements", "/sessions/:session_handle/statements -> Execute a statement. ex) INSERT INTO SINK ~ SELECT ~"),
 
+    GET_EXECUTE_RESULT("/sessions/%s/operations/%s/result/0?rowFormat=JSON",
+        "/sessions/{session_handle}/operations/{operation_handle}/result/{token}?rowFormat=JSON"),
+    GET_EXECUTE_STATUS("/sessions/%s/operations/%s/status","/sessions/{session_handle}/operations/{operation_handle}/status")
     ;
 
 

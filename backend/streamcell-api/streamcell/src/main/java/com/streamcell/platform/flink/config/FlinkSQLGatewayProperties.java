@@ -26,4 +26,11 @@ public class FlinkSQLGatewayProperties {
         return baseUrl + "/" + apiVersion + EndPoint.SUBMIT_SQL.getPath();
     }
 
+    public String getExecuteResultUrl() {
+        return baseUrl + "/" + apiVersion + EndPoint.GET_EXECUTE_RESULT.getPath();
+    }
+
+    public String getExecuteStatusUrl() {
+        return baseUrl + "/" + apiVersion + EndPoint.GET_EXECUTE_STATUS.getPath();
+    }
 }
