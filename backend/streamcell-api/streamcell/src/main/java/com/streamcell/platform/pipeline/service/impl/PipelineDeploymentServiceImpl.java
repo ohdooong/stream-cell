@@ -127,8 +127,10 @@ public class PipelineDeploymentServiceImpl implements PipelineDeploymentService 
 
     @Override
     public List<Deployment> findByPipelineId(Long pipelineId) {
-
-        return List.of();
+        return repository.findPipelineDeploymentByPipelineId(pipelineId)
+                .stream()
+                .map(converter::toDto)
+                .toList();
     }
 
     @Override

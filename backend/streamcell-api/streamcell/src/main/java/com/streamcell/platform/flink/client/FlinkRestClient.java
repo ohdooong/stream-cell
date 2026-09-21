@@ -96,7 +96,7 @@ public class FlinkRestClient {
         }
 
         try {
-             org.springframework.http.ResponseEntity<String> responseResult = restClient.post()
+             org.springframework.http.ResponseEntity<String> responseResult = restClient.patch()
                     .uri(String.format(flinkProperties.getCancelJobUrl(), flinkJobId))
                     .retrieve()
                     .onStatus(status -> !status.isSameCodeAs(HttpStatusCode.valueOf(202))

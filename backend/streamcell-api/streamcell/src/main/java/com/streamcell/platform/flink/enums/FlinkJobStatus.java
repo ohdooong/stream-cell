@@ -1,9 +1,6 @@
 package com.streamcell.platform.flink.enums;
 
 
-import com.streamcell.global._common.enums.ErrorCode;
-import com.streamcell.global._common.exception.BaseAPIException;
-
 public enum FlinkJobStatus {
     INITIALIZING,
     CREATED,

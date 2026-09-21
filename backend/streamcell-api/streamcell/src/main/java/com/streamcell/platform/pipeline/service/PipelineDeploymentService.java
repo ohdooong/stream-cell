@@ -16,7 +16,6 @@ public interface PipelineDeploymentService {
 
     List<Deployment> findByPipelineId(Long pipelineId);
 
-
     PipelineResponse.Deployment createPipelineDeployment(PipelineDeploymentRequest.Create create);
 
     /**

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
+import com.streamcell.platform.ai.domain.policy.FlinkSQLPolicy;
+import com.streamcell.platform.flink.client.FlinkRestClient;
 import com.streamcell.platform.flink.client.FlinkSQLGatewayClient;
 import com.streamcell.platform.ai.converter.AIConverter;
 import com.streamcell.platform.ai.domain.context.FlinkSQLGenerationContext;
@@ -32,7 +34,9 @@ import com.streamcell.platform.ai.dto.PipelineResultTable;
 import com.streamcell.platform.ai.enums.ResultType;
 import com.streamcell.platform.ai.service.AIService;
 import com.streamcell.platform.flink.dto.FlinkSQLGatewayResponse.FetchStatus;
+import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.flink.enums.OperationStatus;
+import com.streamcell.platform.pipeline.domain.JobStatusConvertPolicy;
 import com.streamcell.platform.pipeline.dto.PipelineDeploymentRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
 import com.streamcell.platform.pipeline.dto.PipelineResponse.Deployment;
@@ -40,6 +44,8 @@ import com.streamcell.platform.pipeline.enums.DeploymentStatus;
 import com.streamcell.platform.pipeline.enums.PipelineType;
 import com.streamcell.platform.pipeline.service.PipelineDeploymentService;
 import java.time.LocalDateTime;
+import java.util.Optional;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -59,6 +65,9 @@ public class AIServiceImpl implements AIService {
     private final PipelineResultTableManager pipelineResultTableManager;
 
     private final FlinkSQLGatewayClient flinkSQLGatewayClient;
+    private final FlinkRestClient flinkRestClient;
+
+    private final JobStatusConvertPolicy jobStatusConvertPolicy;
 
     private final PipelineDeploymentService pipelineDeploymentService;
 
@@ -157,15 +166,23 @@ public class AIServiceImpl implements AIService {
         fetchResult = checkResultStatusUntilPayloadAndGet(fetchResult, session.getSessionHandle(),
             submitSQL.getOperationHandle());
 
+        String flinkJobId = Optional.ofNullable(fetchResult.getJobId())
+                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_FLINK_JOB_ID));
+
+        FlinkJobStatus jobStatus = flinkRestClient.getJobStatus(flinkJobId);
+
+        DeploymentStatus deploymentStatus = jobStatusConvertPolicy.convertToDeploymentStatusFrom(jobStatus);
+
         PipelineDeploymentRequest.Create create = PipelineDeploymentRequest.Create
             .builder()
             .pipelineId(1L)
             .deploymentType(PipelineType.AI_SQL)
-            .flinkJobId(fetchResult.getJobId())
-            .status(DeploymentStatus.RUNNING)
+            .flinkJobId(flinkJobId)
+            .status(deploymentStatus)
             .startedAt(LocalDateTime.now())
             .lastCheckedAt(LocalDateTime.now())
             .build();
+
         Deployment pipelineDeployment = pipelineDeploymentService.createPipelineDeployment(create);
 
         return pipelineDeployment;
@@ -195,30 +212,40 @@ public class AIServiceImpl implements AIService {
         int currentCount = 1;
         int delayMillis = 1000;
         ResultType resultType = fetchResult.getResultType();
-        while (ResultType.PAYLOAD != resultType && maxCount > currentCount) {
+        while (currentCount < maxCount) {
 
-            FetchStatus fetchStatus = flinkSQLGatewayClient.fetchStatus(sessionHandle, operationHandle);
+            if (ResultType.PAYLOAD == resultType) {
+                return fetchResult;
+            }
 
-            if (OperationStatus.ERROR == fetchStatus.getStatus()
-                || OperationStatus.TIMEOUT == fetchStatus.getStatus()) {
+            if (ResultType.EOS == resultType) {
                 throw new BaseAPIException(ErrorCode.FAILED_FLINK_SQL_JOB);
             }
 
-            String nextResultUrl = fetchResult.getNextResultUrl();
-            fetchResult = flinkSQLGatewayClient.fetchResult(sessionHandle, operationHandle);
-
-            resultType = fetchResult.getResultType();
-
-            currentCount++;
+            FetchStatus fetchStatus = flinkSQLGatewayClient.fetchStatus(sessionHandle, operationHandle);
+            if (OperationStatus.ERROR == fetchStatus.getStatus()
+                || OperationStatus.TIMEOUT == fetchStatus.getStatus()
+                || OperationStatus.CANCELED == fetchStatus.getStatus()
+                || OperationStatus.CLOSED == fetchStatus.getStatus()) {
+                throw new BaseAPIException(ErrorCode.FAILED_FLINK_SQL_JOB);
+            }
 
             try {
                 Thread.sleep(delayMillis);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             }
+
+            //String nextResultUrl = fetchResult.getNextResultUrl();
+            fetchResult = flinkSQLGatewayClient.fetchResult(sessionHandle, operationHandle);
+            resultType = fetchResult.getResultType();
+
+            currentCount++;
+
         }
 
-        if (ResultType.EOS == resultType) {
+        if (ResultType.PAYLOAD != resultType) {
             throw new BaseAPIException(ErrorCode.FAILED_FLINK_SQL_JOB);
         }
 
