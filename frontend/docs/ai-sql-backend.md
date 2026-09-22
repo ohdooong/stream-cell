@@ -46,10 +46,10 @@
 | `ownerUserId` | 인증 전 개발 사용자. 존재하는 사용자 ID인지 검증 |
 | `pipelineName` | trim 후 1~100자 |
 | `description` | 선택, 최대 1,000자 |
-| `inputTopicIds` | 1개 이상, 중복 없이 유효한 Topic ID |
+| `inputTopicIds` | 정확히 1개의 유효한 Topic ID를 담은 배열. 프론트는 단일 선택, 서버도 배열 길이 1 검증 |
 | `naturalLanguageRequest` | trim 후 1~4,000자 |
 | `timeConfig.mode` | `EVENT_TIME` 또는 `PROCESSING_TIME` |
-| `eventTimeFields` | EVENT_TIME이면 선택된 각 Topic의 필드. PROCESSING_TIME이면 빈 배열 |
+| `eventTimeFields` | EVENT_TIME이면 선택한 Topic의 필드 1개. PROCESSING_TIME이면 빈 배열 |
 | `watermarkDelaySeconds` | 0 이상의 정수. PROCESSING_TIME 요청은 0 |
 | `timezone` | `Asia/Seoul` 기본값, 서버가 지원하는 IANA 시간대 검증 |
 | `sinkType` | 1차 범위는 관리형 `POSTGRESQL` |
@@ -61,7 +61,7 @@
 서버 처리:
 
 1. 요청을 검증하고 DB에서 Topic Schema/형식/시간 필드를 다시 조회합니다. Schema 원문은 프론트 요청에 포함하지 않습니다.
-2. 시간 필드 존재뿐 아니라 타입, 타임스탬프 형식/정밀도/시간대와 변환 가능 여부를 확인합니다. 여러 Topic이면 각 입력의 시간 정의와 조인 조건을 처리합니다.
+2. 시간 필드 존재뿐 아니라 타입, 타임스탬프 형식/정밀도/시간대와 변환 가능 여부를 확인합니다. 입력 Topic은 하나만 허용합니다.
 3. 자연어와 Schema를 이용해 집계 주기, 그룹 키, 필터, 집계식, 조인, 결과 컬럼을 담은 구조화된 Plan을 생성합니다. 모호한 요청은 미확정 조건을 설명하고 `validation.valid=false`로 응답합니다.
 4. 실제 실행 환경에 맞는 Flink SQL을 생성하고, 해당 환경의 파서/플래너 및 연결 가능한 connector로 검증합니다. 생성 과정에서 Job 제출이나 결과 테이블 생성은 하지 않습니다.
 5. 검토 가능한 SQL에서는 연결 비밀번호 등 비밀값을 제외합니다. 실제 실행 시 서버가 연결 정보를 주입합니다.
@@ -117,7 +117,7 @@
 추가 저장 항목(테이블명은 제안):
 
 - `pipeline_ai_sql_config`: pipeline_id, time_mode, watermark_delay_seconds, timezone, startup_mode, parallelism, preview_id/version.
-- `pipeline_input_topic`: pipeline_id, topic_id, event_time_field, 검증 시점 Schema snapshot/hash. 여러 입력 Topic과 Pipeline별 시간 필드를 저장합니다.
+- `pipeline_input_topic`: pipeline_id, topic_id, event_time_field, 검증 시점 Schema snapshot/hash. AI_SQL Pipeline마다 입력 Topic 하나를 저장하고 유일성 제약을 둡니다.
 - `pipeline_sink_config`: 자동/사용자 지정 구분을 위한 table_naming. 결과 컬럼 타입, 집계 키/upsert 키 등 실행에 필요한 정보는 Plan 또는 별도 설정으로 보존합니다.
 - preview 저장소: TTL, owner, 요청 fingerprint, Schema fingerprint, Plan/SQL, 생성된 pipelineId. DB 또는 TTL 저장소를 사용할 수 있으며 등록 멱등성 기록은 만료와 별도로 보존합니다.
 
@@ -146,7 +146,7 @@
 
 백엔드 완료 기준:
 
-1. 단일/복수 Topic, Event/Processing Time, AUTO/CUSTOM 결과 테이블, LATEST/EARLIEST 설정의 생성·저장 round-trip.
+1. 단일 Topic, Event/Processing Time, AUTO/CUSTOM 결과 테이블, LATEST/EARLIEST 설정의 생성·저장 round-trip. 입력 Topic 0개 또는 2개 이상은 거부.
 2. 존재하지 않는 Topic, 미등록 Schema, 잘못된 시간 타입, 유효하지 않은 SQL에 대한 실패 응답.
 3. 설정/사용자/Schema가 바뀐 preview 및 만료 preview의 등록 거부.
 4. 동일 preview 재시도 시 Pipeline 중복 생성 없음, 일부 설정 저장 실패 시 원자적 롤백.
