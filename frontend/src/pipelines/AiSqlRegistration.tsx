@@ -43,7 +43,7 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
   const input = toAiSqlInput(draft, userId);
   const inputKey = JSON.stringify(input);
   const currentPreview = preview?.key === inputKey ? preview.value : null;
-  const loadingTopics = draft.topicIds.some((id) => topicLoading[id]);
+  const loadingTopics = draft.topicId !== null && topicLoading[draft.topicId];
   const canSave = currentPreview?.validation.valid && !currentPreview.validation.errors.length && reviewed && !expired;
 
   useEffect(() => {
@@ -76,9 +76,9 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
       const topic = await platformApi.getTopic(id);
       if (topicSequence.current[id] !== sequence) return;
       setDetails((current) => ({ ...current, [id]: topic }));
-      setDraft((current) => ({ ...current, timeFields: {
+      setDraft((current) => current.topicId === id ? ({ ...current, timeFields: {
         ...current.timeFields, [id]: current.timeFields[id] ?? topic.timeField ?? '',
-      } }));
+      } }) : current);
     } catch (error) {
       if (topicSequence.current[id] === sequence) setTopicErrors((current) => ({ ...current, [id]: errorMessage(error) }));
     } finally {
@@ -86,10 +86,10 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
     }
   }
 
-  function toggleTopic(id: number) {
-    const selected = draft.topicIds.includes(id);
-    update({ topicIds: selected ? draft.topicIds.filter((value) => value !== id) : [...draft.topicIds, id] });
-    if (!selected) void loadTopic(id);
+  function selectTopic(id: number) {
+    if (draft.topicId === id) return;
+    update({ topicId: id, timeFields: {} });
+    void loadTopic(id);
   }
 
   async function generate(event: FormEvent) {
@@ -97,7 +97,7 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
     if (busy || createdId !== null) return;
     const problems = validateAiSqlInput(input, details);
     if (loadingTopics) problems.push('Topic 정보를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
-    if (draft.topicIds.some((id) => topicErrors[id])) problems.push('상세 조회에 실패한 Topic을 다시 불러와 주세요.');
+    if (draft.topicId !== null && topicErrors[draft.topicId]) problems.push('상세 조회에 실패한 Topic을 다시 불러와 주세요.');
     setErrors(problems);
     if (problems.length) return;
     const sequence = ++requestSequence.current;
@@ -151,14 +151,14 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
           <label>Pipeline 이름 <em>필수</em><input value={draft.name} onChange={(e) => update({ name: e.target.value })} maxLength={100} required placeholder="상품별 주문 집계" /></label>
           <label>설명 <small>선택</small><input value={draft.description} onChange={(e) => update({ description: e.target.value })} maxLength={1000} placeholder="이 Pipeline의 목적을 입력하세요" /></label>
         </div>
-        <fieldset className="ai-topic-fieldset"><legend>입력 Topic <em>필수 · 복수 선택 가능</em></legend>
-          {topics.length ? <div className="ai-topic-options">{topics.map((topic) => <label key={topic.topicId} className={draft.topicIds.includes(topic.topicId) ? 'selected' : ''}>
-            <input type="checkbox" checked={draft.topicIds.includes(topic.topicId)} onChange={() => toggleTopic(topic.topicId)} />
+        <fieldset className="ai-topic-fieldset"><legend>입력 Topic <em>필수 · 하나만 선택</em></legend>
+          {topics.length ? <div className="ai-topic-options">{topics.map((topic) => <label key={topic.topicId} className={draft.topicId === topic.topicId ? 'selected' : ''}>
+            <input type="radio" name="ai-input-topic" checked={draft.topicId === topic.topicId} onChange={() => selectTopic(topic.topicId)} />
             <span><strong>{topic.displayName || topic.topicName}</strong><small>{topic.topicName}</small></span>
             <i>{topic.messageFormat || 'Schema'}</i>
           </label>)}</div> : <p className="ai-empty">선택할 Topic이 없습니다. Topic 관리에서 동기화한 후 다시 등록해 주세요.</p>}
         </fieldset>
-        {draft.topicIds.map((id) => <div className="ai-topic-schema" key={id}>
+        {draft.topicId !== null && [draft.topicId].map((id) => <div className="ai-topic-schema" key={id}>
           <div><strong>{topics.find((topic) => topic.topicId === id)?.topicName || `Topic #${id}`}</strong><span>{topicLoading[id] ? '불러오는 중…' : 'Topic Schema'}</span></div>
           {topicErrors[id] ? <p role="alert">{topicErrors[id]} <button type="button" className="text-button" onClick={() => void loadTopic(id)}>다시 불러오기</button></p>
             : !topicLoading[id] && details[id] && <>
@@ -180,11 +180,11 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
         <div className="ai-grid">
           <label>시간 기준<select value={draft.timeMode} onChange={(e) => update({ timeMode: e.target.value as AiSqlDraft['timeMode'] })}><option value="EVENT_TIME">Event Time · 이벤트 발생 시간</option><option value="PROCESSING_TIME">Processing Time · 처리 시간</option></select><small>Event Time을 선택하면 Topic별 시간 필드를 사용합니다.</small></label>
           <label>결과 저장소<input value="관리형 PostgreSQL" readOnly /><small>플랫폼에 설정된 결과 저장소를 사용합니다.</small></label>
-          {draft.timeMode === 'EVENT_TIME' && draft.topicIds.map((id) => <label key={id}>{topics.find((topic) => topic.topicId === id)?.topicName} · Event Time 필드
-            <input value={draft.timeFields[id] || ''} list={`time-fields-${id}`} onChange={(e) => update({ timeFields: { ...draft.timeFields, [id]: e.target.value } })} placeholder="eventTime" required />
-            <datalist id={`time-fields-${id}`}>{schemaFields(details[id]?.schemaJson).map((field) => <option key={field} value={field} />)}</datalist>
+          {draft.timeMode === 'EVENT_TIME' && draft.topicId !== null && <label>{topics.find((topic) => topic.topicId === draft.topicId)?.topicName} · Event Time 필드
+            <input value={draft.timeFields[draft.topicId] || ''} list="ai-time-fields" onChange={(e) => update({ timeFields: { ...draft.timeFields, [draft.topicId!]: e.target.value } })} placeholder="eventTime" required />
+            <datalist id="ai-time-fields">{schemaFields(details[draft.topicId]?.schemaJson).map((field) => <option key={field} value={field} />)}</datalist>
             <small>Topic 설정을 기본값으로 사용합니다. 변경은 이 Pipeline에만 적용됩니다.</small>
-          </label>)}
+          </label>}
           <label>결과 테이블<select value={draft.tableNaming} onChange={(e) => update({ tableNaming: e.target.value as AiSqlDraft['tableNaming'] })}><option value="AUTO">자동 생성</option><option value="CUSTOM">테이블명 직접 지정</option></select><small>자동 생성 시 Pipeline 전용 테이블을 만듭니다.</small></label>
           {draft.tableNaming === 'CUSTOM' && <label>테이블명<input value={draft.tableName} maxLength={63} onChange={(e) => update({ tableName: e.target.value })} placeholder="order_summary_5min" /><small>소문자·숫자·밑줄 사용, 첫 글자는 소문자</small></label>}
         </div>

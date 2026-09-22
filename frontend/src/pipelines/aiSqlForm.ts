@@ -4,7 +4,7 @@ import type { Topic } from '../api/platform';
 export type AiSqlDraft = {
   name: string;
   description: string;
-  topicIds: number[];
+  topicId: number | null;
   request: string;
   timeMode: AiSqlInput['timeConfig']['mode'];
   timeFields: Record<number, string>;
@@ -17,7 +17,7 @@ export type AiSqlDraft = {
 };
 
 export const initialAiSqlDraft: AiSqlDraft = {
-  name: '', description: '', topicIds: [], request: '', timeMode: 'EVENT_TIME',
+  name: '', description: '', topicId: null, request: '', timeMode: 'EVENT_TIME',
   timeFields: {}, watermarkSeconds: 5, timezone: 'Asia/Seoul',
   tableNaming: 'AUTO', tableName: '', startupMode: 'LATEST', parallelism: 1,
 };
@@ -39,12 +39,12 @@ export function toAiSqlInput(draft: AiSqlDraft, userId: number): AiSqlInput {
     pipelineName: draft.name.trim(),
     description: draft.description.trim(),
     pipelineType: 'AI_SQL',
-    inputTopicIds: [...draft.topicIds],
+    inputTopicIds: draft.topicId === null ? [] : [draft.topicId],
     naturalLanguageRequest: draft.request.trim(),
     timeConfig: {
       mode: draft.timeMode,
-      eventTimeFields: draft.timeMode === 'EVENT_TIME'
-        ? draft.topicIds.map((topicId) => ({ topicId, field: (draft.timeFields[topicId] || '').trim() })) : [],
+      eventTimeFields: draft.timeMode === 'EVENT_TIME' && draft.topicId !== null
+        ? [{ topicId: draft.topicId, field: (draft.timeFields[draft.topicId] || '').trim() }] : [],
       watermarkDelaySeconds: draft.timeMode === 'EVENT_TIME' ? draft.watermarkSeconds : 0,
       timezone: draft.timezone.trim(),
     },
@@ -61,7 +61,7 @@ export function validateAiSqlInput(input: AiSqlInput, topics: Record<number, Top
   if (!Number.isSafeInteger(input.ownerUserId) || input.ownerUserId < 1) errors.push('현재 사용자 정보를 확인해 주세요.');
   if (!input.pipelineName || input.pipelineName.length > 100) errors.push('Pipeline 이름을 1~100자로 입력해 주세요.');
   if (input.description.length > 1000) errors.push('설명은 1,000자 이하로 입력해 주세요.');
-  if (!input.inputTopicIds.length) errors.push('입력 Topic을 하나 이상 선택해 주세요.');
+  if (input.inputTopicIds.length !== 1) errors.push('입력 Topic을 하나만 선택해 주세요.');
   if (!input.naturalLanguageRequest) errors.push('자연어 처리 요청을 입력해 주세요.');
   if (input.naturalLanguageRequest.length > 4000) errors.push('자연어 요청은 4,000자 이하로 입력해 주세요.');
   input.inputTopicIds.forEach((topicId) => {
