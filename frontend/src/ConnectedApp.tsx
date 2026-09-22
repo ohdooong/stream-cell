@@ -5,6 +5,7 @@ import {
   type Topic, type TopicPermission, type TopicPermissionType, type User,
 } from './api/platform';
 import { useAuth } from './auth/AuthContext';
+import { AiSqlRegistration } from './pipelines/AiSqlRegistration';
 import './connected.css';
 
 type View = 'overview' | 'cluster' | 'topics' | 'permissions' | 'pipelines' | 'create' | 'detail' | 'results' | 'failures';
@@ -77,9 +78,64 @@ function PermissionTable({ items }: { items: TopicPermission[] }) { return items
 function Pipelines({ pipelines, create, open }: { pipelines: Pipeline[]; create: () => void; open: (id: number) => void }) { return <><div className="welcome-row"><div><h2>Pipeline 운영</h2><p>사용자 소유 Pipeline의 현재 상태를 조회합니다.</p></div><button className="primary-button compact" onClick={create}>＋ 새 Pipeline</button></div><section className="panel table-panel">{pipelines.length ? <div className="table-scroll"><table><thead><tr><th>Pipeline</th><th>Type</th><th>Status</th><th>Action</th></tr></thead><tbody>{pipelines.map((p) => <tr key={p.pipelineId}><td><strong>{p.pipelineName}</strong><small>#{p.pipelineId} · {p.description || '설명 없음'}</small></td><td><span className="format-chip">{p.pipelineType}</span></td><td><Status value={p.pipelineStatus} /></td><td><button className="row-action" onClick={() => open(p.pipelineId)}>상세 →</button></td></tr>)}</tbody></table></div> : <Empty title="Pipeline이 없습니다">새 Pipeline을 등록하세요.</Empty>}</section></>; }
 
 function CreatePipeline({ topics, activeUserId, success, fail, done }: { topics: Topic[]; activeUserId: number; success: (m: string) => void; fail: (e: unknown) => void; done: (id: number) => Promise<void> }) {
-  const [type, setType] = useState<PipelineType>('CUSTOM_JAR'); const [name, setName] = useState(''); const [description, setDescription] = useState(''); const [file, setFile] = useState<File | null>(null); const [entryClass, setEntryClass] = useState(''); const [inputId, setInputId] = useState(0); const [outputId, setOutputId] = useState(0); const [parallelism, setParallelism] = useState(1); const [args, setArgs] = useState(''); const [request, setRequest] = useState(''); const [busy, setBusy] = useState(false);
-  async function submit(event: FormEvent) { event.preventDefault(); if (type === 'CUSTOM_JAR' && !file) return fail(new Error('JAR 파일을 선택해 주세요.')); setBusy(true); try { const pipeline = await platformApi.createPipeline({ ownerUserId: activeUserId, pipelineName: name, description, pipelineType: type }); if (type === 'CUSTOM_JAR' && file) { try { await platformApi.uploadCustomJar(pipeline.pipelineId, file, { userId: activeUserId, entryClass, inputTopicIds: inputId ? [inputId] : [], outputTopicIds: outputId ? [outputId] : [], parallelism, programArgs: parseArgs(args) }); success('Pipeline과 Custom JAR를 등록했습니다.'); } catch (e) { fail(new Error(`Pipeline #${pipeline.pipelineId} 생성 후 JAR 등록에 실패했습니다: ${messageOf(e)}`)); await done(pipeline.pipelineId); return; } } else success('AI_SQL Pipeline 메타데이터를 생성했습니다. 자연어 생성 API는 아직 미구현입니다.'); await done(pipeline.pipelineId); } catch (e) { fail(e); } finally { setBusy(false); } }
-  return <><div className="welcome-row"><div><h2>새 Pipeline 등록</h2><p>현재 구현된 백엔드 API 범위로 등록합니다.</p></div></div><form className="panel connected-create" onSubmit={submit}><div className="type-tabs"><button type="button" className={type === 'CUSTOM_JAR' ? 'active' : ''} onClick={() => setType('CUSTOM_JAR')}><b>Custom JAR</b><span>직접 빌드한 Flink Job 등록</span></button><button type="button" className={type === 'AI_SQL' ? 'active' : ''} onClick={() => setType('AI_SQL')}><b>AI SQL</b><span>자연어 기반 SQL Pipeline</span></button></div><div className="connected-form"><Field label="Pipeline 이름"><input required value={name} onChange={(e) => setName(e.target.value)} /></Field><Field label="설명"><input value={description} onChange={(e) => setDescription(e.target.value)} /></Field>{type === 'CUSTOM_JAR' ? <><Field label="JAR 파일" wide><input required type="file" accept=".jar,application/java-archive" onChange={(e) => setFile(e.target.files?.[0] || null)} /></Field><Field label="Entry Class"><input required value={entryClass} onChange={(e) => setEntryClass(e.target.value)} placeholder="com.example.StreamJob" /></Field><Field label="Parallelism"><input type="number" min="1" value={parallelism} onChange={(e) => setParallelism(Number(e.target.value))} /></Field><Field label="Input Topic"><select value={inputId} onChange={(e) => setInputId(Number(e.target.value))}><option value="0">선택 안 함</option>{topics.map((t) => <option key={t.topicId} value={t.topicId}>{t.topicName}</option>)}</select></Field><Field label="Output Topic"><select value={outputId} onChange={(e) => setOutputId(Number(e.target.value))}><option value="0">선택 안 함</option>{topics.map((t) => <option key={t.topicId} value={t.topicId}>{t.topicName}</option>)}</select></Field><Field label="Program Arguments" wide hint="한 줄에 key=value 형식"><textarea rows={5} value={args} onChange={(e) => setArgs(e.target.value)} /></Field></> : <Field label="자연어 요청" wide hint="생성 API 미구현: 현재 값은 서버로 전송되지 않습니다."><textarea rows={7} value={request} onChange={(e) => setRequest(e.target.value)} placeholder="orders Topic에서 5분 단위 주문 금액을 집계해줘" /></Field>}</div><div className="connected-actions"><button className="primary-button compact" disabled={busy}>{busy ? '등록 중…' : type === 'CUSTOM_JAR' ? 'Pipeline 및 JAR 등록' : 'Pipeline 기본 정보 생성'}</button></div></form></>;
+  const [type, setType] = useState<PipelineType>('CUSTOM_JAR');
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [entryClass, setEntryClass] = useState('');
+  const [inputId, setInputId] = useState(0);
+  const [outputId, setOutputId] = useState(0);
+  const [parallelism, setParallelism] = useState(1);
+  const [args, setArgs] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!file) return fail(new Error('JAR 파일을 선택해 주세요.'));
+    setBusy(true);
+    try {
+      const pipeline = await platformApi.createPipeline({
+        ownerUserId: activeUserId, pipelineName: name, description, pipelineType: 'CUSTOM_JAR',
+      });
+      try {
+        await platformApi.uploadCustomJar(pipeline.pipelineId, file, {
+          userId: activeUserId, entryClass,
+          inputTopicIds: inputId ? [inputId] : [], outputTopicIds: outputId ? [outputId] : [],
+          parallelism, programArgs: parseArgs(args),
+        });
+        success('Pipeline과 Custom JAR를 등록했습니다.');
+      } catch (error) {
+        fail(new Error(`Pipeline #${pipeline.pipelineId} 생성 후 JAR 등록에 실패했습니다: ${messageOf(error)}`));
+        await done(pipeline.pipelineId);
+        return;
+      }
+      await done(pipeline.pipelineId);
+    } catch (error) { fail(error); }
+    finally { setBusy(false); }
+  }
+
+  return <>
+    <div className="welcome-row"><div><h2>새 Pipeline 등록</h2><p>데이터와 처리 방식을 선택하고 Pipeline을 구성하세요.</p></div></div>
+    <div className="panel pipeline-type-picker"><div className="type-tabs" aria-label="Pipeline 유형">
+      <button type="button" aria-pressed={type === 'CUSTOM_JAR'} className={type === 'CUSTOM_JAR' ? 'active' : ''} onClick={() => setType('CUSTOM_JAR')} disabled={busy}><b>Custom JAR</b><span>직접 빌드한 Flink Job 등록</span></button>
+      <button type="button" aria-pressed={type === 'AI_SQL'} className={type === 'AI_SQL' ? 'active' : ''} onClick={() => setType('AI_SQL')} disabled={busy}><b>AI SQL</b><span>자연어로 분석을 요청하고 SQL 검토</span></button>
+    </div></div>
+    {type === 'AI_SQL'
+      ? <AiSqlRegistration topics={topics} userId={activeUserId} onCreated={done} notify={success} />
+      : <form className="panel connected-create" onSubmit={submit}>
+        <div className="connected-form">
+          <Field label="Pipeline 이름"><input required value={name} onChange={(e) => setName(e.target.value)} /></Field>
+          <Field label="설명"><input value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
+          <Field label="JAR 파일" wide><input required type="file" accept=".jar,application/java-archive" onChange={(e) => setFile(e.target.files?.[0] || null)} /></Field>
+          <Field label="Entry Class"><input required value={entryClass} onChange={(e) => setEntryClass(e.target.value)} placeholder="com.example.StreamJob" /></Field>
+          <Field label="Parallelism"><input type="number" min="1" value={parallelism} onChange={(e) => setParallelism(Number(e.target.value))} /></Field>
+          <Field label="Input Topic"><select value={inputId} onChange={(e) => setInputId(Number(e.target.value))}><option value="0">선택 안 함</option>{topics.map((topic) => <option key={topic.topicId} value={topic.topicId}>{topic.topicName}</option>)}</select></Field>
+          <Field label="Output Topic"><select value={outputId} onChange={(e) => setOutputId(Number(e.target.value))}><option value="0">선택 안 함</option>{topics.map((topic) => <option key={topic.topicId} value={topic.topicId}>{topic.topicName}</option>)}</select></Field>
+          <Field label="Program Arguments" wide hint="한 줄에 key=value 형식"><textarea rows={5} value={args} onChange={(e) => setArgs(e.target.value)} /></Field>
+        </div>
+        <div className="connected-actions"><button className="primary-button compact" disabled={busy}>{busy ? '등록 중…' : 'Pipeline 및 JAR 등록'}</button></div>
+      </form>}
+  </>;
 }
 
 function PipelineDetail({ id, success, fail, refreshList }: { id: number; success: (m: string) => void; fail: (e: unknown) => void; refreshList: () => Promise<void> }) {
