@@ -7,20 +7,8 @@ export type AiSqlInput = {
   pipelineName: string;
   description: string;
   pipelineType: 'AI_SQL';
-  inputTopicIds: number[];
+  inputTopicId: number;
   naturalLanguageRequest: string;
-  timeConfig: {
-    mode: 'EVENT_TIME' | 'PROCESSING_TIME';
-    eventTimeFields: Array<{ topicId: number; field: string }>;
-    watermarkDelaySeconds: number;
-    timezone: string;
-  };
-  sinkConfig: {
-    sinkType: 'POSTGRESQL';
-    tableNaming: 'AUTO' | 'CUSTOM';
-    tableName: string | null;
-  };
-  executionConfig: { startupMode: 'LATEST' | 'EARLIEST'; parallelism: number };
 };
 
 export type AiSqlPreview = {
