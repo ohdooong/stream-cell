@@ -3,44 +3,33 @@ import test from 'node:test';
 import { build } from 'esbuild';
 
 const result = await build({ entryPoints: ['src/pipelines/aiSqlForm.ts'], bundle: true, platform: 'node', format: 'esm', write: false });
-const { initialAiSqlDraft, toAiSqlInput, validateAiSqlInput, schemaFields, isAiSqlPreview } = await import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString('base64')}`);
-const topic = { topicId: 10, topicName: 'orders', schemaJson: JSON.stringify({ properties: { eventTime: { type: 'string' }, amount: { type: 'number' } } }), timeField: 'eventTime' };
-const draft = { ...initialAiSqlDraft, name: '  주문 집계  ', topicId: 10, request: '  5분마다 합계  ', timeFields: { 10: 'eventTime', 99: 'deletedField' } };
+const { initialAiSqlDraft, toAiSqlInput, validateAiSqlInput, isAiSqlPreview } = await import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString('base64')}`);
+const topic = { topicId: 10, topicName: 'orders', schemaJson: JSON.stringify({ properties: { eventTime: { type: 'string' }, amount: { type: 'number' } } }) };
+const draft = { ...initialAiSqlDraft, name: '  주문 집계  ', description: '  상품별 집계  ', topicId: 10, request: '  5분마다 합계  ' };
 
-test('request keeps the current owner and only selected Topic settings', () => {
+test('request keeps the current owner and exactly one selected Topic', () => {
   const input = toAiSqlInput(draft, 7);
   assert.equal(input.ownerUserId, 7);
   assert.equal(input.pipelineName, '주문 집계');
+  assert.equal(input.description, '상품별 집계');
   assert.equal(input.naturalLanguageRequest, '5분마다 합계');
-  assert.deepEqual(input.inputTopicIds, [10]);
-  assert.deepEqual(input.timeConfig.eventTimeFields, [{ topicId: 10, field: 'eventTime' }]);
+  assert.equal(input.inputTopicId, 10);
+  assert.deepEqual(Object.keys(input).sort(), [
+    'description', 'inputTopicId', 'naturalLanguageRequest', 'ownerUserId',
+    'pipelineName', 'pipelineType',
+  ]);
   assert.deepEqual(validateAiSqlInput(input, { 10: topic }), []);
 });
 
-test('processing time and automatic tables omit stale hidden values', () => {
-  const input = toAiSqlInput({ ...draft, timeMode: 'PROCESSING_TIME', tableName: 'stale_name', watermarkSeconds: NaN }, 1);
-  assert.deepEqual(input.timeConfig.eventTimeFields, []);
-  assert.equal(input.timeConfig.watermarkDelaySeconds, 0);
-  assert.equal(input.sinkConfig.tableName, null);
-  assert.deepEqual(validateAiSqlInput(input, { 10: topic }), []);
-});
-
-test('generation requires the selected Topic Schema and its event-time field', () => {
-  const input = toAiSqlInput({ ...draft, timeFields: { 10: 'notAField' } }, 1);
-  const errors = validateAiSqlInput(input, { 10: topic });
-  assert.ok(errors.some((error) => error.includes('notAField')));
-  assert.ok(validateAiSqlInput(input, {}).some((error) => error.includes('#10')));
-  assert.ok(validateAiSqlInput(toAiSqlInput(draft, 1), { 10: { ...topic, schemaJson: '' } }).some((error) => error.includes('Schema')));
-});
-
-test('the API contract rejects multiple input Topics even when bypassing the form', () => {
+test('generation requires the selected Topic detail and Schema', () => {
   const input = toAiSqlInput(draft, 1);
-  assert.ok(validateAiSqlInput({ ...input, inputTopicIds: [10, 11] }, { 10: topic, 11: topic }).some((error) => error.includes('하나만')));
+  assert.ok(validateAiSqlInput(input, {}).some((error) => error.includes('#10')));
+  assert.ok(validateAiSqlInput(input, { 10: { ...topic, schemaJson: '' } }).some((error) => error.includes('Schema')));
 });
 
-test('invalid numeric settings, timezone, and table names are rejected', () => {
-  const errors = validateAiSqlInput(toAiSqlInput({ ...draft, parallelism: 1.5, watermarkSeconds: -1, timezone: 'invalid/zone', tableNaming: 'CUSTOM', tableName: 'public.orders; DROP TABLE orders' }, 1), { 10: topic });
-  assert.equal(errors.length, 4);
+test('the API contract rejects an invalid Topic value even when bypassing the form', () => {
+  const input = toAiSqlInput(draft, 1);
+  assert.ok(validateAiSqlInput({ ...input, inputTopicId: [10, 11] }, { 10: topic }).some((error) => error.includes('하나')));
 });
 
 test('missing basic inputs prevent creation', () => {
@@ -48,10 +37,11 @@ test('missing basic inputs prevent creation', () => {
   assert.equal(errors.length, 4);
 });
 
-test('schema hints accept JSON Schema and Avro; unknown formats do not crash', () => {
-  assert.deepEqual(schemaFields(topic.schemaJson), ['eventTime', 'amount']);
-  assert.deepEqual(schemaFields('{"fields":[{"name":"createdAt"},{}]}'), ['createdAt']);
-  assert.deepEqual(schemaFields('not-json'), []);
+test('field length limits are enforced', () => {
+  const input = toAiSqlInput({ ...draft, description: 'a'.repeat(1001), request: 'b'.repeat(4001) }, 1);
+  const errors = validateAiSqlInput(input, { 10: topic });
+  assert.ok(errors.some((error) => error.includes('1,000')));
+  assert.ok(errors.some((error) => error.includes('4,000')));
 });
 
 test('malformed preview responses cannot be treated as reviewed SQL', () => {

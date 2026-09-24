@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { aiSqlApi, type AiSqlPreview } from '../api/aiSql';
 import { ApiError } from '../api/client';
 import { platformApi, type Topic } from '../api/platform';
-import { initialAiSqlDraft, isAiSqlPreview, schemaFields, toAiSqlInput, validateAiSqlInput, type AiSqlDraft } from './aiSqlForm';
+import { initialAiSqlDraft, isAiSqlPreview, toAiSqlInput, validateAiSqlInput, type AiSqlDraft } from './aiSqlForm';
 import './aiSql.css';
 
 type Props = {
@@ -76,9 +76,6 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
       const topic = await platformApi.getTopic(id);
       if (topicSequence.current[id] !== sequence) return;
       setDetails((current) => ({ ...current, [id]: topic }));
-      setDraft((current) => current.topicId === id ? ({ ...current, timeFields: {
-        ...current.timeFields, [id]: current.timeFields[id] ?? topic.timeField ?? '',
-      } }) : current);
     } catch (error) {
       if (topicSequence.current[id] === sequence) setTopicErrors((current) => ({ ...current, [id]: errorMessage(error) }));
     } finally {
@@ -88,7 +85,7 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
 
   function selectTopic(id: number) {
     if (draft.topicId === id) return;
-    update({ topicId: id, timeFields: {} });
+    update({ topicId: id });
     void loadTopic(id);
   }
 
@@ -164,7 +161,6 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
             : !topicLoading[id] && details[id] && <>
               {details[id].schemaJson ? <details><summary>Schema 확인 <span>읽기 전용</span></summary><pre>{formatSchema(details[id].schemaJson!)}</pre></details>
                 : <p className="ai-inline-warning">Schema가 없습니다. Topic 관리에서 Schema를 등록해 주세요.</p>}
-              <small>등록된 Event Time: {details[id].timeField || '미설정'}</small>
             </>}
         </div>)}
       </section>
@@ -175,27 +171,6 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
         <p className="ai-help">생성된 Plan에서 해석된 조건을 확인할 수 있습니다. 수정이 필요하면 요청을 바꾸고 다시 생성하세요.</p>
       </section>
 
-      <section className="panel ai-section">
-        <header><span>03</span><div><h3>시간 기준 · 결과 저장</h3><p>시간을 계산하는 기준과 집계 결과의 저장 위치입니다.</p></div></header>
-        <div className="ai-grid">
-          <label>시간 기준<select value={draft.timeMode} onChange={(e) => update({ timeMode: e.target.value as AiSqlDraft['timeMode'] })}><option value="EVENT_TIME">Event Time · 이벤트 발생 시간</option><option value="PROCESSING_TIME">Processing Time · 처리 시간</option></select><small>Event Time을 선택하면 Topic별 시간 필드를 사용합니다.</small></label>
-          <label>결과 저장소<input value="관리형 PostgreSQL" readOnly /><small>플랫폼에 설정된 결과 저장소를 사용합니다.</small></label>
-          {draft.timeMode === 'EVENT_TIME' && draft.topicId !== null && <label>{topics.find((topic) => topic.topicId === draft.topicId)?.topicName} · Event Time 필드
-            <input value={draft.timeFields[draft.topicId] || ''} list="ai-time-fields" onChange={(e) => update({ timeFields: { ...draft.timeFields, [draft.topicId!]: e.target.value } })} placeholder="eventTime" required />
-            <datalist id="ai-time-fields">{schemaFields(details[draft.topicId]?.schemaJson).map((field) => <option key={field} value={field} />)}</datalist>
-            <small>Topic 설정을 기본값으로 사용합니다. 변경은 이 Pipeline에만 적용됩니다.</small>
-          </label>}
-          <label>결과 테이블<select value={draft.tableNaming} onChange={(e) => update({ tableNaming: e.target.value as AiSqlDraft['tableNaming'] })}><option value="AUTO">자동 생성</option><option value="CUSTOM">테이블명 직접 지정</option></select><small>자동 생성 시 Pipeline 전용 테이블을 만듭니다.</small></label>
-          {draft.tableNaming === 'CUSTOM' && <label>테이블명<input value={draft.tableName} maxLength={63} onChange={(e) => update({ tableName: e.target.value })} placeholder="order_summary_5min" /><small>소문자·숫자·밑줄 사용, 첫 글자는 소문자</small></label>}
-        </div>
-      </section>
-
-      <details className="panel ai-advanced"><summary>고급 실행 설정 <span>읽기 시작점 · 병렬도 · 시간대</span></summary><div className="ai-grid">
-        <label>데이터 읽기 시작점<select value={draft.startupMode} onChange={(e) => update({ startupMode: e.target.value as AiSqlDraft['startupMode'] })}><option value="LATEST">새 데이터부터</option><option value="EARLIEST">보관 중인 가장 오래된 데이터부터</option></select><small>최초 실행에 적용됩니다. 재시작 복구는 저장된 상태를 따릅니다.</small></label>
-        <label>병렬도 (Parallelism)<input type="number" min={1} step={1} value={Number.isNaN(draft.parallelism) ? '' : draft.parallelism} onChange={(e) => update({ parallelism: e.target.valueAsNumber })} /></label>
-        <label>시간대<input value={draft.timezone} onChange={(e) => update({ timezone: e.target.value })} placeholder="Asia/Seoul" /></label>
-        {draft.timeMode === 'EVENT_TIME' && <label>Watermark 지연 (초)<input type="number" min={0} step={1} value={Number.isNaN(draft.watermarkSeconds) ? '' : draft.watermarkSeconds} onChange={(e) => update({ watermarkSeconds: e.target.valueAsNumber })} /><small>이벤트 순서가 뒤바뀌는 지연을 고려하는 설정입니다.</small></label>}
-      </div></details>
     </fieldset>
 
     {errors.length > 0 && <div className="ai-errors" role="alert"><strong>입력 및 연결 상태를 확인해 주세요.</strong><ul>{errors.map((error, index) => <li key={index}>{error}</li>)}</ul></div>}
