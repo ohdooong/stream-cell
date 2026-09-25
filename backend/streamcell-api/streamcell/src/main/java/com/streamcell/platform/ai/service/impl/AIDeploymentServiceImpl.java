@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
-import com.streamcell.platform.ai.domain.policy.FlinkSQLPolicy;
+import com.streamcell.platform.ai.client.AIClient;
 import com.streamcell.platform.flink.client.FlinkRestClient;
 import com.streamcell.platform.flink.client.FlinkSQLGatewayClient;
 import com.streamcell.platform.ai.converter.AIConverter;
@@ -32,7 +32,7 @@ import com.streamcell.platform.flink.dto.FlinkSQLGatewayResponse.FetchResult;
 import com.streamcell.platform.ai.dto.PipelinePlan;
 import com.streamcell.platform.ai.dto.PipelineResultTable;
 import com.streamcell.platform.ai.enums.ResultType;
-import com.streamcell.platform.ai.service.AIService;
+import com.streamcell.platform.ai.service.AIDeploymentService;
 import com.streamcell.platform.flink.dto.FlinkSQLGatewayResponse.FetchStatus;
 import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.flink.enums.OperationStatus;
@@ -53,7 +53,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class AIServiceImpl implements AIService {
+public class AIDeploymentServiceImpl implements AIDeploymentService {
 
     private final AIConverter aiConverter;
     private final PipelinePlanValidationContextResolver pipelinePlanValidationContextResolver;
@@ -64,6 +64,7 @@ public class AIServiceImpl implements AIService {
 
     private final PipelineResultTableManager pipelineResultTableManager;
 
+    private final AIClient aiClient;
     private final FlinkSQLGatewayClient flinkSQLGatewayClient;
     private final FlinkRestClient flinkRestClient;
 
@@ -71,7 +72,6 @@ public class AIServiceImpl implements AIService {
 
     private final PipelineDeploymentService pipelineDeploymentService;
 
-    @Override
     public void requestPipelinePlan() {
         PipelinePlanValidationContext validationContext =
             validateForPipelinePlan(new PipelinePlan());
@@ -85,7 +85,6 @@ public class AIServiceImpl implements AIService {
                 = aiConverter.toKafkaSourceDDLGenerationContext(validationContext);
 
         String generate1 = kafkaSourceDDLGenerator.generate(kafkaSourceDDLGenerationContext);
-
     }
 
     @Override

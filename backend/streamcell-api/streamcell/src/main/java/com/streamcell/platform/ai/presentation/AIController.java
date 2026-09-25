@@ -2,8 +2,8 @@ package com.streamcell.platform.ai.presentation;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.streamcell.global._common.dto.BaseResponse;
+import com.streamcell.platform.ai.service.AIDeploymentService;
 import com.streamcell.platform.flink.client.FlinkSQLGatewayClient;
-import com.streamcell.platform.ai.service.AIService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,10 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AIController {
 
     private final FlinkSQLGatewayClient flinkSQLGatewayClient;
-    private final AIService aiService;
+    private final AIDeploymentService aiDeploymentService;
 
     @PostMapping("/session")
     public ResponseEntity<BaseResponse<?>> getClusterOverview() throws JsonProcessingException {
-        return ResponseEntity.ok(BaseResponse.success(aiService.flinkSqlGatewayTest()));
+        return ResponseEntity.ok(BaseResponse.success(aiDeploymentService.flinkSqlGatewayTest()));
     }
+
 }
