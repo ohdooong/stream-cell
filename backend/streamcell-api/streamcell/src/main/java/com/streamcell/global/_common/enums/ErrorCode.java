@@ -52,7 +52,7 @@ public enum ErrorCode {
     NOT_SUPPORTED_DATA_TYPE(HttpStatus.NOT_IMPLEMENTED, "지원하지 않는 데이터 타입입니다."),
 
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
-    BAD_REQUEST_NOT_CUSTOM_JAR_TYPE(HttpStatus.BAD_REQUEST, "Pipeline Type CUSTOM_JAR가 아닙니다."),
+    BAD_REQUEST_NOT_CUSTOM_JAR_TYPE(HttpStatus.BAD_REQUEST, "PipelineType이 CUSTOM_JAR가 아닙니다."),
     BAD_REQUEST_NOT_UPLOADED_CUSTOM_JAR(HttpStatus.BAD_REQUEST, "Custom Jar파일이 업로드 되지 않았습니다."),
 
     FAILED_FLINK_DEPLOY(HttpStatus.BAD_REQUEST, "Flink 배포에 실패했습니다."),
