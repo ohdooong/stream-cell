@@ -1,14 +1,14 @@
 package com.streamcell.platform.ai.domain.generator;
 
 import com.streamcell.platform.ai.domain.context.FlinkSQLGenerationContext;
+import com.streamcell.platform.ai.domain.enums.FilterOperator;
+import com.streamcell.platform.ai.domain.enums.WindowType;
+import com.streamcell.platform.ai.domain.enums.WindowUnit;
 import com.streamcell.platform.ai.domain.policy.FlinkSQLPolicy;
 import com.streamcell.platform.ai.domain.spec.AggregationSpec;
 import com.streamcell.platform.ai.domain.spec.FilterSpec;
 import com.streamcell.platform.ai.domain.spec.WindowSpec;
 import com.streamcell.platform.ai.dto.PipelinePlan;
-import com.streamcell.platform.ai.enums.FilterOperator;
-import com.streamcell.platform.ai.enums.WindowType;
-import com.streamcell.platform.ai.enums.WindowUnit;
 import com.streamcell.platform.pipeline.vo.Pipeline;
 import com.streamcell.platform.topic.vo.Topic;
 import java.util.ArrayList;
