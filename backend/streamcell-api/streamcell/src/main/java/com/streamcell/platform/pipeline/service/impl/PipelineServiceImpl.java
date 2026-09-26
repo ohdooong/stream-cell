@@ -14,6 +14,7 @@ import com.streamcell.platform.pipeline.converter.PipelineConverter;
 import com.streamcell.platform.pipeline.domain.JobStatusConvertPolicy;
 import com.streamcell.platform.pipeline.dto.PipelineResponse.PipelineStatus.Failure;
 import com.streamcell.platform.pipeline.enums.DeploymentStatus;
+import com.streamcell.platform.pipeline.enums.PipelineType;
 import com.streamcell.platform.pipeline.service.PipelineDeploymentService;
 import com.streamcell.platform.pipeline.validator.PipelineValidator;
 import com.streamcell.platform.pipeline.dto.PipelineRequest;
@@ -27,6 +28,8 @@ import com.streamcell.platform.pipeline.vo.Pipeline;
 import com.streamcell.platform.pipeline.vo.PipelineArtifact;
 import com.streamcell.platform.pipeline.vo.PipelineDeployment;
 import java.util.Optional;
+
+import com.streamcell.platform.topic.service.TopicService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -44,8 +47,11 @@ public class PipelineServiceImpl implements PipelineService {
     private final PipelineRepository repository;
     private final UserLookupPort userLookupPort;
     private final FileService fileService;
+    private final TopicService topicService;
 
     private final JobStatusConvertPolicy jobStatusConvertPolicy;
+
+    private final PipelineConverter pipelineConverter;
 
     private final FlinkRestClient flinkRestClient;
 
@@ -57,9 +63,45 @@ public class PipelineServiceImpl implements PipelineService {
         // 사용자 검증
         validateUser(createItem.getOwnerUserId());
 
-        Pipeline pipeline = PipelineConverter.toVO(createItem);
+        Pipeline pipeline = pipelineConverter.toVO(createItem);
         repository.insert(pipeline);
-        return PipelineConverter.toDTO(pipeline);
+        return pipelineConverter.toDTO(pipeline);
+    }
+
+    @Override
+    public PipelineResponse.Pipeline createAISqlConfig(Long pipelineId, PipelineRequest.CreateAISqlConfig createAISqlConfig) {
+
+        // 파이프라인 id 검증
+        Pipeline pipeline = repository.findPipelineByPipelineId(pipelineId)
+                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
+
+        if (PipelineType.AI_SQL != pipeline.getPipelineType()) {
+            throw new BaseAPIException(ErrorCode.INVALID_AI_SQL_REQUEST);
+        }
+
+        // user 토픽권한 검증
+        Long userId = createAISqlConfig.getUserId();
+        Long ownerUserId = pipeline.getOwnerUserId();
+
+        if (!userId.equals(ownerUserId)) {
+            throw new BaseAPIException(ErrorCode.FORBIDDEN_PIPELINE);
+        }
+
+        Long inputTopicId = createAISqlConfig.getInputTopicId();
+
+        topicService.getPermissionsOfTopicByUserId(userId)
+                .stream()
+                .filter(permission -> inputTopicId.equals(permission.getTopicId()))
+                .findFirst()
+                .orElseThrow(() -> new BaseAPIException(ErrorCode.FORBIDDEN_TOPICS));
+
+        // pipeline AI SQL정보 update
+        String naturalLanguageRequest = createAISqlConfig.getNaturalLanguageRequest();
+        pipeline.setNaturalLanguageRequest(naturalLanguageRequest);
+
+        repository.updateAISqlPipeline(pipeline);
+
+        return pipelineConverter.toDTO(pipeline);
     }
 
 
@@ -69,15 +111,15 @@ public class PipelineServiceImpl implements PipelineService {
         // 사용자 검증
         validateUser(updateItem.getOwnerUserId());
 
-        Pipeline pipeline = PipelineConverter.toVO(updateItem);
+        Pipeline pipeline = pipelineConverter.toVO(updateItem);
         repository.update(pipeline);
-        return PipelineConverter.toDTO(pipeline);
+        return pipelineConverter.toDTO(pipeline);
     }
 
     @Override
     public PipelineResponse.Pipeline findPipelineByPipelineId(Long pipelineId) {
         return repository.findPipelineByPipelineId(pipelineId)
-                .map(PipelineConverter::toDTO)
+                .map(pipelineConverter::toDTO)
                 .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
     }
 
@@ -105,7 +147,7 @@ public class PipelineServiceImpl implements PipelineService {
                     throw new BaseAPIException(ErrorCode.CONFLICT_CUSTOM_JOB_CONFIG);
                 });
 
-        CustomJobConfig customJobConfig = PipelineConverter.toVO(createCustomJobConfig, pipelineId);
+        CustomJobConfig customJobConfig = pipelineConverter.toVO(createCustomJobConfig, pipelineId);
 
         // customJobConfig 유효성검증
         PipelineValidator<CustomJobConfig, Void> customJobConfigValidator =
@@ -128,7 +170,7 @@ public class PipelineServiceImpl implements PipelineService {
                 .pipelineStatus(PipelineStatus.ARTIFACT_UPLOADED)
                 .build());
 
-        return PipelineConverter.toDTO(artifact);
+        return pipelineConverter.toDTO(artifact);
     }
 
     @Override

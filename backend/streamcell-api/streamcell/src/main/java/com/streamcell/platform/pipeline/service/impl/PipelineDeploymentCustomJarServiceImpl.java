@@ -7,7 +7,6 @@ import com.streamcell.platform.flink.client.FlinkRestClient;
 import com.streamcell.platform.flink.dto.FlinkResponse;
 import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.flink.util.FlinkUtils;
-import com.streamcell.platform.pipeline.converter.PipelineConverter;
 import com.streamcell.platform.pipeline.converter.PipelineDeploymentConverter;
 import com.streamcell.platform.pipeline.domain.DeploymentStatusPolicy;
 import com.streamcell.platform.pipeline.domain.JobStatusConvertPolicy;
@@ -33,10 +32,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-@Service
+@Service("pipelineDeploymentCustomJarService")
 @RequiredArgsConstructor
 @Slf4j
-public class PipelineDeploymentServiceImpl implements PipelineDeploymentService {
+public class PipelineDeploymentCustomJarServiceImpl implements PipelineDeploymentService {
 
     private final PipelineRepository repository;
     private final FlinkJarClient flinkJarClient;
@@ -134,20 +133,6 @@ public class PipelineDeploymentServiceImpl implements PipelineDeploymentService 
     }
 
     @Override
-    public Deployment createPipelineDeployment(Create create) {
-
-        PipelineDeployment pipelineDeployment = converter.toVo(create);
-
-        repository.insertPipelineDeployment(pipelineDeployment);
-
-        return Deployment.builder()
-            .deploymentId(pipelineDeployment.getDeploymentId())
-            .pipelineId(pipelineDeployment.getPipelineId())
-            .flinkJobId(pipelineDeployment.getFlinkJobId())
-            .status(pipelineDeployment.getStatus()).build();
-    }
-
-    @Override
     @Transactional(rollbackFor = Exception.class)
     public PipelineResponse.StopPipeline cancelPipelineFlinkJob(Long pipelineId) {
 
@@ -184,6 +169,32 @@ public class PipelineDeploymentServiceImpl implements PipelineDeploymentService 
                 .flinkJobId(pipelineDeployment.getFlinkJobId())
                 .pipelineStatus(PipelineStatus.STOPPING)
                 .build();
+    }
+
+    /**********  Getter  *********/
+    @Override
+    public PipelineRepository getPipelineRepository() {
+        return this.repository;
+    }
+
+    @Override
+    public PipelineDeploymentConverter getPipelineDeploymentConverter() {
+        return this.converter;
+    }
+
+    @Override
+    public FlinkRestClient getFlinkRestClient() {
+        return this.flinkRestClient;
+    }
+
+    @Override
+    public JobStatusConvertPolicy getJobStatusConvertPolicy() {
+        return this.jobStatusConvertPolicy;
+    }
+
+    @Override
+    public DeploymentStatusPolicy getDeploymentStatusPolicy() {
+        return this.deploymentStatusPolicy;
     }
 
     private PipelineValidator<Pipeline, PipelineArtifact> getPipelineDeploymentValidator() {

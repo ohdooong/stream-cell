@@ -13,6 +13,8 @@ public interface PipelineService {
      */
     PipelineResponse.Pipeline create(PipelineRequest.Create createItem);
 
+    PipelineResponse.Pipeline createAISqlConfig(Long pipelineId, PipelineRequest.CreateAISqlConfig createAISqlConfig);
+
     /**
      * 파이프라인 update
      * @param updateItem

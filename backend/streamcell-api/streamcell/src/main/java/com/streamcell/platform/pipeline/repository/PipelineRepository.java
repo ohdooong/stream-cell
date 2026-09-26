@@ -49,6 +49,8 @@ public interface PipelineRepository {
                pipeline_name = #{pipelineName}
              , description = #{description}
              , pipeline_type = #{pipelineType}
+             , natural_language_request = #{naturalLanguageRequest}
+             , pipeline_plan_json = #{pipelinePlanJson}
              , updated_by = 'ADMIN'
              , updated_at = now()
         where pipeline_id = #{pipelineId}
@@ -64,6 +66,17 @@ public interface PipelineRepository {
         where pipeline_id = #{pipelineId}
     """)
     int updatePipelineStatus(Pipeline pipeline);
+
+    @Update("""
+        update platform.pipeline
+           set 
+               natural_language_request = #{naturalLanguageRequest}
+             , pipeline_plan_json = #{pipelinePlanJson}
+             , updated_by = 'ADMIN'
+             , updated_at = now()
+        where pipeline_id = #{pipelineId}
+    """)
+    int updateAISqlPipeline(Pipeline pipeline);
 
     @Select("""
          select
