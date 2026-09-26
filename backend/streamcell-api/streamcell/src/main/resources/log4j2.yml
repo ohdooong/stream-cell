@@ -44,5 +44,9 @@ Config:
               level: "OFF"
             - name: jdbc.audit
               level: "OFF"
+            - name: jdbc.resultset
+              level: "OFF"
+            - name: jdbc.connection
+              level: WARN
             - name: com.zaxxer.hikari
               level: INFO
