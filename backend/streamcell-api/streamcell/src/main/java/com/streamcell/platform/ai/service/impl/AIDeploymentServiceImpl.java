@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.platform.ai.client.AIClient;
+import com.streamcell.platform.ai.dto.AIDeploymentResponse;
 import com.streamcell.platform.flink.client.FlinkRestClient;
 import com.streamcell.platform.flink.client.FlinkSQLGatewayClient;
 import com.streamcell.platform.ai.converter.AIConverter;
@@ -70,11 +71,11 @@ public class AIDeploymentServiceImpl implements AIDeploymentService {
 
     private final JobStatusConvertPolicy jobStatusConvertPolicy;
 
-    private final PipelineDeploymentService pipelineDeploymentService;
+    private final JsonMapper jsonMapper = new JsonMapper();
 
     public void requestPipelinePlan() {
         PipelinePlanValidationContext validationContext =
-            validateForPipelinePlan(new PipelinePlan());
+            validateForPipelinePlan(1L, new PipelinePlan());
 
         FlinkSQLGenerationContext generationContext =
             aiConverter.toGenerationContext(validationContext);
@@ -87,9 +88,81 @@ public class AIDeploymentServiceImpl implements AIDeploymentService {
         String generate1 = kafkaSourceDDLGenerator.generate(kafkaSourceDDLGenerationContext);
     }
 
-    @Override
     public PipelineResponse.Deployment flinkSqlGatewayTest() throws JsonProcessingException {
-        JsonMapper jsonMapper = new JsonMapper();
+        PipelinePlan pipelinePlan = getPipelinePlanByPipelineId(1L).getPipelinePlan();
+
+        PipelinePlanValidationContext pipelinePlanValidationContext
+                = pipelinePlanValidationContextResolver.resolve(1L, 1L, pipelinePlan);
+        // kafka source ddl generate
+        KafkaSourceDDLGenerationContext kafkaSourceDDLGenerationContext =
+                aiConverter.toKafkaSourceDDLGenerationContext(pipelinePlanValidationContext);
+        String generatedSql = kafkaSourceDDLGenerator.generate(kafkaSourceDDLGenerationContext);
+
+        // flinkSQL 세션 생성
+        FlinkSQLGatewayResponse.CreateSession session = flinkSQLGatewayClient.createSession();
+        // kafka source 생성
+        FlinkSQLGatewayResponse.CreateSource source = flinkSQLGatewayClient.createSource(
+            session.getSessionHandle(),
+            FlinkSQLGatewayRequest.CreateSource.from(generatedSql));
+
+        // sink sql generation context 변환
+        PostgreSQLSinkDDLGenerationContext postgreSQLGenerationContext =
+                aiConverter.toPostgreSQLGenerationContext(pipelinePlanValidationContext);
+        // sink sql generate
+        String generatedSinkSql = postgreSQLSinkDDLGenerator.generate(postgreSQLGenerationContext);
+        // sink 생성
+        FlinkSQLGatewayResponse.CreateSink sink = flinkSQLGatewayClient.createSink(
+            session.getSessionHandle(),
+            FlinkSQLGatewayRequest.CreateSink.from(generatedSinkSql));
+
+        // 실제 결과 result 테이블 생성
+        PipelineResultTable.Response table =
+            pipelineResultTableManager.createTable(postgreSQLGenerationContext);
+        log.info("created table name: {}", table.getCreatedTableName());
+
+        // flink sql 생성 후 배포
+        FlinkSQLGenerationContext flinkSQLGenerationContext
+                = aiConverter.toGenerationContext(pipelinePlanValidationContext);
+        String generatedFlinkSql = flinkSQLGenerator.generate(flinkSQLGenerationContext);
+        FlinkSQLGatewayResponse.SubmitSQL submitSQL =
+                flinkSQLGatewayClient.submitSQL(
+                    session.getSessionHandle(),
+                    FlinkSQLGatewayRequest.SubmitSQL.from(generatedFlinkSql));
+
+        // 배포한 sql job 상태가져온 후 pipeline deployment 생성
+        FetchResult fetchResult = flinkSQLGatewayClient.fetchResult(
+            session.getSessionHandle(),
+            submitSQL.getOperationHandle());
+
+        fetchResult = checkResultStatusUntilPayloadAndGet(fetchResult, session.getSessionHandle(),
+            submitSQL.getOperationHandle());
+
+        String flinkJobId = Optional.ofNullable(fetchResult.getJobId())
+                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_FLINK_JOB_ID));
+
+        FlinkJobStatus jobStatus = flinkRestClient.getJobStatus(flinkJobId);
+        DeploymentStatus deploymentStatus = jobStatusConvertPolicy.convertToDeploymentStatusFrom(jobStatus);
+        PipelineDeploymentRequest.Create create = PipelineDeploymentRequest.Create
+            .builder()
+            .pipelineId(1L)
+            .deploymentType(PipelineType.AI_SQL)
+            .flinkJobId(flinkJobId)
+            .status(deploymentStatus)
+            .startedAt(LocalDateTime.now())
+            .lastCheckedAt(LocalDateTime.now())
+            .build();
+
+        return null;
+    }
+
+    @Override
+    public AIDeploymentResponse.GeneratePlan getPipelinePlanByPipelineId(Long pipelineId) {
+        // 사용자 자연여 요청 메세지 가져오기
+        // AI Agent에게 메세지 요청
+
+
+
+
         String sourceJson = """
                 {
                   "sourceTopicId": 1,
@@ -123,73 +196,25 @@ public class AIDeploymentServiceImpl implements AIDeploymentService {
                 }
                 """;
 
-        PipelinePlan pipelinePlan = jsonMapper.readValue(sourceJson, PipelinePlan.class);
-        PipelinePlanValidationContext pipelinePlanValidationContext
-                = pipelinePlanValidationContextResolver.resolve(1L, 1L, pipelinePlan);
+        PipelinePlan pipelinePlan;
+        try {
+            pipelinePlan = jsonMapper.readValue(sourceJson, PipelinePlan.class);
 
-        KafkaSourceDDLGenerationContext kafkaSourceDDLGenerationContext =
-                aiConverter.toKafkaSourceDDLGenerationContext(pipelinePlanValidationContext);
+        } catch (Exception e) {
+            log.error(ErrorCode.JSON_PARSE_ERROR.getMessage() + " : " + e.getMessage());
+            throw new BaseAPIException(ErrorCode.JSON_PARSE_ERROR);
+        }
 
-        String generatedSql = kafkaSourceDDLGenerator.generate(kafkaSourceDDLGenerationContext);
-
-        FlinkSQLGatewayResponse.CreateSession session = flinkSQLGatewayClient.createSession();
-        FlinkSQLGatewayResponse.CreateSource source = flinkSQLGatewayClient.createSource(
-            session.getSessionHandle(),
-            FlinkSQLGatewayRequest.CreateSource.from(generatedSql));
-
-        PostgreSQLSinkDDLGenerationContext postgreSQLGenerationContext =
-                aiConverter.toPostgreSQLGenerationContext(pipelinePlanValidationContext);
-        String generatedSinkSql = postgreSQLSinkDDLGenerator.generate(postgreSQLGenerationContext);
-
-        FlinkSQLGatewayResponse.CreateSink sink = flinkSQLGatewayClient.createSink(
-            session.getSessionHandle(),
-            FlinkSQLGatewayRequest.CreateSink.from(generatedSinkSql));
-
-        PipelineResultTable.Response table =
-            pipelineResultTableManager.createTable(postgreSQLGenerationContext);
-        log.info("created table name: {}", table.getCreatedTableName());
-
-        FlinkSQLGenerationContext flinkSQLGenerationContext
-                = aiConverter.toGenerationContext(pipelinePlanValidationContext);
-        String generatedFlinkSql = flinkSQLGenerator.generate(flinkSQLGenerationContext);
-
-        FlinkSQLGatewayResponse.SubmitSQL submitSQL =
-                flinkSQLGatewayClient.submitSQL(
-                    session.getSessionHandle(),
-                    FlinkSQLGatewayRequest.SubmitSQL.from(generatedFlinkSql));
-
-        FetchResult fetchResult = flinkSQLGatewayClient.fetchResult(
-            session.getSessionHandle(),
-            submitSQL.getOperationHandle());
-
-        fetchResult = checkResultStatusUntilPayloadAndGet(fetchResult, session.getSessionHandle(),
-            submitSQL.getOperationHandle());
-
-        String flinkJobId = Optional.ofNullable(fetchResult.getJobId())
-                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_FLINK_JOB_ID));
-
-        FlinkJobStatus jobStatus = flinkRestClient.getJobStatus(flinkJobId);
-
-        DeploymentStatus deploymentStatus = jobStatusConvertPolicy.convertToDeploymentStatusFrom(jobStatus);
-
-        PipelineDeploymentRequest.Create create = PipelineDeploymentRequest.Create
-            .builder()
-            .pipelineId(1L)
-            .deploymentType(PipelineType.AI_SQL)
-            .flinkJobId(flinkJobId)
-            .status(deploymentStatus)
-            .startedAt(LocalDateTime.now())
-            .lastCheckedAt(LocalDateTime.now())
-            .build();
-
-        Deployment pipelineDeployment = pipelineDeploymentService.createPipelineDeployment(create);
-
-        return pipelineDeployment;
+        PipelinePlanValidationContext planValidationContext = validateForPipelinePlan(pipelineId, pipelinePlan);
+        // 기본 pipeline 가져오기
+        // topic metadata 가져오기
+        // 사용자가 등록한 AI SQL정보 가져오기
+        return AIDeploymentResponse.GeneratePlan.from(pipelinePlan, planValidationContext);
     }
 
-    private PipelinePlanValidationContext validateForPipelinePlan(PipelinePlan pipelinePlan) {
+    private PipelinePlanValidationContext validateForPipelinePlan(Long pipelineId, PipelinePlan pipelinePlan) {
         PipelinePlanValidationContext context =
-                pipelinePlanValidationContextResolver.resolve(1L, 1L, pipelinePlan);
+                pipelinePlanValidationContextResolver.resolve(1L, pipelineId, pipelinePlan);  // TODO userId 1L로 고정해놓았지만 수정무조건 필요함!!
 
         CompositeValidator<PipelinePlanValidationContext> compositeValidator =
                 new CompositeValidator<PipelinePlanValidationContext>()

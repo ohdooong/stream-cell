@@ -15,12 +15,4 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AIController {
 
-    private final FlinkSQLGatewayClient flinkSQLGatewayClient;
-    private final AIDeploymentService aiDeploymentService;
-
-    @PostMapping("/session")
-    public ResponseEntity<BaseResponse<?>> getClusterOverview() throws JsonProcessingException {
-        return ResponseEntity.ok(BaseResponse.success(aiDeploymentService.flinkSqlGatewayTest()));
-    }
-
 }
