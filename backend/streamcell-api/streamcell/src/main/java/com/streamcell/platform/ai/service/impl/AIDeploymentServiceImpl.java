@@ -31,7 +31,7 @@ import com.streamcell.platform.flink.dto.FlinkSQLGatewayResponse;
 import com.streamcell.platform.flink.dto.FlinkSQLGatewayResponse.FetchResult;
 import com.streamcell.platform.ai.dto.PipelinePlan;
 import com.streamcell.platform.ai.dto.PipelineResultTable;
-import com.streamcell.platform.ai.enums.ResultType;
+import com.streamcell.platform.ai.domain.enums.ResultType;
 import com.streamcell.platform.ai.service.AIDeploymentService;
 import com.streamcell.platform.flink.dto.FlinkSQLGatewayResponse.FetchStatus;
 import com.streamcell.platform.flink.enums.FlinkJobStatus;

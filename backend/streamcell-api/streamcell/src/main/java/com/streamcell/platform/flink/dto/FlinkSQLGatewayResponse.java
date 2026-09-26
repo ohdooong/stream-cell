@@ -1,7 +1,7 @@
 package com.streamcell.platform.flink.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.streamcell.platform.ai.enums.ResultType;
+import com.streamcell.platform.ai.domain.enums.ResultType;
 import com.streamcell.platform.flink.enums.OperationStatus;
 import lombok.*;
 

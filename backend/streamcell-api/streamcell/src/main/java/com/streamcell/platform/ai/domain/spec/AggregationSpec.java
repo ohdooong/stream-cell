@@ -1,6 +1,6 @@
 package com.streamcell.platform.ai.domain.spec;
 
-import com.streamcell.platform.ai.enums.AggregationFunction;
+import com.streamcell.platform.ai.domain.enums.AggregationFunction;
 import lombok.Getter;
 import lombok.Setter;
 

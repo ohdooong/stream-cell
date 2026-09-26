@@ -2,8 +2,6 @@ package com.streamcell.platform.ai.domain.resolver;
 
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
-import com.streamcell.platform.ai.domain.spec.AggregationSpec;
-import com.streamcell.platform.ai.enums.AggregationFunction;
 import org.springframework.stereotype.Component;
 
 @Component

@@ -1,6 +1,6 @@
 package com.streamcell.platform.ai.domain.spec;
 
-import com.streamcell.platform.ai.enums.FilterOperator;
+import com.streamcell.platform.ai.domain.enums.FilterOperator;
 import lombok.Getter;
 import lombok.Setter;
 

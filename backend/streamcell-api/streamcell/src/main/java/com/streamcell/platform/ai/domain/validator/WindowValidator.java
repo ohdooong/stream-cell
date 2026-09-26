@@ -3,9 +3,9 @@ package com.streamcell.platform.ai.domain.validator;
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.platform.ai.domain.context.PipelinePlanValidationContext;
+import com.streamcell.platform.ai.domain.enums.WindowType;
+import com.streamcell.platform.ai.domain.enums.WindowUnit;
 import com.streamcell.platform.ai.domain.spec.WindowSpec;
-import com.streamcell.platform.ai.enums.WindowType;
-import com.streamcell.platform.ai.enums.WindowUnit;
 
 /**
  * AI가 만든 Pipeline Plan이 Window 허용범위인지 검증

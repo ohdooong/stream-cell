@@ -1,4 +1,4 @@
-package com.streamcell.platform.ai.enums;
+package com.streamcell.platform.ai.domain.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,7 +1,7 @@
 package com.streamcell.platform.ai.domain.spec;
 
-import com.streamcell.platform.ai.enums.WindowType;
-import com.streamcell.platform.ai.enums.WindowUnit;
+import com.streamcell.platform.ai.domain.enums.WindowType;
+import com.streamcell.platform.ai.domain.enums.WindowUnit;
 import lombok.Getter;
 import lombok.Setter;
 

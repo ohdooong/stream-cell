@@ -5,9 +5,9 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.platform.ai.domain.context.PipelinePlanValidationContext;
+import com.streamcell.platform.ai.domain.enums.AggregationFunction;
 import com.streamcell.platform.ai.domain.spec.AggregationSpec;
 import com.streamcell.platform.ai.dto.PipelinePlan;
-import com.streamcell.platform.ai.enums.AggregationFunction;
 
 import java.util.HashSet;
 import java.util.List;
