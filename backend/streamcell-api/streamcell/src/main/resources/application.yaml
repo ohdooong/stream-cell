@@ -35,6 +35,12 @@ flink:
     username: ${POSTGRES_USERNAME}
     password: ${POSTGRES_PASSWORD}
 
+atlas:
+  base-url: ${ATLAS_URL}
+  agent-id: ${ATLAS_AGENT_ID}
+  api-key: ${ATLAS_API_KEY}
+
+
 file:
   upload:
     dir: C:\streamcell_workspace\upload
