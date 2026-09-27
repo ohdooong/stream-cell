@@ -88,80 +88,11 @@ public class AIDeploymentServiceImpl implements AIDeploymentService {
         String generate1 = kafkaSourceDDLGenerator.generate(kafkaSourceDDLGenerationContext);
     }
 
-    public PipelineResponse.Deployment flinkSqlGatewayTest() throws JsonProcessingException {
-        PipelinePlan pipelinePlan = getPipelinePlanByPipelineId(1L).getPipelinePlan();
-
-        PipelinePlanValidationContext pipelinePlanValidationContext
-                = pipelinePlanValidationContextResolver.resolve(1L, 1L, pipelinePlan);
-        // kafka source ddl generate
-        KafkaSourceDDLGenerationContext kafkaSourceDDLGenerationContext =
-                aiConverter.toKafkaSourceDDLGenerationContext(pipelinePlanValidationContext);
-        String generatedSql = kafkaSourceDDLGenerator.generate(kafkaSourceDDLGenerationContext);
-
-        // flinkSQL 세션 생성
-        FlinkSQLGatewayResponse.CreateSession session = flinkSQLGatewayClient.createSession();
-        // kafka source 생성
-        FlinkSQLGatewayResponse.CreateSource source = flinkSQLGatewayClient.createSource(
-            session.getSessionHandle(),
-            FlinkSQLGatewayRequest.CreateSource.from(generatedSql));
-
-        // sink sql generation context 변환
-        PostgreSQLSinkDDLGenerationContext postgreSQLGenerationContext =
-                aiConverter.toPostgreSQLGenerationContext(pipelinePlanValidationContext);
-        // sink sql generate
-        String generatedSinkSql = postgreSQLSinkDDLGenerator.generate(postgreSQLGenerationContext);
-        // sink 생성
-        FlinkSQLGatewayResponse.CreateSink sink = flinkSQLGatewayClient.createSink(
-            session.getSessionHandle(),
-            FlinkSQLGatewayRequest.CreateSink.from(generatedSinkSql));
-
-        // 실제 결과 result 테이블 생성
-        PipelineResultTable.Response table =
-            pipelineResultTableManager.createTable(postgreSQLGenerationContext);
-        log.info("created table name: {}", table.getCreatedTableName());
-
-        // flink sql 생성 후 배포
-        FlinkSQLGenerationContext flinkSQLGenerationContext
-                = aiConverter.toGenerationContext(pipelinePlanValidationContext);
-        String generatedFlinkSql = flinkSQLGenerator.generate(flinkSQLGenerationContext);
-        FlinkSQLGatewayResponse.SubmitSQL submitSQL =
-                flinkSQLGatewayClient.submitSQL(
-                    session.getSessionHandle(),
-                    FlinkSQLGatewayRequest.SubmitSQL.from(generatedFlinkSql));
-
-        // 배포한 sql job 상태가져온 후 pipeline deployment 생성
-        FetchResult fetchResult = flinkSQLGatewayClient.fetchResult(
-            session.getSessionHandle(),
-            submitSQL.getOperationHandle());
-
-        fetchResult = checkResultStatusUntilPayloadAndGet(fetchResult, session.getSessionHandle(),
-            submitSQL.getOperationHandle());
-
-        String flinkJobId = Optional.ofNullable(fetchResult.getJobId())
-                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_FLINK_JOB_ID));
-
-        FlinkJobStatus jobStatus = flinkRestClient.getJobStatus(flinkJobId);
-        DeploymentStatus deploymentStatus = jobStatusConvertPolicy.convertToDeploymentStatusFrom(jobStatus);
-        PipelineDeploymentRequest.Create create = PipelineDeploymentRequest.Create
-            .builder()
-            .pipelineId(1L)
-            .deploymentType(PipelineType.AI_SQL)
-            .flinkJobId(flinkJobId)
-            .status(deploymentStatus)
-            .startedAt(LocalDateTime.now())
-            .lastCheckedAt(LocalDateTime.now())
-            .build();
-
-        return null;
-    }
 
     @Override
     public AIDeploymentResponse.GeneratePlan getPipelinePlanByPipelineId(Long pipelineId) {
         // 사용자 자연여 요청 메세지 가져오기
         // AI Agent에게 메세지 요청
-
-
-
 
         String sourceJson = """
                 {
@@ -230,50 +161,4 @@ public class AIDeploymentServiceImpl implements AIDeploymentService {
         compositeValidator.validate(context);
         return context;
     }
-
-    private FetchResult checkResultStatusUntilPayloadAndGet(FetchResult fetchResult, String sessionHandle, String operationHandle) {
-        int maxCount = 20;
-        int currentCount = 1;
-        int delayMillis = 1000;
-        ResultType resultType = fetchResult.getResultType();
-        while (currentCount < maxCount) {
-
-            if (ResultType.PAYLOAD == resultType) {
-                return fetchResult;
-            }
-
-            if (ResultType.EOS == resultType) {
-                throw new BaseAPIException(ErrorCode.FAILED_FLINK_SQL_JOB);
-            }
-
-            FetchStatus fetchStatus = flinkSQLGatewayClient.fetchStatus(sessionHandle, operationHandle);
-            if (OperationStatus.ERROR == fetchStatus.getStatus()
-                || OperationStatus.TIMEOUT == fetchStatus.getStatus()
-                || OperationStatus.CANCELED == fetchStatus.getStatus()
-                || OperationStatus.CLOSED == fetchStatus.getStatus()) {
-                throw new BaseAPIException(ErrorCode.FAILED_FLINK_SQL_JOB);
-            }
-
-            try {
-                Thread.sleep(delayMillis);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            }
-
-            //String nextResultUrl = fetchResult.getNextResultUrl();
-            fetchResult = flinkSQLGatewayClient.fetchResult(sessionHandle, operationHandle);
-            resultType = fetchResult.getResultType();
-
-            currentCount++;
-
-        }
-
-        if (ResultType.PAYLOAD != resultType) {
-            throw new BaseAPIException(ErrorCode.FAILED_FLINK_SQL_JOB);
-        }
-
-        return fetchResult;
-    }
-
 }
