@@ -1,5 +1,6 @@
 package com.streamcell.platform.pipeline.repository;
 
+import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.vo.CustomJobConfig;
 import com.streamcell.platform.pipeline.vo.Pipeline;
 import com.streamcell.platform.pipeline.vo.PipelineArtifact;
@@ -66,6 +67,16 @@ public interface PipelineRepository {
         where pipeline_id = #{pipelineId}
     """)
     int updatePipelineStatus(Pipeline pipeline);
+
+    @Update("""
+        update platform.pipeline
+           set 
+               status = #{pipelineStatus}
+             , updated_by = 'ADMIN'
+             , updated_at = now()
+        where pipeline_id = #{pipelineId}
+    """)
+    int updatePipelineStatusByPipelineIdAndStatus(Long pipelineId, PipelineStatus pipelineStatus);
 
     @Update("""
         update platform.pipeline
