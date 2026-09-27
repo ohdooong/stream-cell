@@ -1,12 +1,10 @@
 package com.streamcell.platform.ai.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.streamcell.platform.ai.dto.AIDeploymentResponse;
-import com.streamcell.platform.ai.dto.PipelinePlan;
-import com.streamcell.platform.pipeline.dto.PipelineResponse;
+import com.streamcell.platform.topic.vo.Topic;
 
 public interface AIDeploymentService {
 
-    AIDeploymentResponse.GeneratePlan getPipelinePlanByPipelineId(Long pipelineId);
+    AIDeploymentResponse.GeneratePlan getPipelinePlan(Topic topic, Long pipelineId, String sendMessage);
 
 }
