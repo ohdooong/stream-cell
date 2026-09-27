@@ -1,11 +1,13 @@
 package com.streamcell.platform.ai.config;
 
 import com.streamcell.platform.ai.enums.AtlasEndPoint;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
+@Getter
 @ConfigurationProperties(prefix = "atlas")
 public class AtlasProperties {
     private String baseUrl;
@@ -14,6 +16,10 @@ public class AtlasProperties {
 
     public String getCreateSessionUrl() {
         return baseUrl + String.format(AtlasEndPoint.CREATE_SESSION.getPath(), agentId);
+    }
+
+    public String getSendMessageUrl(String sessionId) {
+        return baseUrl + String.format(AtlasEndPoint.SEND_MESSAGE.getPath(), agentId, sessionId);
     }
 
 }

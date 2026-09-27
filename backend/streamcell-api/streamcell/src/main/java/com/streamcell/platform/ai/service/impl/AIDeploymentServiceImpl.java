@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.platform.ai.client.AIClient;
+import com.streamcell.platform.ai.dto.AIClientResponse;
 import com.streamcell.platform.ai.dto.AIDeploymentResponse;
 import com.streamcell.platform.flink.client.FlinkRestClient;
 import com.streamcell.platform.flink.client.FlinkSQLGatewayClient;
@@ -38,6 +39,7 @@ import com.streamcell.platform.flink.dto.FlinkSQLGatewayResponse.FetchStatus;
 import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.flink.enums.OperationStatus;
 import com.streamcell.platform.pipeline.domain.JobStatusConvertPolicy;
+import com.streamcell.platform.pipeline.domain.PipelineDeploymentPolicy;
 import com.streamcell.platform.pipeline.dto.PipelineDeploymentRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
 import com.streamcell.platform.pipeline.dto.PipelineResponse.Deployment;
@@ -47,6 +49,7 @@ import com.streamcell.platform.pipeline.service.PipelineDeploymentService;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import com.streamcell.platform.topic.vo.Topic;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -72,6 +75,7 @@ public class AIDeploymentServiceImpl implements AIDeploymentService {
     private final JobStatusConvertPolicy jobStatusConvertPolicy;
 
     private final JsonMapper jsonMapper = new JsonMapper();
+    private final PipelineDeploymentPolicy pipelineDeploymentPolicy;
 
     public void requestPipelinePlan() {
         PipelinePlanValidationContext validationContext =
@@ -90,9 +94,14 @@ public class AIDeploymentServiceImpl implements AIDeploymentService {
 
 
     @Override
-    public AIDeploymentResponse.GeneratePlan getPipelinePlanByPipelineId(Long pipelineId) {
-        // 사용자 자연여 요청 메세지 가져오기
-        // AI Agent에게 메세지 요청
+    public AIDeploymentResponse.GeneratePlan getPipelinePlan(Topic topic, Long pipelineId, String sendMessage) {
+        // 기본 pipeline 가져오기
+        // topic metadata 가져오기
+        // 사용자가 등록한 AI SQL정보 가져오기
+        String requestMessage = pipelineDeploymentPolicy.getSendMessageByTemplate(topic, sendMessage);
+
+        AIClientResponse.ConnectSession connected = aiClient.connect(null);
+        AIClientResponse.Message message = aiClient.sendMessage(requestMessage, connected);
 
         String sourceJson = """
                 {
@@ -129,17 +138,19 @@ public class AIDeploymentServiceImpl implements AIDeploymentService {
 
         PipelinePlan pipelinePlan;
         try {
-            pipelinePlan = jsonMapper.readValue(sourceJson, PipelinePlan.class);
+            // pipelinePlan = jsonMapper.readValue(sourceJson, PipelinePlan.class);
+            pipelinePlan = jsonMapper.readValue(message.getMessage(), PipelinePlan.class);
 
         } catch (Exception e) {
             log.error(ErrorCode.JSON_PARSE_ERROR.getMessage() + " : " + e.getMessage());
             throw new BaseAPIException(ErrorCode.JSON_PARSE_ERROR);
         }
 
-        PipelinePlanValidationContext planValidationContext = validateForPipelinePlan(pipelineId, pipelinePlan);
-        // 기본 pipeline 가져오기
-        // topic metadata 가져오기
-        // 사용자가 등록한 AI SQL정보 가져오기
+        PipelinePlanValidationContext planValidationContext = null;
+        if (pipelineId != null) {
+            planValidationContext = validateForPipelinePlan(pipelineId, pipelinePlan);
+        }
+
         return AIDeploymentResponse.GeneratePlan.from(pipelinePlan, planValidationContext);
     }
 

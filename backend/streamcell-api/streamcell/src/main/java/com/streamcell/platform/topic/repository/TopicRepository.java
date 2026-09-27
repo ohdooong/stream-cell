@@ -105,6 +105,23 @@ public interface TopicRepository {
     """)
     List<TopicPermission> findTopicPermissionByUserId(Long userId);
 
+
+    @Select("""
+        select
+            topic_id,
+            topic_name,
+            display_name,
+            description,
+            schema_json,
+            time_field,
+            message_format
+        from platform.topic_metadata x
+        join platform.ai_config y
+          on x.topic_id = y.input_topic_id
+       where y.pipeline_id = #{pipelineId}
+    """)
+    Optional<Topic> findByAISqlPipelineId(Long pipelineId);
+
     @Update("""
         merge into platform.topic_permission a
         using (

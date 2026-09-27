@@ -1,10 +1,8 @@
 package com.streamcell.platform.pipeline.repository;
 
 import com.streamcell.platform.pipeline.enums.PipelineStatus;
-import com.streamcell.platform.pipeline.vo.CustomJobConfig;
-import com.streamcell.platform.pipeline.vo.Pipeline;
-import com.streamcell.platform.pipeline.vo.PipelineArtifact;
-import com.streamcell.platform.pipeline.vo.PipelineDeployment;
+import com.streamcell.platform.pipeline.vo.*;
+
 import java.util.List;
 import org.apache.ibatis.annotations.*;
 import org.springframework.stereotype.Repository;
@@ -88,6 +86,20 @@ public interface PipelineRepository {
         where pipeline_id = #{pipelineId}
     """)
     int updateAISqlPipeline(Pipeline pipeline);
+
+    @Insert("""
+        insert into platform.ai_config
+        (
+            pipeline_id, input_topic_id, created_by, created_at, updated_by, updated_at
+        )
+        values
+        (
+            #{pipelineId}, #{inputTopicId}, 'ADMIN', now(), 'ADMIN', now()
+        )
+        on conflict (pipeline_id, input_topic_id)
+        do nothing
+    """)
+    int createAISqlConfig(AISqlConfig aiSqlConfig);
 
     @Select("""
          select

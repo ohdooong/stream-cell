@@ -25,6 +25,7 @@ public enum ErrorCode {
     NOT_FOUND_AGGREGATION_FUNCTION(HttpStatus.NOT_FOUND, "aggregations값을 찾을 수 없습니다."),
     NOT_FOUND_AGGREGATION_FIELD(HttpStatus.NOT_FOUND, "aggregation 필드(field)값을 찾을 수 없습니다."),
     NOT_FOUND_AGGREGATION_ALIAS(HttpStatus.NOT_FOUND, "aggregations 별칭(alias)값을 찾을 수 없습니다."),
+    NOT_FOUND_AI_AGENT_SESSION(HttpStatus.NOT_FOUND, "AI Agent Session정보가 없습니다. Session을 먼저 생성해주세요."),
 
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
     INVALID_USER(HttpStatus.BAD_REQUEST, "존재하지 않는 사용자가 포함되어 있습니다."),
@@ -68,6 +69,7 @@ public enum ErrorCode {
     CONFLICT_FLINK_JAR_ID(HttpStatus.CONFLICT, "이미 배포한 Flink jar파일이 존재합니다."),
     CONFLICT_PIPELINE_DEPLOYMENT(HttpStatus.CONFLICT, "pipeline이 배포된 상태입니다."),
     CONFLICT_ALIAS(HttpStatus.CONFLICT, "중복된 별칭(alias)입니다. -> alias: %s"),
+    CONFLICT_AI_AGENT_ID(HttpStatus.CONFLICT, "설정된 agent id와 일치하지 않습니다."),
 
     // 5xx 에러
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류입니다."),

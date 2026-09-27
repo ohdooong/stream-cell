@@ -1,11 +1,16 @@
 package com.streamcell.platform.pipeline.dto;
 
+import com.streamcell.platform.ai.dto.PipelinePlan;
 import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.pipeline.enums.ArtifactType;
 import com.streamcell.platform.pipeline.enums.DeploymentStatus;
 import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.enums.PipelineType;
 import java.time.LocalDateTime;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.util.List;
@@ -105,6 +110,18 @@ public class PipelineResponse {
         private Long deploymentId;
         private String flinkJobId;
         private com.streamcell.platform.pipeline.enums.PipelineStatus pipelineStatus;
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor(staticName = "from")
+    @AllArgsConstructor(staticName = "from")
+    public static class AISqlPreview {
+
+        private PipelinePlan pipelinePlan;
+        private String generatedFlinkSql;
+
     }
 
 }

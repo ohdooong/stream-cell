@@ -103,6 +103,20 @@ public class PipelineController {
         return ResponseEntity.ok(BaseResponse.success(service.createAISqlConfig(pipelineId, createAISqlConfig)));
     }
 
+    @Operation(summary = "Pipeline AI_SQL Pipeline Plan JSON, 생성된 SQL 미리보기", description = "Pipeline AI_SQL Pipeline Plan JSON, 생성된 SQL 미리보기 API")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "요청 성공"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "404", description = "Not Found"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error."),
+    })
+    @PostMapping("/pipelines/ai-sql/preview")
+    public ResponseEntity<BaseResponse<?>> getPipelinePlanJsonAndSQLPreview(
+            @RequestBody PipelineRequest.AISqlPreview aiSqlPreview
+    ) {
+
+        return null;
+    }
 
     @Operation(summary = "Pipeline Job 상태 업데이트", description = "Pipeline Flink Job 상태를 업데이트합니다. Flink job과 동기화")
     @ApiResponses({

@@ -5,17 +5,20 @@ import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.global._common.file.dto.FileResponse;
 import com.streamcell.global._common.file.service.FileService;
 import com.streamcell.platform._common.port.UserLookupPort;
+import com.streamcell.platform.ai.domain.context.FlinkSQLGenerationContext;
+import com.streamcell.platform.ai.domain.context.PipelinePlanValidationContext;
+import com.streamcell.platform.ai.domain.generator.FlinkSQLGenerator;
+import com.streamcell.platform.ai.dto.AIDeploymentResponse;
+import com.streamcell.platform.ai.service.AIDeploymentService;
 import com.streamcell.platform.flink.client.FlinkRestClient;
-import com.streamcell.platform.flink.dto.FlinkResponse;
 import com.streamcell.platform.flink.dto.FlinkResponse.JobExceptionsEntry;
 import com.streamcell.platform.flink.dto.FlinkResponse.JobExceptionsHistory;
 import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.pipeline.converter.PipelineConverter;
+import com.streamcell.platform.pipeline.converter.PipelineDeploymentConverter;
 import com.streamcell.platform.pipeline.domain.JobStatusConvertPolicy;
-import com.streamcell.platform.pipeline.dto.PipelineResponse.PipelineStatus.Failure;
 import com.streamcell.platform.pipeline.enums.DeploymentStatus;
 import com.streamcell.platform.pipeline.enums.PipelineType;
-import com.streamcell.platform.pipeline.service.PipelineDeploymentService;
 import com.streamcell.platform.pipeline.validator.PipelineValidator;
 import com.streamcell.platform.pipeline.dto.PipelineRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
@@ -23,13 +26,11 @@ import com.streamcell.platform.pipeline.enums.ArtifactType;
 import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.repository.PipelineRepository;
 import com.streamcell.platform.pipeline.service.PipelineService;
-import com.streamcell.platform.pipeline.vo.CustomJobConfig;
-import com.streamcell.platform.pipeline.vo.Pipeline;
-import com.streamcell.platform.pipeline.vo.PipelineArtifact;
-import com.streamcell.platform.pipeline.vo.PipelineDeployment;
-import java.util.Optional;
-
+import com.streamcell.platform.pipeline.vo.*;
+import com.streamcell.platform.topic.converter.TopicConverter;
+import com.streamcell.platform.topic.dto.TopicResponse;
 import com.streamcell.platform.topic.service.TopicService;
+import com.streamcell.platform.topic.vo.Topic;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -46,15 +47,24 @@ public class PipelineServiceImpl implements PipelineService {
 
     private final PipelineRepository repository;
     private final UserLookupPort userLookupPort;
+
+    // service
     private final FileService fileService;
     private final TopicService topicService;
+    private final AIDeploymentService aiDeploymentService;
 
+    // flink
+    private final FlinkRestClient flinkRestClient;
+
+    // generator
+    private final FlinkSQLGenerator flinkSQLGenerator;
+
+    // policy
     private final JobStatusConvertPolicy jobStatusConvertPolicy;
 
     private final PipelineConverter pipelineConverter;
-
-    private final FlinkRestClient flinkRestClient;
-
+    private final TopicConverter topicConverter;
+    private final PipelineDeploymentConverter pipelineDeploymentConverter;
     private final Map<String, PipelineValidator<?, ?>> validatorMap;
 
     @Override
@@ -99,9 +109,39 @@ public class PipelineServiceImpl implements PipelineService {
         String naturalLanguageRequest = createAISqlConfig.getNaturalLanguageRequest();
         pipeline.setNaturalLanguageRequest(naturalLanguageRequest);
 
+        // 자연어 요청, Plan JSON update
         repository.updateAISqlPipeline(pipeline);
 
+        // ai config 설정 insert (topic id)
+        AISqlConfig aiSqlConfig = AISqlConfig.builder()
+                .pipelineId(pipelineId)
+                .inputTopicId(createAISqlConfig.getInputTopicId())
+                .build();
+        repository.createAISqlConfig(aiSqlConfig);
+
         return pipelineConverter.toDTO(pipeline);
+    }
+
+    @Override
+    public PipelineResponse.AISqlPreview aiSqlPipelinePlanPreview(PipelineRequest.AISqlPreview aiSqlPreview) {
+
+        Long topicId = aiSqlPreview.getInputTopicId();
+
+        TopicResponse.Item item = topicService.getTopicById(topicId);
+        Topic topic = topicConverter.toVO(item);
+
+        AIDeploymentResponse.GeneratePlan generatePlan =
+                aiDeploymentService.getPipelinePlan(topic, null, aiSqlPreview.getNaturalLanguageRequest());
+        PipelinePlanValidationContext planValidationContext = generatePlan.getPipelinePlanValidationContext();
+
+        FlinkSQLGenerationContext context =
+                pipelineDeploymentConverter.toGenerationContext(planValidationContext);
+        String generatedFlinkSql = flinkSQLGenerator.generate(context);
+
+        return PipelineResponse.AISqlPreview.builder()
+                .pipelinePlan(generatePlan.getPipelinePlan())
+                .generatedFlinkSql(generatedFlinkSql)
+                .build();
     }
 
 

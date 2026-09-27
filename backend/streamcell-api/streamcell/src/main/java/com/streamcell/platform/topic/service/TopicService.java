@@ -6,6 +6,7 @@ import com.streamcell.platform.topic.dto.TopicRequest.Schema;
 import com.streamcell.platform.topic.dto.TopicRequest.TopicPermission;
 import com.streamcell.platform.topic.dto.TopicResponse;
 import com.streamcell.platform.topic.dto.TopicResponse.Item;
+import com.streamcell.platform.topic.vo.Topic;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -36,6 +37,13 @@ public interface TopicService {
     Item getTopicById(Long topicId);
 
     /**
+     * Retrieves a topic by pipeline id
+     * @param pipelineId the ID of the pipeline
+     * @return the topic item
+     */
+    Topic getTopicOfAISqlPipelineById(Long pipelineId);
+
+    /**
      * Updates the schema of a topic.
      * @param topicId the ID of the topic to update
      * @param schema the new schema for the topic
@@ -58,6 +66,9 @@ public interface TopicService {
      * @return a list of {@code TopicResponse.TopicPermission} objects representing the permissions of the specified user
      */
     List<TopicResponse.TopicPermission> getPermissionsOfTopicByUserId(Long userId);
+
+
+
 
     /**
      * Posts a list of permissions for a specific topic.
