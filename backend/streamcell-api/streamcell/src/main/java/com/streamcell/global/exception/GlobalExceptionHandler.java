@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Arrays;
 
 @RestControllerAdvice
@@ -22,7 +24,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BaseAPIException.class)
     public ResponseEntity<BaseResponse<?>> handleBaseAPIException(BaseAPIException exception) {
-        log.error(Arrays.toString(exception.getStackTrace()));
+        //log.error(Arrays.toString(exception.getStackTrace()));
+        log.error(getStackTraceAsString(exception));
         String message = exception.getMessage();
         return ResponseEntity.status(exception.getErrorCode().getStatus())
                 .body(BaseResponse.error(exception.getErrorCode(), null));
@@ -30,9 +33,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<BaseResponse<?>> handleException(Exception exception) {
-        log.error(Arrays.toString(exception.getStackTrace()));
+        //log.error(Arrays.toString(exception.getStackTrace()));
+        log.error(getStackTraceAsString(exception));
         String message = "시스템 오류입니다.\\n관리자에게 문의하세요.";
         return ResponseEntity.internalServerError()
             .body(BaseResponse.error(message));
+    }
+
+    // Exception의 StackTrace를 String으로 변환하는 메서드
+    private String getStackTraceAsString(Exception e) {
+        StringWriter stringWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stringWriter));
+        return stringWriter.toString();
     }
 }

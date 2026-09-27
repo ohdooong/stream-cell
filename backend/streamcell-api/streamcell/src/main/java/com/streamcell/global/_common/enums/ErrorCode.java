@@ -36,7 +36,7 @@ public enum ErrorCode {
     INVALID_AI_SQL_REQUEST(HttpStatus.BAD_REQUEST, "AI SQL을 요청할 수 있는 Pipeline이 아닙니다. Pipeline 유형을 확인하세요."),
     INVALID_AI_SQL_REQUEST_OPERATOR(HttpStatus.BAD_REQUEST, "해당값에 유효하지않은 Operator입니다."),
     INVALID_AI_SQL_REQUEST_FILTER_VALUE_TYPE(HttpStatus.BAD_REQUEST, "Filter값 타입이 잘못되었습니다."),
-    INVALID_PIPELINE_STATUS_FOR_AI_SQL(HttpStatus.BAD_REQUEST, "Pipeline이 최초생성되었을때만 요청가능합니다."),
+    INVALID_PIPELINE_STATUS_FOR_AI_SQL(HttpStatus.BAD_REQUEST, "Pipeline이 배포가능한 상태가 아닙니다. current PipelineStatus : %s"),
     INVALID_MESSAGE_FORMAT(HttpStatus.BAD_REQUEST, "지원하지 않는 Message Format입니다. Current Message Format: %s"),
     INVALID_PIPELINE_PLAN(HttpStatus.BAD_REQUEST, "유효하지 않은 Pipeline Plan입니다. Pipeline Plan: %s"),
     INVALID_WINDOW_SIZE(HttpStatus.BAD_REQUEST, "Window Size의 허용범위는 0 ~ 30입니다."),
@@ -44,6 +44,7 @@ public enum ErrorCode {
     INVALID_FIELD_TYPE(HttpStatus.BAD_REQUEST, "Aggregation 시 숫자형만 가능합니다."),
     INVALID_AGGREGATION_FUNCTION(HttpStatus.BAD_REQUEST, "유효하지 않은 Aggregation Function입니다."),
     INVALID_TIME_FILED(HttpStatus.BAD_REQUEST, "time field는 TIMESTAMP(3) 형식만 입력가능합니다."),
+
 
     NOT_IMPLEMENTED_WINDOW_TYPE(HttpStatus.NOT_IMPLEMENTED, "아직 지원하지 않는 Window Type 입니다."),
     NOT_IMPLEMENTED_WINDOW_UNIT(HttpStatus.NOT_IMPLEMENTED, "아직 지원하지 않는 Window Unit 입니다."),
@@ -56,12 +57,13 @@ public enum ErrorCode {
     BAD_REQUEST_NOT_UPLOADED_CUSTOM_JAR(HttpStatus.BAD_REQUEST, "Custom Jar파일이 업로드 되지 않았습니다."),
 
     FAILED_FLINK_DEPLOY(HttpStatus.BAD_REQUEST, "Flink 배포에 실패했습니다."),
+    FAILED_AI_SQL_DEPLOY(HttpStatus.INTERNAL_SERVER_ERROR, "AI SQL Pipeline 배포에 실패하였습니다."),
 
     FORBIDDEN_TOPICS(HttpStatus.FORBIDDEN, "접근 불가능한 Topic이 포함되어 있습니다."),
     FORBIDDEN_PIPELINE(HttpStatus.FORBIDDEN, "해당 Pipeline의 소유자가 아닙니다."),
     FORBIDDEN_AI_SQL(HttpStatus.FORBIDDEN, "AI SQL 분석 권한이 없습니다."),
 
-    CONFLICT_PIPLINE_ARTIFACT(HttpStatus.CONFLICT, "artifact가 이미 존재합니다."),
+    CONFLICT_PIPELINE_ARTIFACT(HttpStatus.CONFLICT, "artifact가 이미 존재합니다."),
     CONFLICT_CUSTOM_JOB_CONFIG(HttpStatus.CONFLICT, "custom job 설정이 이미 존재합니다."),
     CONFLICT_FLINK_JAR_ID(HttpStatus.CONFLICT, "이미 배포한 Flink jar파일이 존재합니다."),
     CONFLICT_PIPELINE_DEPLOYMENT(HttpStatus.CONFLICT, "pipeline이 배포된 상태입니다."),

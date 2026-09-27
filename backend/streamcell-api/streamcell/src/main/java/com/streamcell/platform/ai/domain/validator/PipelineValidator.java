@@ -26,7 +26,7 @@ public class PipelineValidator implements Validator<PipelinePlanValidationContex
         }
 
         if (PipelineStatus.CREATED != pipeline.getPipelineStatus()) {
-            throw new BaseAPIException(ErrorCode.INVALID_PIPELINE_STATUS_FOR_AI_SQL);
+            throw new BaseAPIException(ErrorCode.INVALID_PIPELINE_STATUS_FOR_AI_SQL, pipeline.getPipelineStatus().name());
         }
 
     }
