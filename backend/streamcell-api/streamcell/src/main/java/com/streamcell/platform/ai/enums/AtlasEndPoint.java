@@ -8,7 +8,9 @@ import lombok.RequiredArgsConstructor;
 @AllArgsConstructor
 @Getter
 public enum AtlasEndPoint {
-    CREATE_SESSION("", "세션생성");
+    CREATE_SESSION("/agents/%s/sessions", "세션생성 url -> /agents/{agentId}/sessions"),
+    SEND_MESSAGE("/agents/%s/sessions/%s/messages", "만들어진 세션에 메시지 전송 url -> /agents/{agentId}/sessions/{sessionId}/messages")
+    ;
 
     private final String path;
     private String description;
