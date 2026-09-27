@@ -1,7 +1,6 @@
 package com.streamcell.platform.ai.domain.validator;
 
 
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.platform.ai.domain.context.PipelinePlanValidationContext;
@@ -17,15 +16,13 @@ import java.util.Set;
 
 public class SchemaValidator implements Validator<PipelinePlanValidationContext> {
 
-    private final JsonMapper jsonMapper = new JsonMapper();
-
     @Override
     public void validate(PipelinePlanValidationContext context) {
 
         PipelinePlan pipelinePlan = context.getPipelinePlan();
         List<String> planSchemas = new ArrayList<>();
         planSchemas.addAll(pipelinePlan.getGroupBy());
-        planSchemas.addAll(pipelinePlan.getAggregations().stream().map(AggregationSpec::getField).toList());
+        planSchemas.addAll(pipelinePlan.getAggregations().stream().map(AggregationSpec::getField).filter(field -> !field.equals("*")).toList());
         planSchemas.addAll(pipelinePlan.getFilters().stream().map(FilterSpec::getField).toList());
         planSchemas = planSchemas.stream().distinct().toList();
 

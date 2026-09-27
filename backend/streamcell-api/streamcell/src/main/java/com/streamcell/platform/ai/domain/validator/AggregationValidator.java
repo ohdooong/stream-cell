@@ -34,8 +34,11 @@ public class AggregationValidator implements Validator<PipelinePlanValidationCon
 
             AggregationFunction function = aggregation.getFunction();
 
-            if (targetField.equals("*") && AggregationFunction.COUNT != function) {
-                throw new BaseAPIException(ErrorCode.INVALID_AGGREGATION_FUNCTION);
+            if (targetField.equals("*")) {
+                if (AggregationFunction.COUNT != function) {
+                    throw new BaseAPIException(ErrorCode.INVALID_AGGREGATION_FUNCTION);
+                }
+                continue;
             }
 
             String valueType = (String) parsedTopicSchema.get(targetField);
