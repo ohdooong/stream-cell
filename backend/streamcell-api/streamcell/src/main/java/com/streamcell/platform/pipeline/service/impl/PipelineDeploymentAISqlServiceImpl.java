@@ -34,10 +34,11 @@ import com.streamcell.platform.pipeline.enums.PipelineType;
 import com.streamcell.platform.pipeline.repository.PipelineRepository;
 import com.streamcell.platform.pipeline.service.PipelineDeploymentService;
 import com.streamcell.platform.pipeline.vo.Pipeline;
+import com.streamcell.platform.topic.service.TopicService;
+import com.streamcell.platform.topic.vo.Topic;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -50,6 +51,7 @@ public class PipelineDeploymentAISqlServiceImpl implements PipelineDeploymentSer
     private final PipelineRepository repository;
     private final PipelineDeploymentConverter converter;
 
+    private final TopicService topicService;
     private final AIDeploymentService aiDeploymentService;
 
     private final PipelinePlanValidationContextResolver pipelinePlanValidationContextResolver;
@@ -82,11 +84,12 @@ public class PipelineDeploymentAISqlServiceImpl implements PipelineDeploymentSer
             throw new BaseAPIException(ErrorCode.INVALID_AI_SQL_REQUEST);
         }
 
+        Topic topic = topicService.getTopicOfAISqlPipelineById(pipelineId);
 
-        AIDeploymentResponse.GeneratePlan generatePlan = aiDeploymentService.getPipelinePlanByPipelineId(pipelineId);
+        AIDeploymentResponse.GeneratePlan generatePlan =
+                aiDeploymentService.getPipelinePlan(topic, pipelineId, pipeline.getNaturalLanguageRequest());
 
-        boolean canDeploy
-                = pipelineDeploymentPolicy.isDeployPipeline(pipeline.getPipelineStatus());
+        boolean canDeploy = pipelineDeploymentPolicy.isDeployPipeline(pipeline.getPipelineStatus());
         if (!canDeploy) {
             throw new BaseAPIException(ErrorCode.INVALID_PIPELINE_STATUS_FOR_AI_SQL, pipeline.getPipelineStatus().name());
         }
@@ -94,7 +97,6 @@ public class PipelineDeploymentAISqlServiceImpl implements PipelineDeploymentSer
 
         PipelinePlan pipelinePlan = generatePlan.getPipelinePlan();
         PipelinePlanValidationContext planValidationContext = generatePlan.getPipelinePlanValidationContext();
-
 
         // context
         KafkaSourceDDLGenerationContext sourceDDLGenerationContext =
@@ -220,8 +222,6 @@ public class PipelineDeploymentAISqlServiceImpl implements PipelineDeploymentSer
 
         return fetchResult;
     }
-
-
 
     /**********  Getter  *********/
     @Override

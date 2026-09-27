@@ -102,5 +102,24 @@ public class PipelineRequest {
         private String naturalLanguageRequest;
     }
 
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor(staticName = "from")
+    @AllArgsConstructor(staticName = "from")
+    public static class AISqlPreview {
+        @Schema(description = "요청 Topic ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotNull
+        private Long inputTopicId;
+
+        @Schema(description = "사용자ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotNull
+        private Long userId;
+
+        @Schema(description = "자연어 요청 메세지", example = "5분단위로 주문금액 평균 계산해줘", requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotBlank
+        private String naturalLanguageRequest;
+    }
+
 }
 
