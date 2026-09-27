@@ -32,6 +32,7 @@ public class TopicServiceImpl implements TopicService {
 
     private final KafkaManager kafkaManager;
     private final TopicRepository repository;
+    private final TopicConverter topicConverter;
 
     private final UserLookupPort userLookupPort;
 
@@ -47,21 +48,27 @@ public class TopicServiceImpl implements TopicService {
     public List<Item> getTopics() {
         return repository.findAll()
                 .stream()
-                .map(TopicConverter::toDTO)
+                .map(topicConverter::toDTO)
                 .toList();
     }
 
     @Override
     public Item getTopicById(Long topicId) {
         return repository.findById(topicId)
-                .map(TopicConverter::toDTO)
+                .map(topicConverter::toDTO)
+                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_TOPIC));
+    }
+
+    @Override
+    public Topic getTopicOfAISqlPipelineById(Long pipelineId) {
+        return repository.findByAISqlPipelineId(pipelineId)
                 .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_TOPIC));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int updateTopicSchema(Long topicId, Schema schema) {
-        Topic topic = TopicConverter.toVO(schema, topicId);
+        Topic topic = topicConverter.toVO(schema, topicId);
 
         String schemaJson = schema.getSchemaJson();
         String timeField = schema.getTimeField();
@@ -77,7 +84,7 @@ public class TopicServiceImpl implements TopicService {
     public List<TopicResponse.TopicPermission> getPermissionsOfTopic(Long topicId) {
         return repository.findTopicPermissions(topicId)
                 .stream()
-                .map(TopicConverter::toDTO)
+                .map(topicConverter::toDTO)
                 .toList();
     }
 
@@ -85,7 +92,7 @@ public class TopicServiceImpl implements TopicService {
     public List<TopicResponse.TopicPermission> getPermissionsOfTopicByUserId(Long userId) {
         return repository.findTopicPermissionByUserId(userId)
                 .stream()
-                .map(TopicConverter::toDTO)
+                .map(topicConverter::toDTO)
                 .toList();
     }
 
