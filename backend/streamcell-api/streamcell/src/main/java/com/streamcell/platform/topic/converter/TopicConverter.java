@@ -5,21 +5,14 @@ import com.streamcell.platform.topic.dto.TopicResponse;
 import com.streamcell.platform.topic.dto.TopicResponse.Item;
 import com.streamcell.platform.topic.vo.Topic;
 import com.streamcell.platform.topic.vo.TopicPermission;
+import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 
-public class TopicConverter {
-    public static Item toDTO(Topic topic) {
-        return Item.builder()
-                .topicId(topic.getTopicId())
-                .displayName(topic.getDisplayName())
-                .topicName(topic.getTopicName())
-                .messageFormat(topic.getMessageFormat())
-                .description(topic.getDescription())
-                .timeField(topic.getTimeField())
-                .schemaJson(topic.getSchemaJson())
-                .build();
-    }
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface TopicConverter {
+    Item toDTO(Topic topic);
 
-    public static Topic toVO(TopicRequest.Schema schema, Long topicId) {
+    default Topic toVO(TopicRequest.Schema schema, Long topicId) {
         return Topic.builder()
                 .topicId(topicId)
                 .displayName(schema.getDisplayName())
@@ -30,14 +23,7 @@ public class TopicConverter {
                 .build();
     }
 
-    public static TopicResponse.TopicPermission toDTO(TopicPermission topicPermission) {
-        return TopicResponse.TopicPermission.builder()
-                .permissionId(topicPermission.getPermissionId())
-                .topicId(topicPermission.getTopicId())
-                .topicName(topicPermission.getTopicName())
-                .userId(topicPermission.getUserId())
-                .userName(topicPermission.getUserName())
-                .topicPermissionType(topicPermission.getTopicPermissionType())
-                .build();
-    }
+    Topic toVO(Item item);
+
+    TopicResponse.TopicPermission toDTO(TopicPermission topicPermission);
 }
