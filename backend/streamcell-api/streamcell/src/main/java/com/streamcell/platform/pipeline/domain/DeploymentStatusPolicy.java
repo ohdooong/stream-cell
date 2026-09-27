@@ -16,4 +16,6 @@ public class DeploymentStatusPolicy {
     public boolean isAvailableStop(DeploymentStatus deploymentStatus) {
         return availableCancelDeploymentStatus.contains(deploymentStatus);
     }
+
+
 }
