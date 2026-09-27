@@ -139,7 +139,7 @@ public class PipelineServiceImpl implements PipelineService {
         // pipeline artifact와 custom job config가 존재하면 실패
         repository.findPipelineArtifactByPipelineId(pipelineId)
                     .ifPresent(artifact -> {
-                        throw new BaseAPIException(ErrorCode.CONFLICT_PIPLINE_ARTIFACT);
+                        throw new BaseAPIException(ErrorCode.CONFLICT_PIPELINE_ARTIFACT);
                     });
 
         repository.findCustomJobConfigByPipelineId(pipelineId)
