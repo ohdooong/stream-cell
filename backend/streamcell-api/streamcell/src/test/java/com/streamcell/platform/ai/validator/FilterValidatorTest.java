@@ -8,7 +8,7 @@ import com.streamcell.platform.ai.domain.context.PipelinePlanValidationContext;
 import com.streamcell.platform.ai.domain.spec.FilterSpec;
 import com.streamcell.platform.ai.domain.validator.FilterValidator;
 import com.streamcell.platform.ai.dto.PipelinePlan;
-import com.streamcell.platform.ai.enums.FilterOperator;
+
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;

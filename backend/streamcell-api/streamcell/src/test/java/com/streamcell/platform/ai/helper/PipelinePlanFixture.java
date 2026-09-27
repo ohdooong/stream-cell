@@ -5,10 +5,10 @@ import com.streamcell.platform.ai.domain.spec.AggregationSpec;
 import com.streamcell.platform.ai.domain.spec.FilterSpec;
 import com.streamcell.platform.ai.domain.spec.WindowSpec;
 import com.streamcell.platform.ai.dto.PipelinePlan;
-import com.streamcell.platform.ai.enums.AggregationFunction;
-import com.streamcell.platform.ai.enums.FilterOperator;
-import com.streamcell.platform.ai.enums.WindowType;
-import com.streamcell.platform.ai.enums.WindowUnit;
+import com.streamcell.platform.ai.domain.enums.AggregationFunction;
+import com.streamcell.platform.ai.domain.enums.FilterOperator;
+import com.streamcell.platform.ai.domain.enums.WindowType;
+import com.streamcell.platform.ai.domain.enums.WindowUnit;
 
 import java.util.HashMap;
 import java.util.List;
