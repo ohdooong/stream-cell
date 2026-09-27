@@ -25,9 +25,11 @@ import com.streamcell.platform.flink.enums.OperationStatus;
 import com.streamcell.platform.pipeline.converter.PipelineDeploymentConverter;
 import com.streamcell.platform.pipeline.domain.DeploymentStatusPolicy;
 import com.streamcell.platform.pipeline.domain.JobStatusConvertPolicy;
+import com.streamcell.platform.pipeline.domain.PipelineDeploymentPolicy;
 import com.streamcell.platform.pipeline.dto.PipelineDeploymentRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
 import com.streamcell.platform.pipeline.enums.DeploymentStatus;
+import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.enums.PipelineType;
 import com.streamcell.platform.pipeline.repository.PipelineRepository;
 import com.streamcell.platform.pipeline.service.PipelineDeploymentService;
@@ -67,9 +69,10 @@ public class PipelineDeploymentAISqlServiceImpl implements PipelineDeploymentSer
     // policy
     private final JobStatusConvertPolicy jobStatusConvertPolicy;
     private final DeploymentStatusPolicy deploymentStatusPolicy;
+    private final PipelineDeploymentPolicy pipelineDeploymentPolicy;
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
+    // @Transactional(rollbackFor = Exception.class) // todo 나중에 flink 외부호출과 연계하여 수정예정
     public PipelineResponse.Deployment deploy(Long pipelineId) {
 
         Pipeline pipeline = repository.findPipelineByPipelineId(pipelineId)
@@ -79,62 +82,84 @@ public class PipelineDeploymentAISqlServiceImpl implements PipelineDeploymentSer
             throw new BaseAPIException(ErrorCode.INVALID_AI_SQL_REQUEST);
         }
 
+
         AIDeploymentResponse.GeneratePlan generatePlan = aiDeploymentService.getPipelinePlanByPipelineId(pipelineId);
+
+        boolean canDeploy
+                = pipelineDeploymentPolicy.isDeployPipeline(pipeline.getPipelineStatus());
+        if (!canDeploy) {
+            throw new BaseAPIException(ErrorCode.INVALID_PIPELINE_STATUS_FOR_AI_SQL, pipeline.getPipelineStatus().name());
+        }
+        repository.updatePipelineStatusByPipelineIdAndStatus(pipelineId, PipelineStatus.DEPLOYING);
 
         PipelinePlan pipelinePlan = generatePlan.getPipelinePlan();
         PipelinePlanValidationContext planValidationContext = generatePlan.getPipelinePlanValidationContext();
 
-        // flink sql gateway 세션 생성
-        FlinkSQLGatewayResponse.CreateSession session = flinkSQLGatewayClient.createSession();
-        // kafka source ddl SQL문 생성
+
+        // context
         KafkaSourceDDLGenerationContext sourceDDLGenerationContext =
                 converter.toKafkaSourceDDLGenerationContext(planValidationContext);
-        String generatedSourceDDL = kafkaSourceDDLGenerator.generate(sourceDDLGenerationContext);
-        // kafka source 생성 ddl submit
-        FlinkSQLGatewayResponse.CreateSource source = flinkSQLGatewayClient.createSource(
-                session.getSessionHandle(),
-                FlinkSQLGatewayRequest.CreateSource.from(generatedSourceDDL));
-
-        // sink 생성 ddl SQL문 생성
         PostgreSQLSinkDDLGenerationContext sinkDDLGenerationContext
                 = converter.toPostgreSQLGenerationContext(planValidationContext);
-        String generatedSinkDDL = postgreSQLSinkDDLGenerator.generate(sinkDDLGenerationContext);
-        // sink 생성 ddl SQL문 submit
-        FlinkSQLGatewayResponse.CreateSink sink = flinkSQLGatewayClient.createSink(
-                session.getSessionHandle(),
-                FlinkSQLGatewayRequest.CreateSink.from(generatedSinkDDL));
-
-        // 실제 결과 result 테이블 생성
-        PipelineResultTable.Response table =
-                pipelineResultTableManager.createTable(sinkDDLGenerationContext);
-        log.info("created table name: {}", table.getCreatedTableName());
-
-        // Flink SQL문 생성
         FlinkSQLGenerationContext flinkSQLGenerationContext =
                 converter.toGenerationContext(planValidationContext);
-        String generatedFlinkSQL = flinkSQLGenerator.generate(flinkSQLGenerationContext);
-        // 생성된 Flink SQL문 submit
-        FlinkSQLGatewayResponse.SubmitSQL submitSQL =
-                flinkSQLGatewayClient.submitSQL(
-                        session.getSessionHandle(),
-                        FlinkSQLGatewayRequest.SubmitSQL.from(generatedFlinkSQL));
 
-        // 배포한 sql job 상태 조회
-        FlinkSQLGatewayResponse.FetchResult fetchResult = flinkSQLGatewayClient.fetchResult(
-                session.getSessionHandle(),
-                submitSQL.getOperationHandle());
-        fetchResult = checkResultStatusUntilPayloadAndGet(fetchResult, session.getSessionHandle(),
-                submitSQL.getOperationHandle());
-        String flinkJobId = Optional.ofNullable(fetchResult.getJobId())
-                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_FLINK_JOB_ID));
+        String flinkJobId;
+        FlinkJobStatus jobStatus;
+        try {
+            // 1. 실제 결과 result 테이블 생성
+            PipelineResultTable.Response table =
+                    pipelineResultTableManager.createTable(sinkDDLGenerationContext);
+            log.info("created table name: {}", table.getCreatedTableName());
 
-        // 실제 flink rest api로 상태한번 더 확인.
-        FlinkJobStatus jobStatus = flinkRestClient.getJobStatus(flinkJobId);
+            // 2. flink sql gateway 세션 생성
+            FlinkSQLGatewayResponse.CreateSession session = flinkSQLGatewayClient.createSession();
+            // kafka source ddl SQL문 생성
+            String generatedSourceDDL = kafkaSourceDDLGenerator.generate(sourceDDLGenerationContext);
+            // 3. kafka source 생성 ddl submit
+            FlinkSQLGatewayResponse.CreateSource source = flinkSQLGatewayClient.createSource(
+                    session.getSessionHandle(),
+                    FlinkSQLGatewayRequest.CreateSource.from(generatedSourceDDL));
+
+            // sink 생성 ddl SQL문 생성
+            String generatedSinkDDL = postgreSQLSinkDDLGenerator.generate(sinkDDLGenerationContext);
+            // 4. sink 생성 ddl SQL문 submit
+            FlinkSQLGatewayResponse.CreateSink sink = flinkSQLGatewayClient.createSink(
+                    session.getSessionHandle(),
+                    FlinkSQLGatewayRequest.CreateSink.from(generatedSinkDDL));
+
+
+            // Flink SQL문 생성
+            String generatedFlinkSQL = flinkSQLGenerator.generate(flinkSQLGenerationContext);
+            // 5. 생성된 Flink SQL문 submit
+            FlinkSQLGatewayResponse.SubmitSQL submitSQL =
+                    flinkSQLGatewayClient.submitSQL(
+                            session.getSessionHandle(),
+                            FlinkSQLGatewayRequest.SubmitSQL.from(generatedFlinkSQL));
+
+            // 배포한 sql job 상태 조회
+            FlinkSQLGatewayResponse.FetchResult fetchResult = flinkSQLGatewayClient.fetchResult(
+                    session.getSessionHandle(),
+                    submitSQL.getOperationHandle());
+            fetchResult = checkResultStatusUntilPayloadAndGet(fetchResult, session.getSessionHandle(),
+                    submitSQL.getOperationHandle());
+            flinkJobId = Optional.ofNullable(fetchResult.getJobId())
+                    .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_FLINK_JOB_ID));
+
+            // 실제 flink rest api로 상태한번 더 확인.
+            jobStatus = flinkRestClient.getJobStatus(flinkJobId);
+        } catch (Exception e) {
+            repository.updatePipelineStatusByPipelineIdAndStatus(pipelineId, PipelineStatus.FAILED);
+            throw new BaseAPIException(ErrorCode.FAILED_AI_SQL_DEPLOY);
+        }
+
         DeploymentStatus deploymentStatus = jobStatusConvertPolicy.convertToDeploymentStatusFrom(jobStatus);
+        PipelineStatus pipelineStatus = jobStatusConvertPolicy.convertToPipelineStatusFrom(jobStatus);
+
         // pipeline deployment insert
         PipelineDeploymentRequest.Create create = PipelineDeploymentRequest.Create
                 .builder()
-                .pipelineId(1L)
+                .pipelineId(pipelineId)
                 .deploymentType(PipelineType.AI_SQL)
                 .flinkJobId(flinkJobId)
                 .status(deploymentStatus)
@@ -142,7 +167,11 @@ public class PipelineDeploymentAISqlServiceImpl implements PipelineDeploymentSer
                 .lastCheckedAt(LocalDateTime.now())
                 .build();
 
+        // pipeline deployment insert
         PipelineResponse.Deployment pipelineDeployment = createPipelineDeployment(create);
+
+        // pipeline status 최종 update
+        repository.updatePipelineStatusByPipelineIdAndStatus(pipelineId, pipelineStatus);
 
         return pipelineDeployment;
     }
