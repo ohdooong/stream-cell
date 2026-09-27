@@ -154,6 +154,25 @@ CREATE TABLE IF NOT EXISTS platform.custom_job_config (
     CONSTRAINT chk_custom_job_parallelism CHECK (parallelism >= 1)
 );
 
+CREATE TABLE IF NOT EXISTS platform.ai_config (
+      ai_config_id   bigserial
+          primary key,
+      pipeline_id    bigint                  not null
+          references pipeline
+              on delete cascade,
+      input_topic_id bigint                  not null
+          references topic_metadata
+              on delete cascade,
+      created_by     varchar(255)            not null,
+      created_at     timestamp default now() not null,
+      updated_by     varchar(255)            not null,
+      updated_at     timestamp default now() not null
+);
+
+
+
+
+
 CREATE TABLE IF NOT EXISTS platform.ai_failure_analysis (
     analysis_id BIGSERIAL PRIMARY KEY,
     pipeline_id BIGINT NOT NULL REFERENCES platform.pipeline(pipeline_id) ON DELETE CASCADE,
