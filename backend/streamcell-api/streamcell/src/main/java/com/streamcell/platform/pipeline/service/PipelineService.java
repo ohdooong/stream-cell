@@ -13,7 +13,19 @@ public interface PipelineService {
      */
     PipelineResponse.Pipeline create(PipelineRequest.Create createItem);
 
+    /**
+     * AI SQL 파이프라인 추가정보등록
+     * @param pipelineId pipeline PK
+     * @param createAISqlConfig request dto
+     * @return {@link PipelineResponse.Pipeline PipelineResponse.Pipeline}
+     */
     PipelineResponse.Pipeline createAISqlConfig(Long pipelineId, PipelineRequest.CreateAISqlConfig createAISqlConfig);
+
+    /**
+     * AI SQL pipeline plan preview
+     * @param aiSqlPreview request dto
+     */
+    PipelineResponse.AISqlPreview aiSqlPipelinePlanPreview(PipelineRequest.AISqlPreview aiSqlPreview);
 
     /**
      * 파이프라인 update
