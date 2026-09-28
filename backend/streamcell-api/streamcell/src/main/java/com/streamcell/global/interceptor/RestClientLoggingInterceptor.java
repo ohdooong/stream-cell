@@ -24,7 +24,7 @@ public class RestClientLoggingInterceptor implements ClientHttpRequestIntercepto
     }
 
     private void logRequest(HttpRequest request, byte[] body) {
-        log.info("====== HTTP Request Start ======");
+        log.info("====== HTTP Request ======");
         log.info("--> URI: {}", request.getURI());
         log.info("--> Method: {}", request.getMethod());
         log.info("--> Headers: {}", request.getHeaders());
@@ -33,7 +33,7 @@ public class RestClientLoggingInterceptor implements ClientHttpRequestIntercepto
 
     private void logResponse(ClientHttpResponse response) throws IOException {
 
-        log.info("====== HTTP Response Start ======");
+        log.info("====== HTTP Response ======");
         String body = new BufferedReader(new InputStreamReader(response.getBody(), StandardCharsets.UTF_8))
                 .lines().collect(Collectors.joining("\n"));
         log.info("--> Status: {}", response.getStatusCode());
