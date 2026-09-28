@@ -38,8 +38,8 @@
 |  | TypeScript | 5.6 | 언어 |
 |  | Vite | 5.4 | Build |
 | Backend | Spring Boot | 4.1.0 | Kafka, Flink, Pipeline, Deployment, AI 관리 API |
-|  | JDK | 21 | Java Development Kit |
-|  | Gradle | 9.5.1 | Build |
+|  | JDK | 24 | Java Development Kit |
+|  | Gradle | 9.3.1 | Build |
 | Database | PostgreSQL | 16 | Platform 메타데이터, 스트림 처리결과 저장 |
 | Event Broker | Kafka | 4.2.1 | 실시간 Event(데이터) 수집계층 |
 | Stream Processing | Flink | 1.19 | 실시간 Event(데이터) 처리계층 |
