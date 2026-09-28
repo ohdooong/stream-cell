@@ -146,7 +146,6 @@ public class PipelineServiceImpl implements PipelineService {
                 .build();
     }
 
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public PipelineResponse.Pipeline update(PipelineRequest.Update updateItem) {
