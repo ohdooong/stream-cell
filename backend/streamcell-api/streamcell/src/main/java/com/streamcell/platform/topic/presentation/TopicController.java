@@ -38,9 +38,8 @@ public class TopicController {
         @ApiResponse(responseCode = "500", description = "Internal Server Error.")
     })
     @PostMapping("/sync")
-    public ResponseEntity<BaseResponse<String>> syncTopics() throws Exception {
-        service.syncTopics();
-        return ResponseEntity.ok(BaseResponse.success("sync completed"));
+    public ResponseEntity<BaseResponse<List<Item>>> syncTopics() throws Exception {
+        return ResponseEntity.ok(BaseResponse.success(service.syncTopics()));
     }
 
     @Operation(summary = "Topic 조회 메서드", description = "Topic 목록 조회")

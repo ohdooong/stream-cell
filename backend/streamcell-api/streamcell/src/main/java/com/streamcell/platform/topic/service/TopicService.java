@@ -21,7 +21,7 @@ public interface TopicService {
      * @throws ExecutionException if an error occurs during the synchronization process.
      * @throws InterruptedException if the synchronization process is interrupted.
      */
-    void syncTopics() throws ExecutionException, InterruptedException;
+    List<Item> syncTopics() throws ExecutionException, InterruptedException;
 
     /**
      * Retrieves a list of topics.

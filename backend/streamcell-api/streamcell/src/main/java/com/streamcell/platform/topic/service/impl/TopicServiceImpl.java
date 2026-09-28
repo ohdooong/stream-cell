@@ -37,11 +37,13 @@ public class TopicServiceImpl implements TopicService {
     private final UserLookupPort userLookupPort;
 
     @Override
-    public void syncTopics() throws ExecutionException, InterruptedException {
+    public List<Item> syncTopics() throws ExecutionException, InterruptedException {
         Set<String> topics = kafkaManager.getTopics();
         for (String topic : topics) {
             repository.mergeIntoTopic(topic);
         }
+
+        return getTopics();
     }
 
     @Override
