@@ -114,8 +114,8 @@ public class PipelineController {
     public ResponseEntity<BaseResponse<?>> getPipelinePlanJsonAndSQLPreview(
             @RequestBody PipelineRequest.AISqlPreview aiSqlPreview
     ) {
-
-        return null;
+        return ResponseEntity.ok(
+            BaseResponse.success(service.aiSqlPipelinePlanPreview(aiSqlPreview)));
     }
 
     @Operation(summary = "Pipeline Job 상태 업데이트", description = "Pipeline Flink Job 상태를 업데이트합니다. Flink job과 동기화")

@@ -1,10 +1,10 @@
 package com.streamcell.platform.ai.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.platform.ai.client.AIClient;
+import com.streamcell.platform.ai.domain.validator.PreviewBasicValidator;
 import com.streamcell.platform.ai.dto.AIClientResponse;
 import com.streamcell.platform.ai.dto.AIDeploymentResponse;
 import com.streamcell.platform.flink.client.FlinkRestClient;
@@ -13,7 +13,6 @@ import com.streamcell.platform.ai.converter.AIConverter;
 import com.streamcell.platform.ai.domain.context.FlinkSQLGenerationContext;
 import com.streamcell.platform.ai.domain.context.KafkaSourceDDLGenerationContext;
 import com.streamcell.platform.ai.domain.context.PipelinePlanValidationContext;
-import com.streamcell.platform.ai.domain.context.PostgreSQLSinkDDLGenerationContext;
 import com.streamcell.platform.ai.domain.generator.PostgreSQLSinkDDLGenerator;
 import com.streamcell.platform.ai.domain.manager.PipelineResultTableManager;
 import com.streamcell.platform.ai.domain.resolver.PipelinePlanValidationContextResolver;
@@ -28,27 +27,10 @@ import com.streamcell.platform.ai.domain.validator.SchemaValidator;
 import com.streamcell.platform.ai.domain.validator.TopicPermissionValidator;
 import com.streamcell.platform.ai.domain.validator.TopicValidator;
 import com.streamcell.platform.ai.domain.validator.WindowValidator;
-import com.streamcell.platform.flink.dto.FlinkSQLGatewayRequest;
-import com.streamcell.platform.flink.dto.FlinkSQLGatewayResponse;
-import com.streamcell.platform.flink.dto.FlinkSQLGatewayResponse.FetchResult;
 import com.streamcell.platform.ai.dto.PipelinePlan;
-import com.streamcell.platform.ai.dto.PipelineResultTable;
-import com.streamcell.platform.ai.domain.enums.ResultType;
 import com.streamcell.platform.ai.service.AIDeploymentService;
-import com.streamcell.platform.flink.dto.FlinkSQLGatewayResponse.FetchStatus;
-import com.streamcell.platform.flink.enums.FlinkJobStatus;
-import com.streamcell.platform.flink.enums.OperationStatus;
 import com.streamcell.platform.pipeline.domain.JobStatusConvertPolicy;
 import com.streamcell.platform.pipeline.domain.PipelineDeploymentPolicy;
-import com.streamcell.platform.pipeline.dto.PipelineDeploymentRequest;
-import com.streamcell.platform.pipeline.dto.PipelineResponse;
-import com.streamcell.platform.pipeline.dto.PipelineResponse.Deployment;
-import com.streamcell.platform.pipeline.enums.DeploymentStatus;
-import com.streamcell.platform.pipeline.enums.PipelineType;
-import com.streamcell.platform.pipeline.service.PipelineDeploymentService;
-import java.time.LocalDateTime;
-import java.util.Optional;
-
 import com.streamcell.platform.topic.vo.Topic;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -79,7 +61,7 @@ public class AIDeploymentServiceImpl implements AIDeploymentService {
 
     public void requestPipelinePlan() {
         PipelinePlanValidationContext validationContext =
-            validateForPipelinePlan(1L, new PipelinePlan());
+            validatePipelinePlan(1L, new PipelinePlan());
 
         FlinkSQLGenerationContext generationContext =
             aiConverter.toGenerationContext(validationContext);
@@ -146,15 +128,18 @@ public class AIDeploymentServiceImpl implements AIDeploymentService {
             throw new BaseAPIException(ErrorCode.JSON_PARSE_ERROR);
         }
 
+        pipelinePlan.setSourceTopicId(topic.getTopicId());
         PipelinePlanValidationContext planValidationContext = null;
         if (pipelineId != null) {
-            planValidationContext = validateForPipelinePlan(pipelineId, pipelinePlan);
+            planValidationContext = validatePipelinePlan(pipelineId, pipelinePlan);
+        } else {
+            planValidationContext = validatePipelinePlanForPreview(pipelinePlan);
         }
 
         return AIDeploymentResponse.GeneratePlan.from(pipelinePlan, planValidationContext);
     }
 
-    private PipelinePlanValidationContext validateForPipelinePlan(Long pipelineId, PipelinePlan pipelinePlan) {
+    private PipelinePlanValidationContext validatePipelinePlan(Long pipelineId, PipelinePlan pipelinePlan) {
         PipelinePlanValidationContext context =
                 pipelinePlanValidationContextResolver.resolve(1L, pipelineId, pipelinePlan);  // TODO userId 1L로 고정해놓았지만 수정무조건 필요함!!
 
@@ -172,4 +157,25 @@ public class AIDeploymentServiceImpl implements AIDeploymentService {
         compositeValidator.validate(context);
         return context;
     }
+
+    private PipelinePlanValidationContext validatePipelinePlanForPreview(
+        PipelinePlan pipelinePlan) {
+        PipelinePlanValidationContext context =
+            pipelinePlanValidationContextResolver.resolve(1L, null, pipelinePlan);  // TODO userId 1L로 고정해놓았지만 수정무조건 필요함!!
+
+        CompositeValidator<PipelinePlanValidationContext> compositeValidator =
+            new CompositeValidator<PipelinePlanValidationContext>()
+                .add(new PreviewBasicValidator())
+                .add(new TopicValidator())
+                .add(new TopicPermissionValidator())
+                .add(new WindowValidator())
+                .add(new SchemaValidator())
+                .add(new AggregationValidator())
+                .add(new FilterValidator());
+
+        compositeValidator.validate(context);
+        return context;
+    }
+
+
 }
