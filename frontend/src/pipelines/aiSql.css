@@ -58,6 +58,18 @@
 .ai-preview-grid strong { color: #41566e; }
 .ai-preview-grid li p { margin-top: 3px; }
 .ai-preview-grid pre { padding: 16px; max-height: 430px; overflow: auto; border-radius: 8px; color: #b3e5df; background: #122035; font: 11px/1.8 "DM Mono", monospace; }
+.ai-plan { display: grid; gap: 10px; }
+.ai-plan-row, .ai-plan-block { padding: 12px 13px; border: 1px solid #e5ebf1; border-radius: 8px; background: #fafcfd; }
+.ai-plan-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.ai-plan-row > span, .ai-plan-block > span { color: #8a98a8; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.ai-plan-block > span { display: block; margin-bottom: 8px; }
+.ai-plan-block > strong { font-size: 12px; }
+.ai-plan-block ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.ai-plan-block li { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.ai-plan-block code, .ai-plan-chips code { padding: 3px 6px; border-radius: 5px; background: #edf4f6; color: #326573; font: 10px "DM Mono", monospace; }
+.ai-plan-block li b { color: #40566d; font-size: 11px; }
+.ai-plan-block li i { color: #9aa6b4; font-size: 10px; font-style: normal; }
+.ai-plan-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .ai-preview-notes { margin: 0 24px 20px; padding: 14px; border-radius: 8px; background: #fff9eb; color: #8c702e; font-size: 12px; line-height: 1.7; }
 .ai-preview > .ai-errors { margin: 0 24px 20px; }
 .ai-review { display: grid; gap: 8px; padding: 20px 24px; border-top: 1px solid #eaf0f5; background: #f8fbfd; }
