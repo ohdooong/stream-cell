@@ -60,12 +60,29 @@ public class PipelineController {
             @ApiResponse(responseCode = "404", description = "Not Found"),
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
-    @GetMapping("/pipelines/{pipelineId}")
-    public ResponseEntity<BaseResponse<?>> getPipelineByPipelineId(
+    @GetMapping("/pipelines/custom-jar/{pipelineId}")
+    public ResponseEntity<BaseResponse<?>> getCustomJarPipelineByPipelineId(
             @PathVariable Long pipelineId) {
         return ResponseEntity.ok(
                 BaseResponse.success(service.findPipelineByPipelineId(pipelineId)));
     }
+
+    @Operation(summary = "AI SQL Pipeline 상세조회", description = "AI SQL Pipeline 정보를 상세조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회성공"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "404", description = "Not Found"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error."),
+    })
+    @GetMapping("/pipelines/ai-sql/{pipelineId}")
+    public ResponseEntity<BaseResponse<?>> getAISqlPipelineByPipelineId(
+            @PathVariable Long pipelineId) {
+        return ResponseEntity.ok(
+                BaseResponse.success(service.findPipelineByPipelineId(pipelineId)));
+    }
+
+
+
 
     @Operation(summary = "Pipeline Flink Custom Jar 파일 업로드", description = "Pipeline의 Flink Custom Jar 파일을 업로드합니다.")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
