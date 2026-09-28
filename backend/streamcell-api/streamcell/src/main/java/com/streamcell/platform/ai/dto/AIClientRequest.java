@@ -22,16 +22,4 @@ public class AIClientRequest {
         /* 사용자 메세지 */
         private String message;
     }
-
-    @Getter
-    @Setter
-    @Builder
-    @NoArgsConstructor(staticName = "from")
-    @AllArgsConstructor(staticName = "from")
-    public static class GeneratePipelinePlan {
-
-    }
-
-
-
 }

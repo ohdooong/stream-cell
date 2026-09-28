@@ -8,6 +8,7 @@ import com.streamcell.platform._common.port.UserLookupPort;
 import com.streamcell.platform.ai.domain.context.FlinkSQLGenerationContext;
 import com.streamcell.platform.ai.domain.context.PipelinePlanValidationContext;
 import com.streamcell.platform.ai.domain.generator.FlinkSQLGenerator;
+import com.streamcell.platform.ai.domain.generator.FlinkSQLPreviewGenerator;
 import com.streamcell.platform.ai.dto.AIDeploymentResponse;
 import com.streamcell.platform.ai.service.AIDeploymentService;
 import com.streamcell.platform.flink.client.FlinkRestClient;
@@ -58,6 +59,7 @@ public class PipelineServiceImpl implements PipelineService {
 
     // generator
     private final FlinkSQLGenerator flinkSQLGenerator;
+    private final FlinkSQLPreviewGenerator flinkSQLPreviewGenerator;
 
     // policy
     private final JobStatusConvertPolicy jobStatusConvertPolicy;
@@ -136,7 +138,7 @@ public class PipelineServiceImpl implements PipelineService {
 
         FlinkSQLGenerationContext context =
                 pipelineDeploymentConverter.toGenerationContext(planValidationContext);
-        String generatedFlinkSql = flinkSQLGenerator.generate(context);
+        String generatedFlinkSql = flinkSQLPreviewGenerator.generate(context);
 
         return PipelineResponse.AISqlPreview.builder()
                 .pipelinePlan(generatePlan.getPipelinePlan())
