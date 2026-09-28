@@ -26,6 +26,7 @@ public enum ErrorCode {
     NOT_FOUND_AGGREGATION_FIELD(HttpStatus.NOT_FOUND, "aggregation 필드(field)값을 찾을 수 없습니다."),
     NOT_FOUND_AGGREGATION_ALIAS(HttpStatus.NOT_FOUND, "aggregations 별칭(alias)값을 찾을 수 없습니다."),
     NOT_FOUND_AI_AGENT_SESSION(HttpStatus.NOT_FOUND, "AI Agent Session정보가 없습니다. Session을 먼저 생성해주세요."),
+    NOT_FOUND_PIPELINE_PLAN_JSON(HttpStatus.NOT_FOUND, "Pipeline Plan JSON이 없습니다. Plan JSON을 먼저 생성해주세요."),
 
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
     INVALID_USER(HttpStatus.BAD_REQUEST, "존재하지 않는 사용자가 포함되어 있습니다."),

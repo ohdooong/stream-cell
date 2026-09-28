@@ -1,5 +1,7 @@
 package com.streamcell.platform.pipeline.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.platform.ai.domain.context.FlinkSQLGenerationContext;
@@ -50,6 +52,7 @@ public class PipelineDeploymentAISqlServiceImpl implements PipelineDeploymentSer
 
     private final PipelineRepository repository;
     private final PipelineDeploymentConverter converter;
+    private final JsonMapper jsonMapper = new JsonMapper();
 
     private final TopicService topicService;
     private final AIDeploymentService aiDeploymentService;
@@ -86,17 +89,24 @@ public class PipelineDeploymentAISqlServiceImpl implements PipelineDeploymentSer
 
         Topic topic = topicService.getTopicOfAISqlPipelineById(pipelineId);
 
-        AIDeploymentResponse.GeneratePlan generatePlan =
-                aiDeploymentService.getPipelinePlan(topic, pipelineId, pipeline.getNaturalLanguageRequest());
+        String pipelinePlanJson = pipeline.getPipelinePlanJson();
+        if (pipelinePlanJson.isBlank()) {
+            throw new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE_PLAN_JSON);
+        }
+
+        PipelinePlan pipelinePlan;
+        try {
+            pipelinePlan = jsonMapper.readValue(pipelinePlanJson, PipelinePlan.class);
+        } catch (JsonProcessingException e) {
+            throw new BaseAPIException(ErrorCode.JSON_PARSE_ERROR);
+        }
+        PipelinePlanValidationContext planValidationContext = aiDeploymentService.validatePipelinePlan(pipelineId, pipelinePlan);
 
         boolean canDeploy = pipelineDeploymentPolicy.isDeployPipeline(pipeline.getPipelineStatus());
         if (!canDeploy) {
             throw new BaseAPIException(ErrorCode.INVALID_PIPELINE_STATUS_FOR_AI_SQL, pipeline.getPipelineStatus().name());
         }
         repository.updatePipelineStatusByPipelineIdAndStatus(pipelineId, PipelineStatus.DEPLOYING);
-
-        PipelinePlan pipelinePlan = generatePlan.getPipelinePlan();
-        PipelinePlanValidationContext planValidationContext = generatePlan.getPipelinePlanValidationContext();
 
         // context
         KafkaSourceDDLGenerationContext sourceDDLGenerationContext =
@@ -108,6 +118,7 @@ public class PipelineDeploymentAISqlServiceImpl implements PipelineDeploymentSer
 
         String flinkJobId;
         FlinkJobStatus jobStatus;
+        String generatedFlinkSQL;
         try {
             // 1. 실제 결과 result 테이블 생성
             PipelineResultTable.Response table =
@@ -132,7 +143,7 @@ public class PipelineDeploymentAISqlServiceImpl implements PipelineDeploymentSer
 
 
             // Flink SQL문 생성
-            String generatedFlinkSQL = flinkSQLGenerator.generate(flinkSQLGenerationContext);
+            generatedFlinkSQL = flinkSQLGenerator.generate(flinkSQLGenerationContext);
             // 5. 생성된 Flink SQL문 submit
             FlinkSQLGatewayResponse.SubmitSQL submitSQL =
                     flinkSQLGatewayClient.submitSQL(
@@ -174,6 +185,8 @@ public class PipelineDeploymentAISqlServiceImpl implements PipelineDeploymentSer
 
         // pipeline status 최종 update
         repository.updatePipelineStatusByPipelineIdAndStatus(pipelineId, pipelineStatus);
+        // generated sql update
+        repository.updatePipelineGeneratedSql(pipelineId, generatedFlinkSQL);
 
         return pipelineDeployment;
     }
