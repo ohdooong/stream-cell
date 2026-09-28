@@ -24,14 +24,14 @@ export type TopicPermission = {
 };
 export type User = { userId: number; loginId?: string; email: string; name: string; status: string };
 export type PipelineType = 'AI_SQL' | 'CUSTOM_JAR';
-export type PipelineStatus = 'DRAFT' | 'CREATED' | 'ARTIFACT_UPLOADED' | 'DEPLOYING' | 'RUNNING' | 'FAILED' | 'STOPPED' | 'FINISHED';
+export type PipelineStatus = 'DRAFT' | 'CREATED' | 'ARTIFACT_UPLOADED' | 'DEPLOYING' | 'RUNNING' | 'FAILED' | 'STOPPING' | 'STOPPED' | 'FINISHED' | 'SUSPENDED';
 export type Pipeline = {
   pipelineId: number; ownerUserId: number; pipelineName: string; description?: string;
   pipelineType: PipelineType; pipelineStatus: PipelineStatus; naturalLanguageRequest?: string;
   pipelinePlanJson?: string; generatedSql?: string;
 };
 export type Artifact = { artifactId: number; pipelineId: number; artifactType: 'CUSTOM_JAR'; originalFileName: string; storedFileName: string; storedFilePath: string; flinkJarId?: string };
-export type Deployment = { pipelineId: number; deploymentId: number; flinkJarId: string; flinkJobId: string; status: 'DEPLOYING' | 'RUNNING' | 'FAILED' | 'STOPPED' | 'FINISHED' };
+export type Deployment = { pipelineId: number; deploymentId: number; flinkJarId?: string | null; flinkJobId: string; status: 'DEPLOYING' | 'RUNNING' | 'FAILED' | 'STOPPED' | 'FINISHED' };
 export type TopicSchemaInput = { displayName: string; description: string; messageFormat: string; timeField: string; schemaJson: string };
 
 const FLINK = '/api/v1/platform/flink';
@@ -68,5 +68,8 @@ export const platformApi = {
   },
   async deployPipeline(pipelineId: number) {
     return unwrap(await api<BaseResponse<Deployment>>(`${PIPELINE}/pipelines/deployment/${pipelineId}/deploy`, { method: 'POST' }));
+  },
+  async deployAiSqlPipeline(pipelineId: number) {
+    return unwrap(await api<BaseResponse<Deployment>>(`${PIPELINE}/pipelines/deployment/${pipelineId}/ai-sql/deploy`, { method: 'POST' }));
   },
 };

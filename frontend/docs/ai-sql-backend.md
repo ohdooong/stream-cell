@@ -105,6 +105,16 @@ AI_SQL Pipeline 등록 화면은 다음 세 API를 순서대로 사용합니다.
 
 기본 Pipeline 생성 후 AI 정보 등록만 실패하면 프론트는 생성된 `pipelineId`를 보존합니다. 같은 Pipeline에 AI 정보 등록만 다시 시도하므로 중복 Pipeline 생성을 방지합니다.
 
+## 4. AI_SQL 배포
+
+Pipeline 상세 화면에서 `AI SQL 배포` 버튼을 누르면 다음 API를 호출합니다.
+
+`POST /api/v1/platform/pipeline/pipelines/deployment/{pipelineId}/ai-sql/deploy`
+
+요청 본문은 없습니다. 프론트는 백엔드의 `PipelineDeploymentPolicy`에 맞춰 AI_SQL Pipeline 상태가 `DRAFT` 또는 `CREATED`일 때만 버튼을 활성화합니다.
+
+성공 응답의 `body`는 `pipelineId`, `deploymentId`, `flinkJobId`, `status`를 포함하는 Deployment 응답으로 처리합니다. AI_SQL 배포에는 JAR가 없으므로 `flinkJarId`는 없어도 됩니다. 배포 요청 후 Pipeline 상세와 목록을 다시 조회해 최신 상태를 표시합니다.
+
 ## 백엔드 확인 사항
 
 현재 `CreateAISqlConfig` DTO에는 `pipelinePlan`이 있지만 서비스 구현에서는 전달된 Plan을 `pipeline_plan_json`에 설정하는 처리가 확인되지 않습니다. 또한 미리보기의 `generatedFlinkSql`은 AI 정보 등록 DTO에 포함되지 않습니다. 사용자가 검토한 Plan·SQL을 그대로 저장해야 한다면 백엔드에서 두 값을 저장하는 계약과 구현을 추가해야 합니다.
