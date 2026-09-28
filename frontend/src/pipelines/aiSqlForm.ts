@@ -1,4 +1,4 @@
-import type { AiSqlInput, AiSqlPreview } from '../api/aiSql';
+import type { AiSqlConfigInput, AiSqlInput, AiSqlPreview, AiSqlPreviewRequest, PipelinePlan } from '../api/aiSql';
 import type { Topic } from '../api/platform';
 
 export type AiSqlDraft = {
@@ -23,6 +23,18 @@ export function toAiSqlInput(draft: AiSqlDraft, userId: number): AiSqlInput {
   };
 }
 
+export function toAiSqlPreviewRequest(input: AiSqlInput): AiSqlPreviewRequest {
+  return {
+    inputTopicId: input.inputTopicId,
+    userId: input.ownerUserId,
+    naturalLanguageRequest: input.naturalLanguageRequest,
+  };
+}
+
+export function toAiSqlConfigInput(input: AiSqlInput, pipelinePlan: PipelinePlan): AiSqlConfigInput {
+  return { ...toAiSqlPreviewRequest(input), pipelinePlan };
+}
+
 export function validateAiSqlInput(input: AiSqlInput, topics: Record<number, Topic | undefined>): string[] {
   const errors: string[] = [];
   if (!Number.isSafeInteger(input.ownerUserId) || input.ownerUserId < 1) errors.push('현재 사용자 정보를 확인해 주세요.');
@@ -41,12 +53,15 @@ export function validateAiSqlInput(input: AiSqlInput, topics: Record<number, Top
 
 export function isAiSqlPreview(value: unknown): value is AiSqlPreview {
   const preview = value as AiSqlPreview | null;
-  return Boolean(preview && typeof preview.previewId === 'string' && preview.previewId
-    && typeof preview.expiresAt === 'string' && Number.isFinite(Date.parse(preview.expiresAt))
-    && typeof preview.generatedSql === 'string' && preview.generatedSql.trim()
-    && typeof preview.pipelinePlan?.summary === 'string' && Array.isArray(preview.pipelinePlan.steps)
-    && preview.pipelinePlan.steps.every((step) => step && typeof step.title === 'string' && typeof step.description === 'string')
-    && Array.isArray(preview.warnings) && preview.warnings.every((warning) => typeof warning === 'string')
-    && typeof preview.validation?.valid === 'boolean' && Array.isArray(preview.validation.errors)
-    && preview.validation.errors.every((error) => typeof error === 'string'));
+  const plan = preview?.pipelinePlan;
+  return Boolean(preview && typeof preview.generatedFlinkSql === 'string' && preview.generatedFlinkSql.trim()
+    && plan && Number.isSafeInteger(plan.sourceTopicId) && plan.sourceTopicId > 0
+    && plan.window && typeof plan.window.type === 'string' && plan.window.type
+    && Number.isInteger(plan.window.size) && plan.window.size > 0
+    && typeof plan.window.unit === 'string' && plan.window.unit
+    && Array.isArray(plan.groupBy) && plan.groupBy.every((field) => typeof field === 'string')
+    && Array.isArray(plan.aggregations) && plan.aggregations.every((item) => item
+      && typeof item.function === 'string' && typeof item.field === 'string' && typeof item.alias === 'string')
+    && Array.isArray(plan.filters) && plan.filters.every((item) => item
+      && typeof item.field === 'string' && typeof item.operator === 'string' && Object.hasOwn(item, 'value')));
 }

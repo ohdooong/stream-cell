@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { aiSqlApi, type AiSqlPreview } from '../api/aiSql';
+import { aiSqlApi, type AiSqlPreview, type PipelinePlan } from '../api/aiSql';
 import { ApiError } from '../api/client';
 import { platformApi, type Topic } from '../api/platform';
-import { initialAiSqlDraft, isAiSqlPreview, toAiSqlInput, validateAiSqlInput, type AiSqlDraft } from './aiSqlForm';
+import {
+  initialAiSqlDraft, isAiSqlPreview, toAiSqlConfigInput, toAiSqlInput,
+  toAiSqlPreviewRequest, validateAiSqlInput, type AiSqlDraft,
+} from './aiSqlForm';
 import './aiSql.css';
 
 type Props = {
@@ -16,14 +19,33 @@ function errorMessage(error: unknown) {
   if (error instanceof ApiError && [404, 405, 501].includes(error.status)) {
     return 'AI SQL 생성·등록 기능을 준비 중입니다. 입력한 내용은 이 화면에 유지됩니다.';
   }
-  if (error instanceof ApiError && [409, 410].includes(error.status)) {
-    return '미리보기가 만료되었거나 Topic 설정이 변경되었습니다. Plan과 SQL을 다시 생성해 주세요.';
-  }
   return error instanceof Error ? error.message : '요청을 완료하지 못했습니다. 다시 시도해 주세요.';
 }
 
 function formatSchema(schema: string) {
   try { return JSON.stringify(JSON.parse(schema), null, 2); } catch { return schema; }
+}
+
+const windowUnits: Record<string, string> = { SECOND: '초', MINUTE: '분', HOUR: '시간', DAY: '일' };
+const windowTypes: Record<string, string> = { TUMBLE: 'Tumbling Window', HOP: 'Hopping Window', SESSION: 'Session Window' };
+const operators: Record<string, string> = { EQ: '=', NE: '≠', NEQ: '≠', GT: '>', GTE: '≥', LT: '<', LTE: '≤', IN: '포함', NOT_IN: '미포함' };
+
+function displayValue(value: unknown) {
+  if (typeof value === 'string') return value;
+  if (value === null) return 'null';
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
+function PlanPreview({ plan, topics }: { plan: PipelinePlan; topics: Topic[] }) {
+  const topic = topics.find((item) => item.topicId === plan.sourceTopicId);
+  return <div className="ai-plan">
+    <div className="ai-plan-row"><span>입력 Topic</span><strong>{topic?.displayName || topic?.topicName || `Topic #${plan.sourceTopicId}`}</strong></div>
+    <div className="ai-plan-row"><span>Window</span><strong>{plan.window.size}{windowUnits[plan.window.unit] || ` ${plan.window.unit}`} · {windowTypes[plan.window.type] || plan.window.type}</strong></div>
+    <div className="ai-plan-block"><span>그룹 기준</span>{plan.groupBy.length ? <div className="ai-plan-chips">{plan.groupBy.map((field) => <code key={field}>{field}</code>)}</div> : <strong>없음</strong>}</div>
+    <div className="ai-plan-block"><span>필터</span>{plan.filters.length ? <ul>{plan.filters.map((filter, index) => <li key={`${filter.field}-${index}`}><code>{filter.field}</code> {operators[filter.operator] || filter.operator} <b>{displayValue(filter.value)}</b></li>)}</ul> : <strong>없음</strong>}</div>
+    <div className="ai-plan-block"><span>집계</span><ul>{plan.aggregations.map((aggregation, index) => <li key={`${aggregation.alias}-${index}`}><code>{aggregation.function}({aggregation.field})</code><i>→</i><b>{aggregation.alias}</b></li>)}</ul></div>
+  </div>;
 }
 
 export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) {
@@ -33,9 +55,9 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
   const [topicErrors, setTopicErrors] = useState<Record<number, string>>({});
   const [preview, setPreview] = useState<{ key: string; value: AiSqlPreview } | null>(null);
   const [reviewed, setReviewed] = useState(false);
-  const [expired, setExpired] = useState(false);
   const [busy, setBusy] = useState<'generate' | 'save' | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
+  const [basePipelineId, setBasePipelineId] = useState<number | null>(null);
   const [createdId, setCreatedId] = useState<number | null>(null);
   const requestSequence = useRef(0);
   const topicSequence = useRef<Record<number, number>>({});
@@ -44,22 +66,13 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
   const inputKey = JSON.stringify(input);
   const currentPreview = preview?.key === inputKey ? preview.value : null;
   const loadingTopics = draft.topicId !== null && topicLoading[draft.topicId];
-  const canSave = currentPreview?.validation.valid && !currentPreview.validation.errors.length && reviewed && !expired;
+  const canSave = Boolean(currentPreview && reviewed);
 
   useEffect(() => {
     requestSequence.current += 1;
-    setPreview(null); setReviewed(false); setBusy(null); setCreatedId(null);
+    setPreview(null); setReviewed(false); setBusy(null); setBasePipelineId(null); setCreatedId(null);
     return () => { requestSequence.current += 1; };
   }, [userId]);
-
-  useEffect(() => {
-    setExpired(false);
-    if (!currentPreview) return;
-    const remaining = Date.parse(currentPreview.expiresAt) - Date.now();
-    if (remaining <= 0) { setExpired(true); return; }
-    const timer = window.setTimeout(() => setExpired(true), Math.min(remaining, 2_147_483_647));
-    return () => window.clearTimeout(timer);
-  }, [currentPreview?.expiresAt]);
 
   function update(patch: Partial<AiSqlDraft>) {
     setDraft((current) => ({ ...current, ...patch }));
@@ -100,9 +113,10 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
     const sequence = ++requestSequence.current;
     setBusy('generate'); setPreview(null); setReviewed(false);
     try {
-      const result = await aiSqlApi.preview(input);
+      const result = await aiSqlApi.preview(toAiSqlPreviewRequest(input));
       if (sequence !== requestSequence.current) return;
       if (!isAiSqlPreview(result)) throw new Error('생성 응답을 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.');
+      if (result.pipelinePlan.sourceTopicId !== input.inputTopicId) throw new Error('생성된 Plan의 입력 Topic이 선택한 Topic과 다릅니다. 다시 생성해 주세요.');
       setPreview({ key: inputKey, value: result });
     } catch (error) {
       if (sequence === requestSequence.current) setErrors([errorMessage(error)]);
@@ -113,21 +127,32 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
 
   async function save() {
     if (!currentPreview || !canSave || busy) return;
-    if (Date.parse(currentPreview.expiresAt) <= Date.now()) { setExpired(true); return; }
     const sequence = ++requestSequence.current;
+    let pipelineId = basePipelineId;
     setBusy('save'); setErrors([]);
     try {
-      const pipeline = await aiSqlApi.create(input, currentPreview.previewId);
+      if (pipelineId === null) {
+        const pipeline = await platformApi.createPipeline({
+          ownerUserId: input.ownerUserId,
+          pipelineName: input.pipelineName,
+          description: input.description,
+          pipelineType: 'AI_SQL',
+        });
+        if (!Number.isSafeInteger(pipeline?.pipelineId) || pipeline.pipelineId < 1) throw new Error('Pipeline 생성 응답을 확인할 수 없습니다.');
+        pipelineId = pipeline.pipelineId;
+        setBasePipelineId(pipelineId);
+      }
+      await aiSqlApi.createConfig(pipelineId, toAiSqlConfigInput(input, currentPreview.pipelinePlan));
       if (sequence !== requestSequence.current) return;
-      if (!Number.isSafeInteger(pipeline?.pipelineId) || pipeline.pipelineId < 1) throw new Error('등록 응답을 확인할 수 없습니다. Pipeline 목록을 확인해 주세요.');
-      setCreatedId(pipeline.pipelineId);
+      setCreatedId(pipelineId);
       notify('AI SQL Pipeline을 등록했습니다.');
-      try { await onCreated(pipeline.pipelineId); }
-      catch { setErrors([`Pipeline #${pipeline.pipelineId} 등록은 완료됐지만 목록을 갱신하지 못했습니다. 아래 버튼으로 다시 열어 주세요.`]); }
+      try { await onCreated(pipelineId); }
+      catch { setErrors([`Pipeline #${pipelineId} 등록은 완료됐지만 목록을 갱신하지 못했습니다. 아래 버튼으로 다시 열어 주세요.`]); }
     } catch (error) {
       if (sequence === requestSequence.current) {
-        setErrors([errorMessage(error)]);
-        if (error instanceof ApiError && [409, 410].includes(error.status)) { setPreview(null); setReviewed(false); }
+        setErrors([pipelineId === null
+          ? errorMessage(error)
+          : `Pipeline #${pipelineId}의 기본 정보는 생성됐지만 AI 정보 등록에 실패했습니다. 다시 시도해 주세요: ${errorMessage(error)}`]);
       }
     } finally {
       if (sequence === requestSequence.current) setBusy(null);
@@ -141,7 +166,7 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
       <li className={createdId ? 'active' : ''}><b>03</b> Pipeline 등록</li>
     </ol>
 
-    <fieldset disabled={busy !== null || createdId !== null} className="ai-inputs">
+    <fieldset disabled={busy !== null || basePipelineId !== null || createdId !== null} className="ai-inputs">
       <section className="panel ai-section">
         <header><span>01</span><div><h3>기본 정보</h3><p>분석 작업의 이름과 사용할 데이터를 정해 주세요.</p></div></header>
         <div className="ai-grid">
@@ -174,17 +199,15 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
     </fieldset>
 
     {errors.length > 0 && <div className="ai-errors" role="alert"><strong>입력 및 연결 상태를 확인해 주세요.</strong><ul>{errors.map((error, index) => <li key={index}>{error}</li>)}</ul></div>}
-    <div className="ai-generate-actions"><p>설정을 변경하면 이전 미리보기를 다시 생성해야 합니다.</p><button type="submit" className="primary-button compact" disabled={!!busy || loadingTopics || createdId !== null}>{busy === 'generate' ? 'Plan · SQL 생성 중…' : currentPreview ? 'Plan · SQL 다시 생성' : 'Plan · SQL 생성'}</button></div>
+    <div className="ai-generate-actions"><p>설정을 변경하면 이전 미리보기를 다시 생성해야 합니다.</p><button type="submit" className="primary-button compact" disabled={!!busy || loadingTopics || basePipelineId !== null || createdId !== null}>{busy === 'generate' ? 'Plan · SQL 생성 중…' : currentPreview ? 'Plan · SQL 다시 생성' : 'Plan · SQL 생성'}</button></div>
 
     <section className="panel ai-preview" aria-label="Pipeline Plan 및 SQL 미리보기" aria-busy={busy === 'generate'}>
-      <div className="panel-heading"><div><h3>Plan · SQL 미리보기</h3><p>처리 조건과 SQL을 확인한 후 Pipeline을 등록하세요.</p></div>{currentPreview && <span className={`status ${currentPreview.validation.valid ? 'running' : 'failed'}`}>{currentPreview.validation.valid ? '검증 완료' : '검토 필요'}</span>}</div>
+      <div className="panel-heading"><div><h3>Plan · SQL 미리보기</h3><p>처리 조건과 SQL을 확인한 후 Pipeline을 등록하세요.</p></div>{currentPreview && <span className="status running">생성 완료</span>}</div>
       {currentPreview ? <>
-        <div className="ai-preview-grid"><article><h4>Pipeline Plan</h4><p>{currentPreview.pipelinePlan.summary}</p><ol>{currentPreview.pipelinePlan.steps.map((step, index) => <li key={index}><strong>{step.title}</strong><p>{step.description}</p></li>)}</ol></article><article><h4>Flink SQL</h4><pre>{currentPreview.generatedSql}</pre></article></div>
-        {currentPreview.warnings.length > 0 && <div className="ai-preview-notes"><strong>확인할 사항</strong><ul>{currentPreview.warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul></div>}
-        {currentPreview.validation.errors.length > 0 && <div className="ai-errors" role="alert"><ul>{currentPreview.validation.errors.map((error, index) => <li key={index}>{error}</li>)}</ul></div>}
-        <div className="ai-review"><label><input type="checkbox" checked={reviewed} onChange={(e) => setReviewed(e.target.checked)} disabled={!currentPreview.validation.valid || currentPreview.validation.errors.length > 0 || expired || !!busy || createdId !== null} />생성된 처리 조건과 SQL을 확인했습니다.</label><small>{expired ? '미리보기가 만료되었습니다. 다시 생성해 주세요.' : `미리보기 유효 시간: ${new Date(currentPreview.expiresAt).toLocaleString('ko-KR')}`}</small></div>
+        <div className="ai-preview-grid"><article><h4>Pipeline Plan</h4><PlanPreview plan={currentPreview.pipelinePlan} topics={topics} /></article><article><h4>Flink SQL</h4><pre>{currentPreview.generatedFlinkSql}</pre></article></div>
+        <div className="ai-review"><label><input type="checkbox" checked={reviewed} onChange={(e) => setReviewed(e.target.checked)} disabled={!!busy || createdId !== null} />생성된 처리 조건과 SQL을 확인했습니다.</label><small>확인한 Pipeline Plan이 AI 정보 등록 API로 전달됩니다.</small></div>
       </> : <div className="ai-preview-empty"><span>SQL</span><h4>처리할 내용을 입력하고 생성해 주세요.</h4><p>Pipeline Plan과 검증된 Flink SQL이 여기에 표시됩니다.</p></div>}
     </section>
-    <div className="ai-save-actions"><p>등록 후 Pipeline 상세에서 배포 상태를 확인할 수 있습니다.</p>{createdId !== null ? <button type="button" className="primary-button compact" onClick={() => void onCreated(createdId).catch(() => setErrors(['목록을 갱신하지 못했습니다. 잠시 후 다시 시도해 주세요.']))}>등록된 Pipeline 열기</button> : <button type="button" className="primary-button compact" disabled={!canSave || !!busy} onClick={() => void save()}>{busy === 'save' ? '등록 중…' : '검토한 Pipeline 등록'}</button>}</div>
+    <div className="ai-save-actions"><p>기본 Pipeline을 생성한 뒤 검토한 AI 정보를 연결해 등록합니다.</p>{createdId !== null ? <button type="button" className="primary-button compact" onClick={() => void onCreated(createdId).catch(() => setErrors(['목록을 갱신하지 못했습니다. 잠시 후 다시 시도해 주세요.']))}>등록된 Pipeline 열기</button> : <button type="button" className="primary-button compact" disabled={!canSave || !!busy} onClick={() => void save()}>{busy === 'save' ? '등록 중…' : basePipelineId !== null ? 'AI 정보 다시 등록' : '검토한 Pipeline 등록'}</button>}</div>
   </form>;
 }
