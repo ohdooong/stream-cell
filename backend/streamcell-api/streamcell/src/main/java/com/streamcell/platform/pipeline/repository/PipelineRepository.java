@@ -79,8 +79,18 @@ public interface PipelineRepository {
     @Update("""
         update platform.pipeline
            set 
+               generated_sql = #{generatedFlinkSql}
+             , updated_by = 'ADMIN'
+             , updated_at = now()
+        where pipeline_id = #{pipelineId}
+    """)
+    int updatePipelineGeneratedSql(Long pipelineId, String generatedFlinkSql);
+
+    @Update("""
+        update platform.pipeline
+           set 
                natural_language_request = #{naturalLanguageRequest}
-             , pipeline_plan_json = #{pipelinePlanJson}
+             , pipeline_plan_json = #{pipelinePlanJson}::jsonb
              , updated_by = 'ADMIN'
              , updated_at = now()
         where pipeline_id = #{pipelineId}

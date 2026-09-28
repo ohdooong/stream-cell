@@ -139,7 +139,8 @@ public class AIDeploymentServiceImpl implements AIDeploymentService {
         return AIDeploymentResponse.GeneratePlan.from(pipelinePlan, planValidationContext);
     }
 
-    private PipelinePlanValidationContext validatePipelinePlan(Long pipelineId, PipelinePlan pipelinePlan) {
+    @Override
+    public PipelinePlanValidationContext validatePipelinePlan(Long pipelineId, PipelinePlan pipelinePlan) {
         PipelinePlanValidationContext context =
                 pipelinePlanValidationContextResolver.resolve(1L, pipelineId, pipelinePlan);  // TODO userId 1L로 고정해놓았지만 수정무조건 필요함!!
 

@@ -18,7 +18,6 @@ public interface PipelineDeploymentConverter {
 
     PipelineResponse.Deployment toDto(PipelineDeployment pipelineDeployment);
 
-
     FlinkSQLGenerationContext toGenerationContext(PipelinePlanValidationContext validationContext);
 
     KafkaSourceDDLGenerationContext toKafkaSourceDDLGenerationContext(PipelinePlanValidationContext validationContext);
