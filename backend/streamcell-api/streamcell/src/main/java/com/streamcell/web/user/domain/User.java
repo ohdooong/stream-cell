@@ -1,14 +1,48 @@
 package com.streamcell.web.user.domain;
 
+import java.util.Collection;
+import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Getter
-public class User {
+@AllArgsConstructor
+@Builder
+public class User implements UserDetails {
+
     private Long userId;
+
     private String loginId;
+
     private String name;
+
     private String email;
-    private String password;
+
+    private String encryptedPassword;
+
     private String status;
+
+    private Role role;
+
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+    }
+
+    @Override
+    public @Nullable String getPassword() {
+        return this.encryptedPassword;
+    }
+
+    @Override
+    public String getUsername() {
+        return this.loginId;
+    }
 }
