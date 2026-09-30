@@ -1,5 +1,6 @@
 import { api, unwrap } from './client';
-import type { Pipeline } from './platform';
+import { platformApi, type Pipeline } from './platform';
+import { isPersistedPipelinePlan } from './pipelinePlan';
 
 export type AiSqlInput = {
   ownerUserId: number;
@@ -43,8 +44,13 @@ export const aiSqlApi = {
     }));
   },
   async createConfig(pipelineId: number, input: AiSqlConfigInput) {
-    return unwrap(await api<Envelope<Pipeline>>(`${PIPELINES}/${pipelineId}/ai-sql`, {
+    await api<Envelope<Pipeline>>(`${PIPELINES}/${pipelineId}/ai-sql`, {
       method: 'POST', body: JSON.stringify(input),
-    }));
+    });
+    const pipeline = await platformApi.getPipeline(pipelineId, 'AI_SQL');
+    if (!isPersistedPipelinePlan(pipeline.pipelinePlanJson, input.pipelinePlan)) {
+      throw new Error('서버가 등록 성공을 응답했지만 Pipeline Plan JSON이 저장되지 않았습니다. 백엔드 저장 로직을 확인해 주세요.');
+    }
+    return pipeline;
   },
 };

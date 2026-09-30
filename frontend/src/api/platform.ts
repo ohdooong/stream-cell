@@ -1,4 +1,5 @@
 import { api, unwrap } from './client';
+import { pipelineDetailPath } from './pipelineDetail';
 
 type BaseResponse<T> = { status: number; message: string; timestamp: string; body: T };
 
@@ -30,6 +31,7 @@ export type Pipeline = {
   pipelineType: PipelineType; pipelineStatus: PipelineStatus; naturalLanguageRequest?: string;
   pipelinePlanJson?: string; generatedSql?: string;
 };
+export type PipelineDetail = Pipeline & Record<string, unknown>;
 export type Artifact = { artifactId: number; pipelineId: number; artifactType: 'CUSTOM_JAR'; originalFileName: string; storedFileName: string; storedFilePath: string; flinkJarId?: string };
 export type Deployment = { pipelineId: number; deploymentId: number; flinkJarId?: string | null; flinkJobId: string; status: 'DEPLOYING' | 'RUNNING' | 'FAILED' | 'STOPPED' | 'FINISHED' };
 export type TopicSchemaInput = { displayName: string; description: string; messageFormat: string; timeField: string; schemaJson: string };
@@ -53,7 +55,9 @@ export const platformApi = {
   },
   async getUsers() { return api<User[]>('/api/v1/web/user/items'); },
   async getPipelines(userId: number) { return unwrap(await api<BaseResponse<Pipeline[]>>(`/api/v1/web/my/pipeline/pipelines?userId=${userId}`)); },
-  async getPipeline(pipelineId: number) { return unwrap(await api<BaseResponse<Pipeline>>(`${PIPELINE}/pipelines/${pipelineId}`)); },
+  async getPipeline(pipelineId: number, type: PipelineType) {
+    return unwrap(await api<BaseResponse<PipelineDetail>>(pipelineDetailPath(pipelineId, type)));
+  },
   async createPipeline(input: Pick<Pipeline, 'ownerUserId' | 'pipelineName' | 'description' | 'pipelineType'>) {
     return unwrap(await api<BaseResponse<Pipeline>>(`${PIPELINE}/pipelines`, { method: 'POST', body: JSON.stringify(input) }));
   },

@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { ApiError } from './api/client';
 import {
-  platformApi, type ClusterOverview, type Pipeline, type PipelineStatus, type PipelineType,
+  platformApi, type ClusterOverview, type Pipeline, type PipelineDetail as PipelineDetailData, type PipelineStatus, type PipelineType,
   type Topic, type TopicPermission, type TopicPermissionType, type User,
 } from './api/platform';
 import { useAuth } from './auth/AuthContext';
@@ -14,6 +14,28 @@ const nav: Array<[View, string, string]> = [['overview', '▦', 'Overview'], ['c
 
 function messageOf(error: unknown) { return error instanceof ApiError ? error.message : error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'; }
 function Brand() { return <div className="brand inverse"><span className="brand-symbol"><i /><i /><i /></span><strong>StreamCell</strong></div>; }
+function FlowIllustration() {
+  return <div className="auth-flow-board" aria-label="Kafka Topic에서 Pipeline을 거쳐 처리 결과로 이어지는 데이터 흐름 예시">
+    <div className="auth-flow-board-heading"><span><i /> PIPELINE FLOW</span><small>데이터 처리 흐름 예시</small></div>
+    <div className="auth-flow-track">
+      <div className="auth-flow-node">
+        <span className="auth-flow-icon source-icon"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><ellipse cx="16" cy="8" rx="10" ry="4" /><path d="M6 8v15c0 2.2 4.5 4 10 4s10-1.8 10-4V8M6 15c0 2.2 4.5 4 10 4s10-1.8 10-4" /></svg></span>
+        <small>SOURCE</small><strong>Kafka Topic</strong><span>이벤트 수집</span>
+      </div>
+      <div className="auth-flow-link" aria-hidden="true"><i /><i /><i /></div>
+      <div className="auth-flow-node featured">
+        <span className="auth-flow-icon pipeline-icon"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="4" y="11" width="7" height="10" rx="2" /><rect x="21" y="11" width="7" height="10" rx="2" /><path d="M11 16h10M15 11l5 5-5 5" /></svg></span>
+        <small>PROCESS</small><strong>Pipeline</strong><span>실시간 처리</span>
+      </div>
+      <div className="auth-flow-link" aria-hidden="true"><i /><i /><i /></div>
+      <div className="auth-flow-node">
+        <span className="auth-flow-icon result-icon"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M5 25h22M8 21v-5M14 21V9M20 21v-8M26 21V6" strokeLinecap="round" strokeWidth="3" /></svg></span>
+        <small>OBSERVE</small><strong>Result</strong><span>결과 확인</span>
+      </div>
+    </div>
+    <div className="auth-flow-board-footer"><span><i /> Topic</span><b>→</b><span><i /> Pipeline</span><b>→</b><span><i /> Dashboard</span></div>
+  </div>;
+}
 function Status({ value }: { value: PipelineStatus | string }) { return <span className={`status ${value === 'RUNNING' ? 'running' : value === 'FAILED' ? 'failed' : ''}`}><i />{value}</span>; }
 function Empty({ title, children }: { title: string; children: ReactNode }) { return <div className="empty-state"><span>◇</span><h3>{title}</h3><p>{children}</p></div>; }
 function Field({ label, hint, wide, children }: { label: string; hint?: string; wide?: boolean; children: ReactNode }) { return <label className={`connected-field ${wide ? 'wide' : ''}`}><span>{label}</span>{children}{hint && <small>{hint}</small>}</label>; }
@@ -38,12 +60,38 @@ function Login() {
     try { await signIn(loginId, password); }
     catch (cause) { setError(messageOf(cause)); setBusy(false); }
   }
-  return <main className="auth-page"><section className="auth-art"><Brand /><div className="art-copy"><p className="eyebrow">STREAMING MANAGEMENT PLATFORM</p><h1>데이터 흐름을<br /><em>하나의 화면</em>에서.</h1></div></section><section className="auth-panel"><form className="login-card" onSubmit={submit}><div className="login-heading"><h2>관리 콘솔 로그인</h2><p>StreamCell 계정으로 로그인하세요.</p></div><label htmlFor="login-id">아이디</label><div className="field"><input id="login-id" autoComplete="username" value={loginId} onChange={(e) => setLoginId(e.target.value)} required /></div><div className="label-row"><label htmlFor="login-password">비밀번호</label></div><div className="field"><input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>{error && <p className="form-error" role="alert">{error}</p>}<button className="primary-button" disabled={busy}>{busy ? '로그인 중…' : '로그인'}</button></form></section></main>;
+  return <main className="auth-page">
+    <section className="auth-art">
+      <div className="auth-art-inner">
+        <Brand />
+        <div className="art-copy">
+          <p className="eyebrow"><span /> STREAMCELL CONTROL CENTER</p>
+          <h1>흐르는 데이터를<br /><em>운영 가능한 흐름</em>으로.</h1>
+          <p className="auth-art-description">Topic에서 시작된 이벤트가 Pipeline을 지나 결과가 되는 순간까지, 한곳에서 설계하고 관리하세요.</p>
+        </div>
+        <FlowIllustration />
+        <div className="auth-art-footer"><span>STREAMING DATA OPERATIONS</span><span>TOPIC <b>·</b> PIPELINE <b>·</b> DEPLOYMENT</span></div>
+      </div>
+    </section>
+    <section className="auth-panel">
+      <form className="login-card" onSubmit={submit}>
+        <div className="auth-form-emblem" aria-hidden="true"><span className="brand-symbol"><i /><i /><i /></span></div>
+        <div className="login-heading"><p className="auth-form-eyebrow">WELCOME TO STREAMCELL</p><h2>관리 콘솔 로그인</h2><p>실시간 데이터 파이프라인을 관리할 준비가 되셨나요?<br />계정으로 로그인해 계속하세요.</p></div>
+        <label htmlFor="login-id">아이디</label>
+        <div className="field"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.25" /><path d="M5.5 19c.4-3.1 2.9-5 6.5-5s6.1 1.9 6.5 5" /></svg><input id="login-id" autoComplete="username" placeholder="아이디를 입력하세요" value={loginId} onChange={(e) => setLoginId(e.target.value)} required /></div>
+        <div className="label-row"><label htmlFor="login-password">비밀번호</label></div>
+        <div className="field"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v2" /></svg><input id="login-password" type="password" autoComplete="current-password" placeholder="비밀번호를 입력하세요" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
+        {error && <p className="form-error" role="alert">{error}</p>}
+        <button className="primary-button auth-submit" disabled={busy}>{busy ? '로그인 중…' : <>로그인하고 시작하기 <span aria-hidden="true">→</span></>}</button>
+        <p className="auth-form-note"><span aria-hidden="true">●</span> 승인된 StreamCell 계정으로만 접속할 수 있습니다.</p>
+      </form>
+    </section>
+  </main>;
 }
 
 function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOut: () => Promise<void> }) {
   const { user, authEnabled } = useAuth();
-  const [view, setView] = useState<View>('overview'); const [users, setUsers] = useState<User[]>([]); const [topics, setTopics] = useState<Topic[]>([]); const [pipelines, setPipelines] = useState<Pipeline[]>([]); const [cluster, setCluster] = useState<ClusterOverview | null>(null); const [activeUserId, setActiveUserId] = useState(defaultUserId); const [selectedPipelineId, setSelectedPipelineId] = useState<number | null>(null); const [loading, setLoading] = useState(true); const [notice, setNotice] = useState(''); const [error, setError] = useState('');
+  const [view, setView] = useState<View>('overview'); const [users, setUsers] = useState<User[]>([]); const [topics, setTopics] = useState<Topic[]>([]); const [pipelines, setPipelines] = useState<Pipeline[]>([]); const [cluster, setCluster] = useState<ClusterOverview | null>(null); const [activeUserId, setActiveUserId] = useState(defaultUserId); const [selectedPipeline, setSelectedPipeline] = useState<{ id: number; type: PipelineType } | null>(null); const [loading, setLoading] = useState(true); const [notice, setNotice] = useState(''); const [error, setError] = useState('');
   const success = (message: string) => { setError(''); setNotice(message); window.setTimeout(() => setNotice(''), 4000); };
   const fail = (cause: unknown) => { setNotice(''); setError(messageOf(cause)); };
   const refreshTopics = async () => setTopics(await platformApi.getTopics());
@@ -53,7 +101,7 @@ function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOu
   useEffect(() => { platformApi.getPipelines(activeUserId).then(setPipelines).catch(fail); }, [activeUserId]);
   const activeUser = users.find((item) => item.userId === activeUserId);
   const accountName = activeUser?.name || user?.displayName || user?.username || '사용자';
-  const openPipeline = (id: number) => { setSelectedPipelineId(id); setView('detail'); };
+  const openPipeline = (id: number, type: PipelineType) => { setSelectedPipeline({ id, type }); setView('detail'); };
   return <div className="app-shell">
     <aside className="sidebar">
       <Brand />
@@ -76,8 +124,8 @@ function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOu
         {view === 'topics' && <Topics topics={topics} refresh={refreshTopics} success={success} fail={fail} />}
         {view === 'permissions' && <Permissions topics={topics} users={users} activeUserId={activeUserId} success={success} fail={fail} />}
         {view === 'pipelines' && <Pipelines pipelines={pipelines} create={() => setView('create')} open={openPipeline} />}
-        {view === 'create' && <CreatePipeline topics={topics} activeUserId={activeUserId} success={success} fail={fail} done={async (id) => { await refreshPipelines(); openPipeline(id); }} />}
-        {view === 'detail' && selectedPipelineId && <PipelineDetail id={selectedPipelineId} success={success} fail={fail} refreshList={refreshPipelines} />}
+        {view === 'create' && <CreatePipeline topics={topics} activeUserId={activeUserId} success={success} fail={fail} done={async (id, type) => { await refreshPipelines(); openPipeline(id, type); }} />}
+        {view === 'detail' && selectedPipeline && <PipelineDetail key={`${selectedPipeline.type}-${selectedPipeline.id}`} id={selectedPipeline.id} type={selectedPipeline.type} success={success} fail={fail} refreshList={refreshPipelines} />}
         {view === 'results' && <Unavailable title="결과 Dashboard API가 필요합니다">Pipeline 처리 결과 조회 엔드포인트가 아직 구현되지 않아 임의 데이터를 표시하지 않습니다.</Unavailable>}
         {view === 'failures' && <Unavailable title="실패 분석 API가 필요합니다">원본 Exception과 AI 분석 결과 조회 엔드포인트가 구현되면 이 화면에 연결할 수 있습니다.</Unavailable>}
       </>}</main>
@@ -85,8 +133,8 @@ function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOu
   </div>;
 }
 
-function Overview({ cluster, topics, pipelines, navigate, open }: { cluster: ClusterOverview | null; topics: Topic[]; pipelines: Pipeline[]; navigate: (view: View) => void; open: (id: number) => void }) {
-  return <><div className="welcome-row"><div><h2>Streaming Platform 현황</h2><p>백엔드 API에서 조회한 최신 운영 상태입니다.</p></div><button className="primary-button compact" onClick={() => navigate('create')}>＋ 새 Pipeline</button></div><div className="stats-grid"><Stat title="Running Jobs" value={cluster?.['jobs-running'] ?? '—'} hint={`${cluster?.['jobs-failed'] ?? 0} failed`} tone="blue" /><Stat title="Kafka Topics" value={topics.length} hint="synced topics" tone="green" /><Stat title="Available Slots" value={cluster?.['slots-available'] ?? '—'} hint={`/ ${cluster?.['slots-total'] ?? '—'} total`} tone="amber" /></div><div className="dashboard-grid"><section className="panel"><div className="panel-heading"><div><h3>내 Pipeline</h3><p>선택한 사용자의 Pipeline 목록</p></div><button className="text-button" onClick={() => navigate('pipelines')}>전체 보기 →</button></div>{pipelines.length ? <div className="pipeline-list">{pipelines.slice(0, 5).map((p) => <div className="pipeline-row" key={p.pipelineId}><span className="pipeline-mark">⌘</span><div><strong>{p.pipelineName}</strong><small>{p.pipelineType} · #{p.pipelineId}</small></div><Status value={p.pipelineStatus} /><button className="row-action" onClick={() => open(p.pipelineId)}>열기 →</button></div>)}</div> : <Empty title="Pipeline이 없습니다">새 Pipeline을 등록해 운영을 시작하세요.</Empty>}</section><section className="panel"><div className="panel-heading"><div><h3>Flink Cluster</h3><p>{cluster?.['flink-version'] || '연결 정보 없음'}</p></div><span className="live-pill"><i /> LIVE API</span></div><div className="cluster-summary"><b>{cluster?.taskmanagers ?? '—'}</b><span>TaskManagers</span><b>{cluster?.['slots-total'] ?? '—'}</b><span>Total Slots</span><b>{cluster?.['jobs-finished'] ?? '—'}</b><span>Finished Jobs</span></div></section></div></>;
+function Overview({ cluster, topics, pipelines, navigate, open }: { cluster: ClusterOverview | null; topics: Topic[]; pipelines: Pipeline[]; navigate: (view: View) => void; open: (id: number, type: PipelineType) => void }) {
+  return <><div className="welcome-row"><div><h2>Streaming Platform 현황</h2><p>백엔드 API에서 조회한 최신 운영 상태입니다.</p></div><button className="primary-button compact" onClick={() => navigate('create')}>＋ 새 Pipeline</button></div><div className="stats-grid"><Stat title="Running Jobs" value={cluster?.['jobs-running'] ?? '—'} hint={`${cluster?.['jobs-failed'] ?? 0} failed`} tone="blue" /><Stat title="Kafka Topics" value={topics.length} hint="synced topics" tone="green" /><Stat title="Available Slots" value={cluster?.['slots-available'] ?? '—'} hint={`/ ${cluster?.['slots-total'] ?? '—'} total`} tone="amber" /></div><div className="dashboard-grid"><section className="panel"><div className="panel-heading"><div><h3>내 Pipeline</h3><p>선택한 사용자의 Pipeline 목록</p></div><button className="text-button" onClick={() => navigate('pipelines')}>전체 보기 →</button></div>{pipelines.length ? <div className="pipeline-list">{pipelines.slice(0, 5).map((p) => <div className="pipeline-row" key={p.pipelineId}><span className="pipeline-mark">⌘</span><div><strong>{p.pipelineName}</strong><small>{p.pipelineType} · #{p.pipelineId}</small></div><Status value={p.pipelineStatus} /><button className="row-action" onClick={() => open(p.pipelineId, p.pipelineType)}>열기 →</button></div>)}</div> : <Empty title="Pipeline이 없습니다">새 Pipeline을 등록해 운영을 시작하세요.</Empty>}</section><section className="panel"><div className="panel-heading"><div><h3>Flink Cluster</h3><p>{cluster?.['flink-version'] || '연결 정보 없음'}</p></div><span className="live-pill"><i /> LIVE API</span></div><div className="cluster-summary"><b>{cluster?.taskmanagers ?? '—'}</b><span>TaskManagers</span><b>{cluster?.['slots-total'] ?? '—'}</b><span>Total Slots</span><b>{cluster?.['jobs-finished'] ?? '—'}</b><span>Finished Jobs</span></div></section></div></>;
 }
 function Stat({ title, value, hint, tone }: { title: string; value: number | string; hint: string; tone: string }) { return <article className="stat-card"><span className={`stat-icon ${tone}`}>◇</span><p>{title}</p><strong>{value}</strong><small>{hint}</small></article>; }
 
@@ -114,9 +162,9 @@ function Permissions({ topics, users, activeUserId, success, fail }: { topics: T
 }
 function PermissionTable({ items }: { items: TopicPermission[] }) { return items.length ? <div className="table-scroll"><table><thead><tr><th>Topic</th><th>User</th><th>권한</th></tr></thead><tbody>{items.map((p) => <tr key={p.permissionId}><td><strong>{p.topicName}</strong><small>#{p.topicId}</small></td><td>{p.userName}<small>#{p.userId}</small></td><td><span className="format-chip">{p.topicPermissionType}</span></td></tr>)}</tbody></table></div> : <Empty title="권한이 없습니다">조회된 Topic 권한이 없습니다.</Empty>; }
 
-function Pipelines({ pipelines, create, open }: { pipelines: Pipeline[]; create: () => void; open: (id: number) => void }) { return <><div className="welcome-row"><div><h2>Pipeline 운영</h2><p>사용자 소유 Pipeline의 현재 상태를 조회합니다.</p></div><button className="primary-button compact" onClick={create}>＋ 새 Pipeline</button></div><section className="panel table-panel">{pipelines.length ? <div className="table-scroll"><table><thead><tr><th>Pipeline</th><th>Type</th><th>Status</th><th>Action</th></tr></thead><tbody>{pipelines.map((p) => <tr key={p.pipelineId}><td><strong>{p.pipelineName}</strong><small>#{p.pipelineId} · {p.description || '설명 없음'}</small></td><td><span className="format-chip">{p.pipelineType}</span></td><td><Status value={p.pipelineStatus} /></td><td><button className="row-action" onClick={() => open(p.pipelineId)}>상세 →</button></td></tr>)}</tbody></table></div> : <Empty title="Pipeline이 없습니다">새 Pipeline을 등록하세요.</Empty>}</section></>; }
+function Pipelines({ pipelines, create, open }: { pipelines: Pipeline[]; create: () => void; open: (id: number, type: PipelineType) => void }) { return <><div className="welcome-row"><div><h2>Pipeline 운영</h2><p>사용자 소유 Pipeline의 현재 상태를 조회합니다.</p></div><button className="primary-button compact" onClick={create}>＋ 새 Pipeline</button></div><section className="panel table-panel">{pipelines.length ? <div className="table-scroll"><table><thead><tr><th>Pipeline</th><th>Type</th><th>Status</th><th>Action</th></tr></thead><tbody>{pipelines.map((p) => <tr key={p.pipelineId}><td><strong>{p.pipelineName}</strong><small>#{p.pipelineId} · {p.description || '설명 없음'}</small></td><td><span className="format-chip">{p.pipelineType}</span></td><td><Status value={p.pipelineStatus} /></td><td><button className="row-action" onClick={() => open(p.pipelineId, p.pipelineType)}>상세 →</button></td></tr>)}</tbody></table></div> : <Empty title="Pipeline이 없습니다">새 Pipeline을 등록하세요.</Empty>}</section></>; }
 
-function CreatePipeline({ topics, activeUserId, success, fail, done }: { topics: Topic[]; activeUserId: number; success: (m: string) => void; fail: (e: unknown) => void; done: (id: number) => Promise<void> }) {
+function CreatePipeline({ topics, activeUserId, success, fail, done }: { topics: Topic[]; activeUserId: number; success: (m: string) => void; fail: (e: unknown) => void; done: (id: number, type: PipelineType) => Promise<void> }) {
   const [type, setType] = useState<PipelineType>('CUSTOM_JAR');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -145,10 +193,10 @@ function CreatePipeline({ topics, activeUserId, success, fail, done }: { topics:
         success('Pipeline과 Custom JAR를 등록했습니다.');
       } catch (error) {
         fail(new Error(`Pipeline #${pipeline.pipelineId} 생성 후 JAR 등록에 실패했습니다: ${messageOf(error)}`));
-        await done(pipeline.pipelineId);
+        await done(pipeline.pipelineId, 'CUSTOM_JAR');
         return;
       }
-      await done(pipeline.pipelineId);
+      await done(pipeline.pipelineId, 'CUSTOM_JAR');
     } catch (error) { fail(error); }
     finally { setBusy(false); }
   }
@@ -160,7 +208,7 @@ function CreatePipeline({ topics, activeUserId, success, fail, done }: { topics:
       <button type="button" aria-pressed={type === 'AI_SQL'} className={type === 'AI_SQL' ? 'active' : ''} onClick={() => setType('AI_SQL')} disabled={busy}><b>AI SQL</b><span>자연어로 분석을 요청하고 SQL 검토</span></button>
     </div></div>
     {type === 'AI_SQL'
-      ? <AiSqlRegistration topics={topics} userId={activeUserId} onCreated={done} notify={success} />
+      ? <AiSqlRegistration topics={topics} userId={activeUserId} onCreated={(id) => done(id, 'AI_SQL')} notify={success} />
       : <form className="panel connected-create" onSubmit={submit}>
         <div className="connected-form">
           <Field label="Pipeline 이름"><input required value={name} onChange={(e) => setName(e.target.value)} /></Field>
@@ -177,18 +225,38 @@ function CreatePipeline({ topics, activeUserId, success, fail, done }: { topics:
   </>;
 }
 
-function PipelineDetail({ id, success, fail, refreshList }: { id: number; success: (m: string) => void; fail: (e: unknown) => void; refreshList: () => Promise<void> }) {
-  const [item, setItem] = useState<Pipeline | null>(null); const [name, setName] = useState(''); const [description, setDescription] = useState(''); const [busy, setBusy] = useState(false);
-  async function load() { setBusy(true); try { const value = await platformApi.getPipeline(id); setItem(value); setName(value.pipelineName); setDescription(value.description || ''); } catch (e) { fail(e); } finally { setBusy(false); } }
-  useEffect(() => { void load(); }, [id]);
+const basePipelineFields = new Set(['pipelineId', 'ownerUserId', 'pipelineName', 'description', 'pipelineType', 'pipelineStatus']);
+const pipelineDetailLabels: Record<string, string> = {
+  naturalLanguageRequest: '자연어 요청', pipelinePlanJson: 'Pipeline Plan JSON', generatedSql: '생성된 Flink SQL',
+  entryClass: 'Entry Class', parallelism: 'Parallelism', inputTopicIds: '입력 Topic IDs', outputTopicIds: '출력 Topic IDs',
+  programArgs: 'Program Arguments', originalFileName: 'JAR 파일명', storedFileName: '저장된 파일명', storedFilePath: '파일 경로',
+  flinkJarId: 'Flink JAR ID', artifact: 'JAR Artifact', customJobConfig: 'Custom Job 설정', inputTopicId: '입력 Topic ID',
+};
+
+function PipelineExtraValue({ name, value }: { name: string; value: unknown }) {
+  let formatted = value;
+  if (typeof value === 'string' && name.toLowerCase().includes('json')) {
+    try { formatted = JSON.parse(value); } catch { /* Show the original response if it is not valid JSON. */ }
+  }
+  const isCode = typeof formatted === 'object' || /sql|json|args/i.test(name);
+  return <div className={isCode ? 'pipeline-extra-value code' : 'pipeline-extra-value'}>
+    {isCode ? <pre>{typeof formatted === 'string' ? formatted : JSON.stringify(formatted, null, 2)}</pre> : String(formatted)}
+  </div>;
+}
+
+function PipelineDetail({ id, type, success, fail, refreshList }: { id: number; type: PipelineType; success: (m: string) => void; fail: (e: unknown) => void; refreshList: () => Promise<void> }) {
+  const [item, setItem] = useState<PipelineDetailData | null>(null); const [name, setName] = useState(''); const [description, setDescription] = useState(''); const [busy, setBusy] = useState(false); const [loadError, setLoadError] = useState(false);
+  async function load() { setBusy(true); setLoadError(false); try { const value = await platformApi.getPipeline(id, type); if (!value || value.pipelineId !== id || value.pipelineType !== type) throw new Error('Pipeline 상세 응답의 ID 또는 유형이 요청과 다릅니다.'); setItem(value); setName(value.pipelineName); setDescription(value.description || ''); } catch (e) { setLoadError(true); fail(e); } finally { setBusy(false); } }
+  useEffect(() => { void load(); }, [id, type]);
   async function save(event: FormEvent) { event.preventDefault(); if (!item) return; try { await platformApi.updatePipeline({ pipelineId: item.pipelineId, ownerUserId: item.ownerUserId, pipelineName: name, description, pipelineType: item.pipelineType }); await Promise.all([load(), refreshList()]); success('Pipeline 정보를 수정했습니다.'); } catch (e) { fail(e); } }
   async function deploy() { if (!item) return; setBusy(true); try { const result = item.pipelineType === 'AI_SQL' ? await platformApi.deployAiSqlPipeline(item.pipelineId) : await platformApi.deployPipeline(item.pipelineId); success(`Deployment #${result.deploymentId} · ${result.status}`); await Promise.all([load(), refreshList()]); } catch (e) { fail(e); } finally { setBusy(false); } }
-  if (!item) return <Empty title="Pipeline 조회 중">상세 API 응답을 기다리고 있습니다.</Empty>;
+  if (!item) return <section className="panel connected-unavailable"><span>API</span><h2>{loadError ? 'Pipeline 상세조회에 실패했습니다' : 'Pipeline 조회 중'}</h2><p>{loadError ? '유형별 상세 API 연결 상태를 확인한 후 다시 시도해 주세요.' : '상세 API 응답을 기다리고 있습니다.'}</p>{loadError && <button className="secondary-button" type="button" onClick={() => void load()}>다시 조회</button>}</section>;
   const deployable = item.pipelineType === 'AI_SQL'
     ? ['DRAFT', 'CREATED'].includes(item.pipelineStatus)
     : ['ARTIFACT_UPLOADED', 'STOPPED', 'FAILED'].includes(item.pipelineStatus);
   const deployLabel = busy ? '배포 중…' : item.pipelineType === 'AI_SQL' ? 'AI SQL 배포' : '배포 실행';
-  return <><div className="welcome-row"><div><h2>{item.pipelineName}</h2><p>Pipeline #{item.pipelineId} · Owner #{item.ownerUserId}</p></div><div className="connected-heading-actions"><Status value={item.pipelineStatus} /><button className="primary-button compact" onClick={() => void deploy()} disabled={!deployable || busy}>{deployLabel}</button></div></div><form className="panel connected-create" onSubmit={save}><div className="panel-heading"><div><h3>기본 정보</h3><p>{item.pipelineType}</p></div><button className="secondary-button">변경 저장</button></div><div className="connected-form"><Field label="Pipeline 이름"><input value={name} onChange={(e) => setName(e.target.value)} required /></Field><Field label="Type"><input value={item.pipelineType} disabled /></Field><Field label="설명" wide><textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} /></Field></div></form><section className="connected-availability"><h3>운영 기능 연결 상태</h3><p><b>연결됨</b> 상태 조회, 기본 정보 수정, CUSTOM_JAR 및 AI_SQL 배포</p><p><span>API 필요</span> 중지, Deployment 이력, 결과 조회, 실패 분석</p></section></>;
+  const extraFields = Object.entries(item).filter(([key, value]) => !basePipelineFields.has(key) && value !== null && value !== undefined);
+  return <><div className="welcome-row"><div><h2>{item.pipelineName}</h2><p>Pipeline #{item.pipelineId} · Owner #{item.ownerUserId}</p></div><div className="connected-heading-actions"><Status value={item.pipelineStatus} /><button className="primary-button compact" onClick={() => void deploy()} disabled={!deployable || busy}>{deployLabel}</button></div></div><form className="panel connected-create" onSubmit={save}><div className="panel-heading"><div><h3>기본 정보</h3><p>{item.pipelineType}</p></div><button className="secondary-button" disabled={busy}>변경 저장</button></div><div className="connected-form"><Field label="Pipeline 이름"><input value={name} onChange={(e) => setName(e.target.value)} required /></Field><Field label="Type"><input value={item.pipelineType} disabled /></Field><Field label="설명" wide><textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} /></Field></div></form><section className="panel pipeline-extra"><div className="panel-heading"><div><h3>{type === 'AI_SQL' ? 'AI SQL 등록 정보' : 'Custom JAR 등록 정보'}</h3><p>유형별 상세 API에서 조회한 설정과 처리 정보입니다.</p></div></div>{extraFields.length ? <dl className="pipeline-extra-grid">{extraFields.map(([key, value]) => <div key={key}><dt>{pipelineDetailLabels[key] || key}</dt><dd><PipelineExtraValue name={key} value={value} /></dd></div>)}</dl> : <p className="pipeline-extra-empty">상세 API 응답에 유형별 추가 정보가 없습니다.</p>}</section><section className="connected-availability"><h3>운영 기능 연결 상태</h3><p><b>연결됨</b> 유형별 상세 조회, 상태 조회, 기본 정보 수정, CUSTOM_JAR 및 AI_SQL 배포</p><p><span>API 필요</span> 중지, Deployment 이력, 결과 조회, 실패 분석</p></section></>;
 }
 
 function Unavailable({ title, children }: { title: string; children: ReactNode }) { return <section className="panel connected-unavailable"><span>API</span><h2>{title}</h2><p>{children}</p></section>; }
