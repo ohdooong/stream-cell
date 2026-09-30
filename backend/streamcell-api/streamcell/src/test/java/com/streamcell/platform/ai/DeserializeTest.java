@@ -2,6 +2,8 @@ package com.streamcell.platform.ai;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.streamcell.platform.ai.domain.enums.WindowType;
+import com.streamcell.platform.ai.domain.enums.WindowUnit;
 import com.streamcell.platform.ai.dto.PipelinePlan;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;

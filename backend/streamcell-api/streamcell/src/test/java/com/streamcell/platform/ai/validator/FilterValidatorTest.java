@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.platform.ai.domain.context.PipelinePlanValidationContext;
+import com.streamcell.platform.ai.domain.enums.FilterOperator;
 import com.streamcell.platform.ai.domain.spec.FilterSpec;
 import com.streamcell.platform.ai.domain.validator.FilterValidator;
 import com.streamcell.platform.ai.dto.PipelinePlan;
