@@ -19,31 +19,70 @@ function Empty({ title, children }: { title: string; children: ReactNode }) { re
 function Field({ label, hint, wide, children }: { label: string; hint?: string; wide?: boolean; children: ReactNode }) { return <label className={`connected-field ${wide ? 'wide' : ''}`}><span>{label}</span>{children}{hint && <small>{hint}</small>}</label>; }
 
 export function App() {
-  const { user, isLoading, signOut } = useAuth();
-  if (isLoading) return <div className="loading-screen"><Brand /><span className="spinner" /></div>;
+  const { user, signOut } = useAuth();
   if (!user) return <Login />;
-  return <Console defaultUserId={user.userId || 1} onSignOut={signOut} />;
+  return <Console defaultUserId={user.userId} onSignOut={signOut} />;
 }
 
 function Login() {
   const { signIn } = useAuth();
-  const [username, setUsername] = useState(''); const [password, setPassword] = useState(''); const [error, setError] = useState('');
-  async function submit(event: FormEvent) { event.preventDefault(); try { await signIn(username, password, true); } catch (e) { setError(messageOf(e)); } }
-  return <main className="auth-page"><section className="auth-art"><Brand /><div className="art-copy"><p className="eyebrow">STREAMING MANAGEMENT PLATFORM</p><h1>데이터 흐름을<br /><em>하나의 화면</em>에서.</h1></div></section><section className="auth-panel"><form className="login-card" onSubmit={submit}><div className="login-heading"><h2>관리 콘솔 로그인</h2><p>Spring Security 인증 API가 활성화된 환경입니다.</p></div><label>아이디</label><div className="field"><input value={username} onChange={(e) => setUsername(e.target.value)} required /></div><div className="label-row"><label>비밀번호</label></div><div className="field"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>{error && <p className="form-error">{error}</p>}<button className="primary-button">로그인</button></form></section></main>;
+  const [loginId, setLoginId] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    try { await signIn(loginId, password); }
+    catch (cause) { setError(messageOf(cause)); setBusy(false); }
+  }
+  return <main className="auth-page"><section className="auth-art"><Brand /><div className="art-copy"><p className="eyebrow">STREAMING MANAGEMENT PLATFORM</p><h1>데이터 흐름을<br /><em>하나의 화면</em>에서.</h1></div></section><section className="auth-panel"><form className="login-card" onSubmit={submit}><div className="login-heading"><h2>관리 콘솔 로그인</h2><p>StreamCell 계정으로 로그인하세요.</p></div><label htmlFor="login-id">아이디</label><div className="field"><input id="login-id" autoComplete="username" value={loginId} onChange={(e) => setLoginId(e.target.value)} required /></div><div className="label-row"><label htmlFor="login-password">비밀번호</label></div><div className="field"><input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>{error && <p className="form-error" role="alert">{error}</p>}<button className="primary-button" disabled={busy}>{busy ? '로그인 중…' : '로그인'}</button></form></section></main>;
 }
 
 function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOut: () => Promise<void> }) {
+  const { user, authEnabled } = useAuth();
   const [view, setView] = useState<View>('overview'); const [users, setUsers] = useState<User[]>([]); const [topics, setTopics] = useState<Topic[]>([]); const [pipelines, setPipelines] = useState<Pipeline[]>([]); const [cluster, setCluster] = useState<ClusterOverview | null>(null); const [activeUserId, setActiveUserId] = useState(defaultUserId); const [selectedPipelineId, setSelectedPipelineId] = useState<number | null>(null); const [loading, setLoading] = useState(true); const [notice, setNotice] = useState(''); const [error, setError] = useState('');
   const success = (message: string) => { setError(''); setNotice(message); window.setTimeout(() => setNotice(''), 4000); };
   const fail = (cause: unknown) => { setNotice(''); setError(messageOf(cause)); };
   const refreshTopics = async () => setTopics(await platformApi.getTopics());
   const refreshPipelines = async () => setPipelines(await platformApi.getPipelines(activeUserId));
   const refreshCluster = async () => setCluster(await platformApi.getClusterOverview());
-  useEffect(() => { Promise.allSettled([platformApi.getUsers(), platformApi.getTopics(), platformApi.getClusterOverview()]).then(([u, t, c]) => { if (u.status === 'fulfilled') { setUsers(u.value); if (!u.value.some((item) => item.userId === defaultUserId) && u.value[0]) setActiveUserId(u.value[0].userId); } if (t.status === 'fulfilled') setTopics(t.value); if (c.status === 'fulfilled') setCluster(c.value); const count = [u, t, c].filter((item) => item.status === 'rejected').length; if (count) setError(`일부 API를 불러오지 못했습니다. 백엔드(기본 포트 8085) 실행 상태를 확인해 주세요. (${count}/3)`); setLoading(false); }); }, [defaultUserId]);
+  useEffect(() => { Promise.allSettled([platformApi.getUsers(), platformApi.getTopics(), platformApi.getClusterOverview()]).then(([u, t, c]) => { if (u.status === 'fulfilled') setUsers(u.value); if (t.status === 'fulfilled') setTopics(t.value); if (c.status === 'fulfilled') setCluster(c.value); const count = [u, t, c].filter((item) => item.status === 'rejected').length; if (count) setError(`일부 API를 불러오지 못했습니다. 백엔드(기본 포트 8085) 실행 상태를 확인해 주세요. (${count}/3)`); setLoading(false); }); }, []);
   useEffect(() => { platformApi.getPipelines(activeUserId).then(setPipelines).catch(fail); }, [activeUserId]);
   const activeUser = users.find((item) => item.userId === activeUserId);
+  const accountName = activeUser?.name || user?.displayName || user?.username || '사용자';
   const openPipeline = (id: number) => { setSelectedPipelineId(id); setView('detail'); };
-  return <div className="app-shell"><aside className="sidebar"><Brand /><nav>{nav.map(([id, icon, label]) => <button key={id} className={`nav-item ${view === id || (id === 'pipelines' && (view === 'create' || view === 'detail')) ? 'active' : ''}`} onClick={() => setView(id)}><b>{icon}</b><span>{label}</span></button>)}</nav><div className="sidebar-bottom"><div className="help-card"><p>Backend integration</p><a href="http://localhost:8085/swagger-ui/index.html" target="_blank" rel="noreferrer">Swagger UI ↗</a></div><button className="account-button" onClick={() => void onSignOut()}><span className="avatar">{(activeUser?.name || 'D').slice(0, 1)}</span><span><strong>{activeUser?.name || 'Development User'}</strong><small>AUTH DISABLED</small></span></button></div></aside><section className="workspace"><header className="topbar"><div><p className="breadcrumb">Management <span>/</span> {titles[view]}</p><h1>{titles[view]}</h1></div><div className="top-actions"><label className="api-user">API 사용자<select value={activeUserId} onChange={(e) => setActiveUserId(Number(e.target.value))}>{users.length ? users.map((item) => <option key={item.userId} value={item.userId}>{item.name} · #{item.userId}</option>) : <option value={activeUserId}>User #{activeUserId}</option>}</select></label><button className="secondary-button" onClick={() => void Promise.all([refreshCluster(), refreshTopics(), refreshPipelines()]).then(() => success('데이터를 새로고침했습니다.')).catch(fail)}>새로고침</button></div></header>{notice && <div className="toast connected-success">✓ {notice}</div>}{error && <div className="toast connected-error">! {error}<button onClick={() => setError('')}>닫기</button></div>}<main className="page-content">{loading ? <Empty title="API 연결 중">백엔드 데이터를 불러오고 있습니다.</Empty> : <>{view === 'overview' && <Overview cluster={cluster} topics={topics} pipelines={pipelines} navigate={setView} open={openPipeline} />}{view === 'cluster' && <Cluster cluster={cluster} refresh={() => void refreshCluster().then(() => success('Cluster 상태를 갱신했습니다.')).catch(fail)} />}{view === 'topics' && <Topics topics={topics} refresh={refreshTopics} success={success} fail={fail} />}{view === 'permissions' && <Permissions topics={topics} users={users} activeUserId={activeUserId} success={success} fail={fail} />}{view === 'pipelines' && <Pipelines pipelines={pipelines} create={() => setView('create')} open={openPipeline} />}{view === 'create' && <CreatePipeline topics={topics} activeUserId={activeUserId} success={success} fail={fail} done={async (id) => { await refreshPipelines(); openPipeline(id); }} />}{view === 'detail' && selectedPipelineId && <PipelineDetail id={selectedPipelineId} success={success} fail={fail} refreshList={refreshPipelines} />}{view === 'results' && <Unavailable title="결과 Dashboard API가 필요합니다">Pipeline 처리 결과 조회 엔드포인트가 아직 구현되지 않아 임의 데이터를 표시하지 않습니다.</Unavailable>}{view === 'failures' && <Unavailable title="실패 분석 API가 필요합니다">원본 Exception과 AI 분석 결과 조회 엔드포인트가 구현되면 이 화면에 연결할 수 있습니다.</Unavailable>}</>}</main></section></div>;
+  return <div className="app-shell">
+    <aside className="sidebar">
+      <Brand />
+      <nav>{nav.map(([id, icon, label]) => <button key={id} className={`nav-item ${view === id || (id === 'pipelines' && (view === 'create' || view === 'detail')) ? 'active' : ''}`} onClick={() => setView(id)}><b>{icon}</b><span>{label}</span></button>)}</nav>
+      <div className="sidebar-bottom">
+        <div className="help-card"><p>Backend integration</p><a href="http://localhost:8085/swagger-ui/index.html" target="_blank" rel="noreferrer">Swagger UI ↗</a></div>
+        <button className="account-button" onClick={() => void onSignOut()}><span className="avatar">{accountName.slice(0, 1)}</span><span><strong>{accountName}</strong><small>{authEnabled ? '로그아웃' : '개발 사용자'}</small></span></button>
+      </div>
+    </aside>
+    <section className="workspace">
+      <header className="topbar"><div><p className="breadcrumb">Management <span>/</span> {titles[view]}</p><h1>{titles[view]}</h1></div><div className="top-actions">
+        {authEnabled ? <span className="api-user">{accountName} · #{activeUserId}</span> : <label className="api-user">API 사용자<select value={activeUserId} onChange={(e) => setActiveUserId(Number(e.target.value))}>{users.length ? users.map((item) => <option key={item.userId} value={item.userId}>{item.name} · #{item.userId}</option>) : <option value={activeUserId}>User #{activeUserId}</option>}</select></label>}
+        <button className="secondary-button" onClick={() => void Promise.all([refreshCluster(), refreshTopics(), refreshPipelines()]).then(() => success('데이터를 새로고침했습니다.')).catch(fail)}>새로고침</button>
+      </div></header>
+      {notice && <div className="toast connected-success">✓ {notice}</div>}
+      {error && <div className="toast connected-error">! {error}<button onClick={() => setError('')}>닫기</button></div>}
+      <main className="page-content">{loading ? <Empty title="API 연결 중">백엔드 데이터를 불러오고 있습니다.</Empty> : <>
+        {view === 'overview' && <Overview cluster={cluster} topics={topics} pipelines={pipelines} navigate={setView} open={openPipeline} />}
+        {view === 'cluster' && <Cluster cluster={cluster} refresh={() => void refreshCluster().then(() => success('Cluster 상태를 갱신했습니다.')).catch(fail)} />}
+        {view === 'topics' && <Topics topics={topics} refresh={refreshTopics} success={success} fail={fail} />}
+        {view === 'permissions' && <Permissions topics={topics} users={users} activeUserId={activeUserId} success={success} fail={fail} />}
+        {view === 'pipelines' && <Pipelines pipelines={pipelines} create={() => setView('create')} open={openPipeline} />}
+        {view === 'create' && <CreatePipeline topics={topics} activeUserId={activeUserId} success={success} fail={fail} done={async (id) => { await refreshPipelines(); openPipeline(id); }} />}
+        {view === 'detail' && selectedPipelineId && <PipelineDetail id={selectedPipelineId} success={success} fail={fail} refreshList={refreshPipelines} />}
+        {view === 'results' && <Unavailable title="결과 Dashboard API가 필요합니다">Pipeline 처리 결과 조회 엔드포인트가 아직 구현되지 않아 임의 데이터를 표시하지 않습니다.</Unavailable>}
+        {view === 'failures' && <Unavailable title="실패 분석 API가 필요합니다">원본 Exception과 AI 분석 결과 조회 엔드포인트가 구현되면 이 화면에 연결할 수 있습니다.</Unavailable>}
+      </>}</main>
+    </section>
+  </div>;
 }
 
 function Overview({ cluster, topics, pipelines, navigate, open }: { cluster: ClusterOverview | null; topics: Topic[]; pipelines: Pipeline[]; navigate: (view: View) => void; open: (id: number) => void }) {
