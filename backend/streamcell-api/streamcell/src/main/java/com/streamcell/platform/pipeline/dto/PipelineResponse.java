@@ -50,6 +50,8 @@ public class PipelineResponse {
         private String naturalLanguageRequest;
         private String pipelinePlanJson;
         private String generatedSql;
+
+        private CustomJobConfig customJobConfig;
     }
 
     @Getter

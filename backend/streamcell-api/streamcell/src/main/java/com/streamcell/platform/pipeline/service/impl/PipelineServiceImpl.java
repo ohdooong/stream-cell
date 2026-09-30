@@ -181,8 +181,15 @@ public class PipelineServiceImpl implements PipelineService {
 
     @Override
     public PipelineResponse.CustomJarPipeline findCustomJarPipelineByPipelineId(Long pipelineId) {
+        Pipeline pipeline = repository.findPipelineByPipelineId(pipelineId)
+                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
+        CustomJobConfig customJobConfig = repository.findCustomJobConfigByPipelineId(pipelineId)
+                .orElse(null);
 
-        return repository.findCustomJarPipelineByPipelineId(pipelineId);
+        PipelineResponse.CustomJarPipeline result = pipelineConverter.toCustomJarDTO(pipeline);
+        result.setCustomJobConfig(pipelineConverter.toDTO(customJobConfig));
+
+        return result;
     }
 
     @Override

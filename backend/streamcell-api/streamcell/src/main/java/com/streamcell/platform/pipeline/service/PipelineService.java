@@ -41,8 +41,6 @@ public interface PipelineService {
      */
     PipelineResponse.Pipeline findPipelineByPipelineId(Long pipelineId);
 
-    PipelineResponse.AISqlPipeline findAISqlPipelineByPipelineId(Long pipelineId);
-
     PipelineResponse.CustomJarPipeline findCustomJarPipelineByPipelineId(Long pipelineId);
 
 

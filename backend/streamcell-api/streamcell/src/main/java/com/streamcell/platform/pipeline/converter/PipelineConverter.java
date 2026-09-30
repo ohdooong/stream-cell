@@ -43,4 +43,5 @@ public interface PipelineConverter {
     }
 
 
+    PipelineResponse.CustomJobConfig toDTO(CustomJobConfig customJobConfig);
 }

@@ -1,5 +1,6 @@
 package com.streamcell.platform.pipeline.repository;
 
+import com.streamcell.platform.pipeline.dto.PipelineResponse;
 import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.vo.*;
 
@@ -147,6 +148,7 @@ public interface PipelineRepository {
               entry_class,
               input_topics,
               output_topics,
+              parallelism,
               program_args
          from platform.custom_job_config
         where pipeline_id = #{pipelineId}

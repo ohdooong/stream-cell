@@ -64,7 +64,7 @@ public class PipelineController {
     public ResponseEntity<BaseResponse<?>> getCustomJarPipelineByPipelineId(
             @PathVariable Long pipelineId) {
         return ResponseEntity.ok(
-                BaseResponse.success(service.findPipelineByPipelineId(pipelineId)));
+                BaseResponse.success(service.findCustomJarPipelineByPipelineId(pipelineId)));
     }
 
     @Operation(summary = "AI SQL Pipeline 상세조회", description = "AI SQL Pipeline 정보를 상세조회합니다.")
