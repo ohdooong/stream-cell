@@ -4,13 +4,19 @@
 <mapper namespace="com.streamcell.web.user.repository.UserRepository">
 
     <select id="findAll" resultType="com.streamcell.web.user.domain.User">
-        SELECT
-            user_id,
-            email,
-            password,
-            name,
-            status
-        FROM web.users
+        select
+            x.user_id,
+            x.login_id,
+            x.name,
+            x.email,
+            x.password as encrypted_password,
+            x.status,
+            z.role_name as role
+        from web.users x
+        join web.user_roles y
+          on x.user_id = y.user_id
+        join web.roles z
+          on y.role_id = z.role_id
     </select>
 
     <select id="findExistingUserIds" resultType="Long">

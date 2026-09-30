@@ -31,6 +31,7 @@ ext {
     log4jdbcVersion = '1.16'
     reactiveStreamVersion = '1.0.4'
     mapstructVersion = '1.6.3'
+    jwtVersion = '0.13.0'
 }
 
 dependencies {
@@ -46,6 +47,11 @@ dependencies {
 
     implementation "org.springframework.boot:spring-boot-starter-jdbc"
     implementation "org.springframework.boot:spring-boot-starter-security"
+
+    /* jwt */
+    implementation "io.jsonwebtoken:jjwt-api:${jwtVersion}"
+    runtimeOnly "io.jsonwebtoken:jjwt-impl:${jwtVersion}"
+    runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jwtVersion}"
 
     implementation 'org.apache.httpcomponents.client5:httpclient5'
 

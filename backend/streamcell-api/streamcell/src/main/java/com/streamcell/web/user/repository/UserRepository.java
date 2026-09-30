@@ -17,39 +17,55 @@ public interface UserRepository {
 
     @Select("""
         select
-                user_id,
-                login_id,
-                name,
-                email,
-                password,
-                status
-            from web.users
-            where user_id = #{userId};
+                x.user_id,
+                x.login_id,
+                x.name,
+                x.email,
+                x.password as encrypted_password,
+                x.status,
+                z.role_name as role
+            from web.users x
+            join web.user_roles y
+              on x.user_id = y.user_id
+            join web.roles z
+              on y.role_id = z.role_id
+            where x.user_id = #{userId};
     """)
     Optional<User> findById(Long userId);
 
     @Select("""
         select
-                user_id,
-                login_id,
-                name,
-                email,
-                password,
-                status
-            from web.users
-            where login_id = #{LoginId};
+                x.user_id,
+                x.login_id,
+                x.name,
+                x.email,
+                x.password as encrypted_password,
+                x.status,
+                z.role_name as role
+            from web.users x
+            join web.user_roles y
+              on x.user_id = y.user_id
+            join web.roles z
+              on y.role_id = z.role_id
+            where x.login_id = #{loginId};
     """)
-    Optional<User> findByLoginId(String LoginId);
+    Optional<User> findByLoginId(String loginId);
 
     @Select("""
         select
-                user_id,
-                name,
-                email,
-                password,
-                status
-            from web.users
-            where name = #{userName};
+                x.user_id,
+                x.login_id,
+                x.name,
+                x.email,
+                x.password as encrypted_password,
+                x.status,
+                z.role_name as role
+            from web.users x
+            join web.user_roles y
+              on x.user_id = y.user_id
+            join web.roles z
+              on y.role_id = z.role_id
+            where x.name = #{userName};
     """)
     List<User> findByUserName(String userName);
 
