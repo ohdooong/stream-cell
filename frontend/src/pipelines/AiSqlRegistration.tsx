@@ -37,7 +37,7 @@ function displayValue(value: unknown) {
   return String(value);
 }
 
-function PlanPreview({ plan, topics }: { plan: PipelinePlan; topics: Topic[] }) {
+export function PlanPreview({ plan, topics }: { plan: PipelinePlan; topics: Topic[] }) {
   const topic = topics.find((item) => item.topicId === plan.sourceTopicId);
   return <div className="ai-plan">
     <div className="ai-plan-row"><span>입력 Topic</span><strong>{topic?.displayName || topic?.topicName || `Topic #${plan.sourceTopicId}`}</strong></div>
