@@ -51,11 +51,9 @@ export function validateAiSqlInput(input: AiSqlInput, topics: Record<number, Top
   return errors;
 }
 
-export function isAiSqlPreview(value: unknown): value is AiSqlPreview {
-  const preview = value as AiSqlPreview | null;
-  const plan = preview?.pipelinePlan;
-  return Boolean(preview && typeof preview.generatedFlinkSql === 'string' && preview.generatedFlinkSql.trim()
-    && plan && Number.isSafeInteger(plan.sourceTopicId) && plan.sourceTopicId > 0
+export function isPipelinePlan(value: unknown): value is PipelinePlan {
+  const plan = value as PipelinePlan | null;
+  return Boolean(plan && Number.isSafeInteger(plan.sourceTopicId) && plan.sourceTopicId > 0
     && plan.window && typeof plan.window.type === 'string' && plan.window.type
     && Number.isInteger(plan.window.size) && plan.window.size > 0
     && typeof plan.window.unit === 'string' && plan.window.unit
@@ -64,4 +62,10 @@ export function isAiSqlPreview(value: unknown): value is AiSqlPreview {
       && typeof item.function === 'string' && typeof item.field === 'string' && typeof item.alias === 'string')
     && Array.isArray(plan.filters) && plan.filters.every((item) => item
       && typeof item.field === 'string' && typeof item.operator === 'string' && Object.hasOwn(item, 'value')));
+}
+
+export function isAiSqlPreview(value: unknown): value is AiSqlPreview {
+  const preview = value as AiSqlPreview | null;
+  return Boolean(preview && typeof preview.generatedFlinkSql === 'string' && preview.generatedFlinkSql.trim()
+    && isPipelinePlan(preview.pipelinePlan));
 }
