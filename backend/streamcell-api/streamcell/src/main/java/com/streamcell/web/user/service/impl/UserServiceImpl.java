@@ -17,19 +17,20 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository repository;
+    private final UserConverter userConverter;
 
     @Override
     @Transactional(readOnly = true)
     public List<UserResponse> findAll() {
         return repository.findAll().stream()
-                .map(UserConverter::toDTO)
+                .map(userConverter::toDTO)
                 .toList();
     }
 
     @Override
     public UserResponse findByUserId(Long userId) {
         return repository.findById(userId)
-            .map(UserConverter::toDTO)
+            .map(userConverter::toDTO)
             .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_USER));
     }
 
@@ -37,7 +38,7 @@ public class UserServiceImpl implements UserService {
     public List<UserResponse> findByUserName(String userName) {
         return repository.findByUserName(userName)
             .stream()
-            .map(UserConverter::toDTO)
+            .map(userConverter::toDTO)
             .toList();
     }
 }

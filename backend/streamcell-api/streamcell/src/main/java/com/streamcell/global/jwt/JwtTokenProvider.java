@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import javax.crypto.SecretKey;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -16,11 +17,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret}")
-    private String secretKey;
+    private final String secretKey;
 
-    @Value("${jwt.expiration}")
-    private Long expiration;
+    @Getter
+    private final Long expiration;
+
+    public JwtTokenProvider(
+        @Value("${jwt.secret}") String secretKey,
+        @Value("${jwt.expiration}") Long expiration
+    ) {
+        this.secretKey = secretKey;
+        this.expiration = expiration;
+    }
+
 
     // SecretKey 객체 생성 - HMAC-SHA 알고리즘에 적합한 키 생성
     private SecretKey getSigningKey() {
@@ -46,8 +55,8 @@ public class JwtTokenProvider {
     // 추가 Claims를 포함한 JWT 토큰 생성 (role, userId 등 커스텀 정보 삽입 가능)
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
         return Jwts.builder()
-            .claims(extraClaims)
             .subject(userDetails.getUsername())
+            .claims(extraClaims)
             .issuedAt(new Date(System.currentTimeMillis()))
             .expiration(new Date(System.currentTimeMillis() + expiration))
             // HS256 알고리즘으로 서명 - 서버만 알고 있는 키로 토큰 위변조 방지

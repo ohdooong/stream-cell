@@ -1,24 +1,32 @@
 package com.streamcell.global.security;
 
+import com.streamcell.web.user.domain.Role;
 import java.util.Collection;
 import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+@Getter
+@AllArgsConstructor
+@Builder
 public class CustomUserDetails implements UserDetails {
 
-    private String userId;
+    private Long userId;
     private String loginId;
-    private String email;
     private String name;
+    private String email;
     private String encryptedPassword;
     private String status;
-    List<GrantedAuthority> authorities;
+    private Role role;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return this.authorities;
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     @Override
@@ -28,6 +36,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getUsername() {
-        return "";
+        return this.loginId;
     }
 }

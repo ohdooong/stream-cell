@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,6 +18,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -25,6 +27,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
         FilterChain filterChain) throws ServletException, IOException {
+
+        log.info("===== JwtAuthenticationFilter Start =====");
 
         final String authHeader = request.getHeader("Authorization");
 
@@ -40,8 +44,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             userLoginId = jwtTokenProvider.extractUsername(jwt);
+            log.info("loginId: {}", userLoginId);
         } catch (JwtException e) {
             // 토큰 파싱 실패 시 인증 없이 다음 필터로 넘김 - 이후 인가 단계에서 거부됨
+            log.warn("jwt 토큰 파싱 failed");
             filterChain.doFilter(request, response);
             return;
         }
@@ -61,6 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
+        log.info("===== JwtAuthenticationFilter End =====");
         filterChain.doFilter(request, response);
     }
 }

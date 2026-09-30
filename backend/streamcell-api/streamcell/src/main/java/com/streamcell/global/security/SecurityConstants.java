@@ -33,7 +33,6 @@ public class SecurityConstants {
         // 그 외 제외 대상
         "/", //
         "/index.html", //
-        "/csrf",
         "/error", //
         "/error/**", //
         LOGIN_API_END_POINT, // 로그인 URI

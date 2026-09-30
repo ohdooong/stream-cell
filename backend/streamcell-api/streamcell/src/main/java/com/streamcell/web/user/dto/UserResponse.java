@@ -1,5 +1,6 @@
 package com.streamcell.web.user.dto;
 
+import com.streamcell.web.user.domain.Role;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,4 +13,5 @@ public class UserResponse {
     private String password;
     private String name;
     private String status;
+    private Role role;
 }

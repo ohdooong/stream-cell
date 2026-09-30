@@ -63,7 +63,7 @@ logging:
   config: classpath:log4j2.yml
 
 springdoc:
-  packages-to-scan: com.streamcell.platform
+  packages-to-scan: com.streamcell
   default-consumes-media-type: application/json;charset=UTF-8
   default-produces-media-type: application/json;charset=UTF-8
   swagger-ui:

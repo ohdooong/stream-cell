@@ -1,18 +1,15 @@
 package com.streamcell.web.user.converter;
 
+import com.streamcell.global.security.CustomUserDetails;
 import com.streamcell.web.user.domain.User;
 import com.streamcell.web.user.dto.UserResponse;
+import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 
-public class UserConverter {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface UserConverter {
 
-    public static UserResponse toDTO(User user) {
-        return UserResponse.builder()
-            .userId(user.getUserId())
-            .loginId(user.getLoginId())
-            .email(user.getEmail())
-            .name(user.getName())
-            .password(user.getPassword())
-            .status(user.getStatus())
-            .build();
-    }
+    UserResponse toDTO(User user);
+
+    CustomUserDetails customUserDetailsOf(User user);
 }
