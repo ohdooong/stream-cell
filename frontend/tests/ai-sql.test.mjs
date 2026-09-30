@@ -7,6 +7,10 @@ const {
   initialAiSqlDraft, toAiSqlConfigInput, toAiSqlInput, toAiSqlPreviewRequest,
   validateAiSqlInput, isAiSqlPreview,
 } = await import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString('base64')}`);
+const planResult = await build({ entryPoints: ['src/api/pipelinePlan.ts'], bundle: true, platform: 'node', format: 'esm', write: false });
+const { isPersistedPipelinePlan } = await import(`data:text/javascript;base64,${Buffer.from(planResult.outputFiles[0].text).toString('base64')}`);
+const detailResult = await build({ entryPoints: ['src/api/pipelineDetail.ts'], bundle: true, platform: 'node', format: 'esm', write: false });
+const { pipelineDetailPath } = await import(`data:text/javascript;base64,${Buffer.from(detailResult.outputFiles[0].text).toString('base64')}`);
 const topic = { topicId: 10, topicName: 'orders', schemaJson: JSON.stringify({ properties: { eventTime: { type: 'string' }, amount: { type: 'number' } } }) };
 const draft = { ...initialAiSqlDraft, name: '  주문 집계  ', description: '  상품별 집계  ', topicId: 10, request: '  5분마다 합계  ' };
 
@@ -86,4 +90,23 @@ test('malformed preview responses cannot be treated as reviewed SQL', () => {
   assert.equal(isAiSqlPreview({ ...preview, pipelinePlan: { ...preview.pipelinePlan, sourceTopicId: 0 } }), false);
   assert.equal(isAiSqlPreview({ ...preview, pipelinePlan: { ...preview.pipelinePlan, groupBy: null } }), false);
   assert.equal(isAiSqlPreview({ ...preview, pipelinePlan: { ...preview.pipelinePlan, filters: [{ field: 'amount', operator: 'GTE' }] } }), false);
+});
+
+test('AI SQL registration only succeeds when the saved Pipeline Plan matches the preview', () => {
+  const plan = {
+    sourceTopicId: 10,
+    window: { type: 'TUMBLE', size: 5, unit: 'MINUTE' },
+    groupBy: ['product_id'],
+    aggregations: [{ function: 'COUNT', field: '*', alias: 'order_count' }],
+    filters: [],
+  };
+  assert.equal(isPersistedPipelinePlan(JSON.stringify({ ...plan, window: { unit: 'MINUTE', size: 5, type: 'TUMBLE' } }), plan), true);
+  assert.equal(isPersistedPipelinePlan(null, plan), false);
+  assert.equal(isPersistedPipelinePlan('{bad json', plan), false);
+  assert.equal(isPersistedPipelinePlan(JSON.stringify({ ...plan, sourceTopicId: 11 }), plan), false);
+});
+
+test('pipeline detail routes are selected by pipeline type', () => {
+  assert.equal(pipelineDetailPath(42, 'CUSTOM_JAR'), '/api/v1/platform/pipeline/pipelines/custom-jar/42');
+  assert.equal(pipelineDetailPath(42, 'AI_SQL'), '/api/v1/platform/pipeline/pipelines/ai-sql/42');
 });
