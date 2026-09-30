@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test:ai-sql": "node --test tests/ai-sql.test.mjs",
+    "test:auth": "node --test tests/auth.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

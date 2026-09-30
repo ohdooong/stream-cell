@@ -1,6 +1,6 @@
 # StreamCell Web
 
-React + TypeScript 기반의 StreamCell 관리 콘솔입니다. 인증은 Spring Security API를 소유한 백엔드와 연동하며, 프론트에는 권한 판정이나 비밀값을 저장하지 않습니다.
+React + TypeScript 기반의 StreamCell 관리 콘솔입니다. 로그인은 Spring Security JWT API를 사용합니다.
 
 ## 실행
 
@@ -12,21 +12,21 @@ npm run dev
 
 개발 서버는 기본적으로 `/api` 요청을 `http://localhost:8085`으로 프록시합니다. 배포 환경에서는 `.env.example`을 복사한 뒤 `VITE_API_BASE_URL`에 API origin을 지정하세요.
 
-## 인증 연동 계약
+## JWT 로그인
 
-## 백엔드 없이 화면 확인하기
+`npm run dev`에서도 로그인 화면이 표시됩니다. 백엔드가 실행 중이어야 로그인할 수 있습니다.
 
-`npm run dev`에서는 `.env.development`가 자동으로 로드되어 데모 모드가 켜집니다. 로그인 화면에 임의의 이메일과 비밀번호를 입력하면 샘플 토픽·파이프라인 데이터가 채워진 콘솔을 확인할 수 있습니다. 이 동작은 개발 환경에서만 활성화되며, 프로덕션 빌드에는 포함되지 않습니다.
-
-기본 로그인 요청은 `POST /api/v1/auth/login`이며 본문은 아래입니다.
+`POST /api/v1/web/auth/login` 요청:
 
 ```json
-{ "username": "name@example.com", "password": "password", "rememberMe": true }
+{ "loginId": "streamcell-user", "password": "password" }
 ```
 
-Spring Security의 세션 쿠키 방식이면 응답에 `Set-Cookie`를 설정하면 됩니다. JWT 방식이면 응답 JSON의 `accessToken`, `access_token`, 또는 `token` 속성을 반환하세요. 토큰은 페이지 세션 동안에만 메모리에 유지되고, 이후 API 호출의 `Authorization: Bearer` 헤더에 자동으로 붙습니다.
+응답의 `body.accessToken`을 메모리에 보관하며 이후 API 요청에 `Authorization: Bearer <token>`을 붙입니다. 페이지를 새로고침하거나 로그아웃하면 메모리의 토큰이 사라져 다시 로그인해야 합니다. 보호된 API가 401을 반환해도 로그인 화면으로 돌아갑니다.
 
-로그인 상태 확인은 `GET /api/v1/auth/me`, 로그아웃은 `POST /api/v1/auth/logout`입니다. `/me` 응답은 `{ "userId": 1, "username": "...", "displayName": "...", "roles": ["ROLE_USER"] }` 형태를 권장합니다. 실제 엔드포인트가 달라질 경우 환경 변수의 경로만 바꾸면 됩니다.
+현재 로그인 응답에는 사용자 ID가 없으므로 토큰을 받은 뒤 `GET /api/v1/web/user/items`에서 `loginId`가 일치하는 사용자를 찾아 소유 사용자 ID로 사용합니다. 인증된 화면에서 사용자 ID를 임의로 바꾸는 선택 UI는 표시하지 않습니다. 백엔드에 `/me` API가 추가되면 사용자 목록 조회를 그 API로 교체하는 것이 좋습니다.
+
+로컬에서 인증 없이 UI만 점검해야 할 때는 `.env.development`의 `VITE_AUTH_ENABLED=false`로 설정할 수 있습니다.
 
 ## Management Console 데모 범위
 
