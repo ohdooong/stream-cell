@@ -1,5 +1,7 @@
 package com.streamcell.platform.pipeline.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.global._common.file.dto.FileResponse;
@@ -10,6 +12,7 @@ import com.streamcell.platform.ai.domain.context.PipelinePlanValidationContext;
 import com.streamcell.platform.ai.domain.generator.FlinkSQLGenerator;
 import com.streamcell.platform.ai.domain.generator.FlinkSQLPreviewGenerator;
 import com.streamcell.platform.ai.dto.AIDeploymentResponse;
+import com.streamcell.platform.ai.dto.PipelinePlan;
 import com.streamcell.platform.ai.service.AIDeploymentService;
 import com.streamcell.platform.flink.client.FlinkRestClient;
 import com.streamcell.platform.flink.dto.FlinkResponse.JobExceptionsEntry;
@@ -69,6 +72,8 @@ public class PipelineServiceImpl implements PipelineService {
     private final PipelineDeploymentConverter pipelineDeploymentConverter;
     private final Map<String, PipelineValidator<?, ?>> validatorMap;
 
+    private final JsonMapper jsonMapper = new JsonMapper();
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public PipelineResponse.Pipeline create(PipelineRequest.Create createItem) {
@@ -112,6 +117,16 @@ public class PipelineServiceImpl implements PipelineService {
         pipeline.setNaturalLanguageRequest(naturalLanguageRequest);
 
         // 자연어 요청, Plan JSON update
+        PipelinePlan pipelinePlan = createAISqlConfig.getPipelinePlan();
+
+        try {
+            String pipelinePlanJson = jsonMapper.writeValueAsString(pipelinePlan);
+            pipeline.setPipelinePlanJson(pipelinePlanJson);
+        } catch (JsonProcessingException e) {
+            log.error("pipeline plan json 문자열로 변경 실패 -> current pipelinePlan: {}", pipelinePlan);
+            throw new RuntimeException(e);
+        }
+
         repository.updateAISqlPipeline(pipeline);
 
         // ai config 설정 insert (topic id)
@@ -162,6 +177,12 @@ public class PipelineServiceImpl implements PipelineService {
         return repository.findPipelineByPipelineId(pipelineId)
                 .map(pipelineConverter::toDTO)
                 .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
+    }
+
+    @Override
+    public PipelineResponse.CustomJarPipeline findCustomJarPipelineByPipelineId(Long pipelineId) {
+
+        return repository.findCustomJarPipelineByPipelineId(pipelineId);
     }
 
     @Override

@@ -40,6 +40,40 @@ public class PipelineResponse {
     @Builder
     @NoArgsConstructor(staticName = "from")
     @AllArgsConstructor(staticName = "from")
+    public static class CustomJarPipeline {
+        private Long pipelineId;
+        private Long ownerUserId;
+        private String pipelineName;
+        private String description;
+        private PipelineType pipelineType;
+        private com.streamcell.platform.pipeline.enums.PipelineStatus pipelineStatus;
+        private String naturalLanguageRequest;
+        private String pipelinePlanJson;
+        private String generatedSql;
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor(staticName = "from")
+    @AllArgsConstructor(staticName = "from")
+    public static class AISqlPipeline {
+        private Long pipelineId;
+        private Long ownerUserId;
+        private String pipelineName;
+        private String description;
+        private PipelineType pipelineType;
+        private com.streamcell.platform.pipeline.enums.PipelineStatus pipelineStatus;
+        private String naturalLanguageRequest;
+        private String pipelinePlanJson;
+        private String generatedSql;
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor(staticName = "from")
+    @AllArgsConstructor(staticName = "from")
     public static class Artifact {
         private Long artifactId;
         private Long pipelineId;
@@ -118,10 +152,8 @@ public class PipelineResponse {
     @NoArgsConstructor(staticName = "from")
     @AllArgsConstructor(staticName = "from")
     public static class AISqlPreview {
-
         private PipelinePlan pipelinePlan;
         private String generatedFlinkSql;
-
     }
 
 }

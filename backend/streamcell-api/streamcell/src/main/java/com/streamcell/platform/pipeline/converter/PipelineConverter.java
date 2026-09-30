@@ -14,6 +14,8 @@ public interface PipelineConverter {
 
     PipelineResponse.Pipeline toDTO(Pipeline vo);
 
+    PipelineResponse.CustomJarPipeline toCustomJarDTO(Pipeline vo);
+
     default Pipeline toVO(PipelineRequest.Create createItem) {
         return Pipeline.builder()
                 .ownerUserId(createItem.getOwnerUserId())
