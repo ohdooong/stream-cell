@@ -47,8 +47,7 @@ public class ListToJsonTypeHandler extends BaseTypeHandler<List<Object>> {
     private List<Object> readValueToList(String json) {
         if (json == null) return null;
         try {
-            return mapper.readValue(json, new TypeReference<List<Object>>() {
-            });
+            return mapper.readValue(json, new TypeReference<>() {});
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Json read error: ", e);
         }

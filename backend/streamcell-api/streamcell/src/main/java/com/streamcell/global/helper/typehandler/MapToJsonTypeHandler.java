@@ -49,8 +49,7 @@ public class MapToJsonTypeHandler extends BaseTypeHandler<Map<String, String>> {
     private Map<String, String> readValueToMap(String json) {
         if (json == null) return null;
         try {
-            return mapper.readValue(json, new TypeReference<Map<String, String>>() {
-            });
+            return mapper.readValue(json, new TypeReference<>() {});
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Json read error: ", e);
         }
