@@ -41,4 +41,9 @@ public class AuthServiceImpl implements AuthService {
             .expiration(jwtTokenProvider.getExpiration())
             .build();
     }
+
+    @Override
+    public void logout() {
+
+    }
 }

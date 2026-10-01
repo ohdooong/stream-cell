@@ -36,6 +36,5 @@ public class SecurityConstants {
         "/error", //
         "/error/**", //
         LOGIN_API_END_POINT, // 로그인 URI
-        LOGOUT_API_END_POINT, // 로그아웃 URI
     };
 }
