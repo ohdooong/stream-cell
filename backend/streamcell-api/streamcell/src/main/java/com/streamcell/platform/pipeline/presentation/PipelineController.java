@@ -81,9 +81,6 @@ public class PipelineController {
                 BaseResponse.success(service.findPipelineByPipelineId(pipelineId)));
     }
 
-
-
-
     @Operation(summary = "Pipeline Flink Custom Jar 파일 업로드", description = "Pipeline의 Flink Custom Jar 파일을 업로드합니다.")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -147,5 +144,19 @@ public class PipelineController {
         @PathVariable Long pipelineId) {
         return ResponseEntity.ok(
                 BaseResponse.success(service.updatePipelineStatus(pipelineId)));
+    }
+
+    @Operation(summary = "Pipeline Job 상태 업데이트", description = "Pipeline Flink Job 상태를 업데이트합니다. Flink job과 동기화")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "처리성공"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "404", description = "Not Found"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error."),
+    })
+    @DeleteMapping("/pipelines/{pipelineId}")
+    public ResponseEntity<BaseResponse<PipelineResponse.PipelineStatus>> deletePipeline(
+            @PathVariable Long pipelineId) {
+        
+        return ResponseEntity.noContent().build();
     }
 }
