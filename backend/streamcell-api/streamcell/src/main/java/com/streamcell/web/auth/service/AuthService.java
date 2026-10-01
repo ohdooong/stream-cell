@@ -7,4 +7,6 @@ public interface AuthService {
 
     AuthResponse.Token login(AuthRequest.Login loginRequest);
 
+    void logout();
+
 }

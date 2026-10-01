@@ -30,11 +30,19 @@ public class AuthController {
         @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @PostMapping("/login")
-    public ResponseEntity<BaseResponse<?>> loginRequest(
+    public ResponseEntity<BaseResponse<?>> login(
         @RequestBody AuthRequest.Login loginRequest) {
         return ResponseEntity.ok(BaseResponse.success(authService.login(loginRequest)));
     }
 
-
-
+    @Operation(summary = "사용자 로그아웃 요청", description = "사용자 로그아웃 요청을 처리합니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "로그아웃 성공 (응답없음)"),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error."),
+    })
+    @PostMapping("/logout")
+    public ResponseEntity<BaseResponse<Void>> logout() {
+        authService.logout();
+        return ResponseEntity.ok(BaseResponse.success(204, "로그아웃 성공", null));
+    }
 }
