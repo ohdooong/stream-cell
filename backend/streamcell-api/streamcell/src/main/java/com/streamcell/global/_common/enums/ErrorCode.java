@@ -46,6 +46,7 @@ public enum ErrorCode {
     INVALID_FIELD_TYPE(HttpStatus.BAD_REQUEST, "Aggregation 시 숫자형만 가능합니다."),
     INVALID_AGGREGATION_FUNCTION(HttpStatus.BAD_REQUEST, "유효하지 않은 Aggregation Function입니다."),
     INVALID_TIME_FILED(HttpStatus.BAD_REQUEST, "time field는 TIMESTAMP(3) 형식만 입력가능합니다."),
+    INVALID_PIPELINE_RESULT_PIPELINE_TYPE(HttpStatus.BAD_REQUEST, "Pipeline 유형이 AI SQL 유형인것만 결과조회가 가능합니다."),
 
 
     NOT_IMPLEMENTED_WINDOW_TYPE(HttpStatus.NOT_IMPLEMENTED, "아직 지원하지 않는 Window Type 입니다."),

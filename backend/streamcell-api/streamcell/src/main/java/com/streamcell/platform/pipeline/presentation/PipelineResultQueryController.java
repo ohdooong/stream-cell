@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,8 +31,8 @@ public class PipelineResultQueryController {
     @GetMapping("/pipelines/{pipelineId}/results")
     public ResponseEntity<BaseResponse<?>> getPipelineResults(
             @PathVariable Long pipelineId,
-            @RequestParam @NotNull Integer limit,
-            @RequestParam @NotNull Integer rangeMinutes
+            @RequestParam @Valid @NotNull Integer limit,
+            @RequestParam @Valid @NotNull Integer rangeMinutes
     ) {
         return ResponseEntity.ok(BaseResponse.success(service.getPipelineResults(pipelineId, limit, rangeMinutes)));
     }

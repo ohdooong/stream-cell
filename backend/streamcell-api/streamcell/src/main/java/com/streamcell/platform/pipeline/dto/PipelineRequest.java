@@ -2,11 +2,13 @@ package com.streamcell.platform.pipeline.dto;
 
 import com.streamcell.platform.ai.dto.PipelinePlan;
 import com.streamcell.platform.pipeline.enums.PipelineType;
+import com.streamcell.platform.pipeline.vo.ProgramArgs;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -78,10 +80,8 @@ public class PipelineRequest {
 
         @Schema(description = "programArgs", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull
-        private Map<String, String> programArgs;
+        private ProgramArgs programArgs;
 
-//        @NotNull
-//        private Map<String, Object> programArgs;
     }
 
     @Getter

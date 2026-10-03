@@ -15,8 +15,9 @@ public interface PipelineResultQueryRepository {
     @Select("""
         select
             *
-        from ${tableName} x
-        where x.window_start >= now() - INTERVAL #{rangeMinute} minute
+        from platform.${tableName} x
+        where x.window_start >= now() - (CAST(#{rangeMinute} AS text) || ' minutes')::INTERVAL
+        order by x.window_start desc
         limit #{limit}
     """)
     List<Map<String, Object>> findRowsByTableName(String tableName, Integer limit, Integer rangeMinute);

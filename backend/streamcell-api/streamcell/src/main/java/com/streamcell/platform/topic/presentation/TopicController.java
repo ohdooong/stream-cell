@@ -50,8 +50,7 @@ public class TopicController {
     })
     @GetMapping("/topics")
     public ResponseEntity<BaseResponse<List<Item>>> getTopics() {
-        List<Item> topics = service.getTopics();
-        return ResponseEntity.ok(BaseResponse.success(topics));
+        return ResponseEntity.ok(BaseResponse.success(service.getTopics()));
     }
 
     @Operation(summary = "Topic 상세정보 조회(메타데이터)", description = "Topic 상세정보 조회")

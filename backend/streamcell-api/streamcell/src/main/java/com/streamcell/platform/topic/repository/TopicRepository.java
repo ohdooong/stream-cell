@@ -126,15 +126,16 @@ public interface TopicRepository {
         merge into platform.topic_permission a
         using (
             select #{topicId} as topic_id,
-                   #{userId} as user_id) b
-        on a.topic_id = b.topic_id and a.user_id = b.user_id
+                   #{userId} as user_id,
+                   #{permissionType} as permission_type) b
+        on a.topic_id = b.topic_id and a.user_id = b.user_id and a.permission_type = b.permission_type
         when matched then
             update set permission_type = #{permissionType}
                      , updated_by = 'SYSTEM'
                      , updated_at = now()
         when not matched then
             insert (topic_id, user_id, permission_type, created_by, created_at, updated_by, updated_at)
-            values (b.topic_id, b.user_id, #{permissionType}, 'SYSTEM', now(), 'SYSTEM', now())
+            values (b.topic_id, b.user_id, #{permissionType}, 'ADMIN', now(), 'ADMIN', now())
     """)
     int mergeIntoTopicPermission(Long topicId, Long userId, TopicPermissionType permissionType);
 }
