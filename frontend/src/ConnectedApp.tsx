@@ -8,6 +8,7 @@ import { useAuth } from './auth/AuthContext';
 import { AiSqlRegistration, PlanPreview } from './pipelines/AiSqlRegistration';
 import { isPipelinePlan } from './pipelines/aiSqlForm';
 import { aiSqlDetail, customJarDetail, programArgsText } from './pipelines/detailData';
+import { ResultsDashboard } from './results/ResultsDashboard';
 import './connected.css';
 
 type View = 'overview' | 'cluster' | 'topics' | 'permissions' | 'pipelines' | 'create' | 'detail' | 'results' | 'failures';
@@ -102,6 +103,8 @@ function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOu
   useEffect(() => { Promise.allSettled([platformApi.getUsers(), platformApi.getTopics(), platformApi.getClusterOverview()]).then(([u, t, c]) => { if (u.status === 'fulfilled') setUsers(u.value); if (t.status === 'fulfilled') setTopics(t.value); if (c.status === 'fulfilled') setCluster(c.value); const count = [u, t, c].filter((item) => item.status === 'rejected').length; if (count) setError(`일부 API를 불러오지 못했습니다. 백엔드(기본 포트 8085) 실행 상태를 확인해 주세요. (${count}/3)`); setLoading(false); }); }, []);
   useEffect(() => { platformApi.getPipelines(activeUserId).then(setPipelines).catch(fail); }, [activeUserId]);
   const activeUser = users.find((item) => item.userId === activeUserId);
+  const [resultsPipelineId, setResultsPipelineId] = useState<number | null>(null);
+  const openResults = (id: number) => { setResultsPipelineId(id); setView('results'); };
   const accountName = activeUser?.name || user?.displayName || user?.username || '사용자';
   const openPipeline = (id: number, type: PipelineType) => { setSelectedPipeline({ id, type }); setView('detail'); };
   return <div className="app-shell">
@@ -127,8 +130,8 @@ function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOu
         {view === 'permissions' && <Permissions topics={topics} users={users} activeUserId={activeUserId} success={success} fail={fail} />}
         {view === 'pipelines' && <Pipelines pipelines={pipelines} create={() => setView('create')} open={openPipeline} />}
         {view === 'create' && <CreatePipeline topics={topics} activeUserId={activeUserId} success={success} fail={fail} done={async (id, type) => { await refreshPipelines(); openPipeline(id, type); }} />}
-        {view === 'detail' && selectedPipeline && <PipelineDetail key={`${selectedPipeline.type}-${selectedPipeline.id}`} id={selectedPipeline.id} type={selectedPipeline.type} topics={topics} success={success} fail={fail} refreshList={refreshPipelines} />}
-        {view === 'results' && <Unavailable title="결과 Dashboard API가 필요합니다">Pipeline 처리 결과 조회 엔드포인트가 아직 구현되지 않아 임의 데이터를 표시하지 않습니다.</Unavailable>}
+        {view === 'detail' && selectedPipeline && <PipelineDetail key={`${selectedPipeline.type}-${selectedPipeline.id}`} id={selectedPipeline.id} type={selectedPipeline.type} topics={topics} success={success} fail={fail} refreshList={refreshPipelines} openResults={openResults} />}
+        {view === 'results' && <ResultsDashboard key={activeUserId} pipelines={pipelines} initialPipelineId={resultsPipelineId} openPipeline={openPipeline} />}
         {view === 'failures' && <Unavailable title="실패 분석 API가 필요합니다">원본 Exception과 AI 분석 결과 조회 엔드포인트가 구현되면 이 화면에 연결할 수 있습니다.</Unavailable>}
       </>}</main>
     </section>
@@ -300,7 +303,7 @@ function AiSqlRegisteredDetails({ item, topics }: { item: PipelineDetailData; to
   </div>;
 }
 
-function PipelineDetail({ id, type, topics, success, fail, refreshList }: { id: number; type: PipelineType; topics: Topic[]; success: (m: string) => void; fail: (e: unknown) => void; refreshList: () => Promise<void> }) {
+function PipelineDetail({ id, type, topics, success, fail, refreshList, openResults }: { id: number; type: PipelineType; topics: Topic[]; success: (m: string) => void; fail: (e: unknown) => void; refreshList: () => Promise<void>; openResults: (id: number) => void }) {
   const [item, setItem] = useState<PipelineDetailData | null>(null); const [name, setName] = useState(''); const [description, setDescription] = useState(''); const [busy, setBusy] = useState(false); const [loadError, setLoadError] = useState(false);
   async function load() { setBusy(true); setLoadError(false); try { const value = await platformApi.getPipeline(id, type); if (!value || value.pipelineId !== id || value.pipelineType !== type) throw new Error('Pipeline 상세 응답의 ID 또는 유형이 요청과 다릅니다.'); setItem(value); setName(value.pipelineName); setDescription(value.description || ''); } catch (e) { setLoadError(true); fail(e); } finally { setBusy(false); } }
   useEffect(() => { void load(); }, [id, type]);
@@ -311,11 +314,11 @@ function PipelineDetail({ id, type, topics, success, fail, refreshList }: { id: 
     ? ['DRAFT', 'CREATED'].includes(item.pipelineStatus)
     : ['ARTIFACT_UPLOADED', 'STOPPED', 'FAILED'].includes(item.pipelineStatus);
   const deployLabel = busy ? '배포 중…' : item.pipelineType === 'AI_SQL' ? 'AI SQL 배포' : '배포 실행';
-  return <><div className="welcome-row"><div><h2>{item.pipelineName}</h2><p>Pipeline #{item.pipelineId} · Owner #{item.ownerUserId}</p></div><div className="connected-heading-actions"><Status value={item.pipelineStatus} /><button className="primary-button compact" onClick={() => void deploy()} disabled={!deployable || busy}>{deployLabel}</button></div></div><PipelineTypeSummary type={type} />{type === 'AI_SQL'
+  return <><div className="welcome-row"><div><h2>{item.pipelineName}</h2><p>Pipeline #{item.pipelineId} · Owner #{item.ownerUserId}</p></div><div className="connected-heading-actions"><Status value={item.pipelineStatus} /><button className="secondary-button" onClick={() => openResults(id)}>결과 Dashboard →</button><button className="primary-button compact" onClick={() => void deploy()} disabled={!deployable || busy}>{deployLabel}</button></div></div><PipelineTypeSummary type={type} />{type === 'AI_SQL'
     ? <AiSqlRegisteredDetails item={item} topics={topics} />
     : <CustomJarRegisteredDetails item={item} topics={topics} name={name} description={description} setName={setName} setDescription={setDescription} save={save} busy={busy} />}
     <PipelineResponseSource item={item} />
-    <section className="connected-availability"><h3>운영 기능 연결 상태</h3><p><b>연결됨</b> 유형별 상세 조회, 상태 조회, CUSTOM_JAR 기본 정보 수정 및 유형별 배포</p><p><span>API 필요</span> 중지, Deployment 이력, 결과 조회, 실패 분석</p></section></>;
+    <section className="connected-availability"><h3>운영 기능 연결 상태</h3><p><b>연결됨</b> 유형별 상세 조회, 상태 조회, CUSTOM_JAR 기본 정보 수정, 유형별 배포 및 결과 Dashboard</p><p><span>API 필요</span> 중지, Deployment 이력, 실패 분석</p></section></>;
 }
 
 function Unavailable({ title, children }: { title: string; children: ReactNode }) { return <section className="panel connected-unavailable"><span>API</span><h2>{title}</h2><p>{children}</p></section>; }

@@ -9,6 +9,7 @@
     "test:ai-sql": "node --test tests/ai-sql.test.mjs",
     "test:pipeline-detail": "node --test tests/pipeline-detail.test.mjs",
     "test:auth": "node --test tests/auth.test.mjs",
+    "test:results": "node --test tests/results.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
