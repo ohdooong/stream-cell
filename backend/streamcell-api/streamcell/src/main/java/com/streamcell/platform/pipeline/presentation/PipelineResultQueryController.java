@@ -1,18 +1,18 @@
 package com.streamcell.platform.pipeline.presentation;
 
 import com.streamcell.global._common.dto.BaseResponse;
+import com.streamcell.platform.pipeline.enums.PipelineType;
 import com.streamcell.platform.pipeline.service.PipelineResultQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-@Tag(name = "Platform Pipeline API", description = "Pipeline(파이프라인관리) API 컨트롤러")
+import org.springframework.web.bind.annotation.*;
+
+@Tag(name = "Pipeline Result API", description = "Pipeline Result(파이프라인 실시간 결과) API 컨트롤러")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/platform/pipeline")
@@ -27,9 +27,13 @@ public class PipelineResultQueryController {
             @ApiResponse(responseCode = "404", description = "Not Found"),
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
-    @GetMapping("/pipelines")
-    public ResponseEntity<BaseResponse<?>> getPipelineResultValue() {
-        return ResponseEntity.ok(BaseResponse.success(null));
+    @GetMapping("/pipelines/{pipelineId}/results")
+    public ResponseEntity<BaseResponse<?>> getPipelineResults(
+            @PathVariable Long pipelineId,
+            @RequestParam @NotNull Integer limit,
+            @RequestParam @NotNull Integer rangeMinutes
+    ) {
+        return ResponseEntity.ok(BaseResponse.success(service.getPipelineResults(pipelineId, limit, rangeMinutes)));
     }
 
 }

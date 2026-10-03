@@ -1,4 +1,4 @@
-package com.streamcell.platform.pipeline.domain;
+package com.streamcell.platform.pipeline.domain.policy;
 
 import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.topic.vo.Topic;
