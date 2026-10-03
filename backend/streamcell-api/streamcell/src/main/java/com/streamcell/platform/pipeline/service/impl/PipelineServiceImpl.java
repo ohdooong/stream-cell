@@ -20,7 +20,7 @@ import com.streamcell.platform.flink.dto.FlinkResponse.JobExceptionsHistory;
 import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.pipeline.converter.PipelineConverter;
 import com.streamcell.platform.pipeline.converter.PipelineDeploymentConverter;
-import com.streamcell.platform.pipeline.domain.JobStatusConvertPolicy;
+import com.streamcell.platform.pipeline.domain.policy.JobStatusConvertPolicy;
 import com.streamcell.platform.pipeline.enums.DeploymentStatus;
 import com.streamcell.platform.pipeline.enums.PipelineType;
 import com.streamcell.platform.pipeline.validator.PipelineValidator;
@@ -250,7 +250,7 @@ public class PipelineServiceImpl implements PipelineService {
             .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
 
         PipelineDeployment pipelineDeployment = repository.findLatestPipelineDeployMentByPipelineId(pipelineId)
-            .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE_DEPLOYMENT));
+            .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE_DEPLOYMENT, pipelineId));
 
         String deployedFlinkJobId = pipelineDeployment.getFlinkJobId();
         if (deployedFlinkJobId == null) {

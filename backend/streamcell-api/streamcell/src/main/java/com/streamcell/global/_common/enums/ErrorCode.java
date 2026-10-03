@@ -12,7 +12,7 @@ public enum ErrorCode {
     NOT_FOUND_CUSTOM_JOB_CONFIG(HttpStatus.NOT_FOUND, "Custom Job Config정보를 찾을 수 없습니다."),
     NOT_FOUND_FILE(HttpStatus.NOT_FOUND, "파일을 찾을 수 없습니다."),
     NOT_FOUND_USER(HttpStatus.NOT_FOUND, "사용자 정보를 찾을 수 없습니다."),
-    NOT_FOUND_PIPELINE_DEPLOYMENT(HttpStatus.NOT_FOUND, "Pipeline Deployment 정보를 찾을 수 없습니다."),
+    NOT_FOUND_PIPELINE_DEPLOYMENT(HttpStatus.NOT_FOUND, "Pipeline Deployment 정보를 찾을 수 없습니다. Pipeline Id: %s"),
     NOT_FOUND_FLINK_JOB_ID(HttpStatus.NOT_FOUND, "Flink Job ID가 존재하지 않습니다. 정상적으로 배포되었는지 확인하십시오."),
     NOT_FOUND_FLINK_JOB_ID_FROM_CLUSTER(HttpStatus.NOT_FOUND, "Flink Cluster에서 Flink Job 정보를 찾을 수 없습니다."),
     NOT_FOUND_TOPIC_SCHEMA(HttpStatus.NOT_FOUND, "해당 토픽의 스키마 정보를 찾을 수 없습니다. Topic Id: %s"),

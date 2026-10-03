@@ -2,15 +2,15 @@ package com.streamcell.platform.pipeline.service.impl;
 
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
+import com.streamcell.global.security.utils.SecurityUtil;
 import com.streamcell.platform.flink.client.FlinkJarClient;
 import com.streamcell.platform.flink.client.FlinkRestClient;
 import com.streamcell.platform.flink.dto.FlinkResponse;
 import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.flink.util.FlinkUtils;
 import com.streamcell.platform.pipeline.converter.PipelineDeploymentConverter;
-import com.streamcell.platform.pipeline.domain.DeploymentStatusPolicy;
-import com.streamcell.platform.pipeline.domain.JobStatusConvertPolicy;
-import com.streamcell.platform.pipeline.dto.PipelineDeploymentRequest.Create;
+import com.streamcell.platform.pipeline.domain.policy.DeploymentStatusPolicy;
+import com.streamcell.platform.pipeline.domain.policy.JobStatusConvertPolicy;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
 import com.streamcell.platform.pipeline.dto.PipelineResponse.Deployment;
 import com.streamcell.platform.pipeline.enums.DeploymentStatus;
@@ -139,9 +139,14 @@ public class PipelineDeploymentCustomJarServiceImpl implements PipelineDeploymen
         Pipeline pipeline = repository.findPipelineByPipelineId(pipelineId)
                 .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
 
-        // todo 사용자 권한/소유자 검증
+        // 사용자 권한/소유자 검증
+        Long currentUserId = SecurityUtil.getUserId();
+        if (!pipeline.getOwnerUserId().equals(currentUserId)) {
+            throw new BaseAPIException(ErrorCode.FORBIDDEN_PIPELINE);
+        }
+
         PipelineDeployment pipelineDeployment = repository.findLatestPipelineDeployMentByPipelineId(pipelineId)
-                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE_DEPLOYMENT));
+                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE_DEPLOYMENT, pipelineId));
 
         // 중지 가능한 상태인지 검증
         boolean availableStop = deploymentStatusPolicy.isAvailableStop(pipelineDeployment.getStatus());

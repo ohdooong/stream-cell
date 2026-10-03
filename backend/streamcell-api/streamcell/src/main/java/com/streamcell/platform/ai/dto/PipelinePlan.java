@@ -25,15 +25,9 @@ import lombok.ToString;
  */
 @Data
 public class PipelinePlan {
-
     private Long sourceTopicId;
-
     private WindowSpec window;
-
     private List<String> groupBy;
-
     private List<AggregationSpec> aggregations;
-
     private List<FilterSpec> filters;
-
 }
