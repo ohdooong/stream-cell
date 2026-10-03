@@ -49,7 +49,10 @@ public class ColumnExtractor {
 
         for (AggregationSpec aggregation : pipelinePlan.getAggregations()) {
             String alias = aggregation.getAlias();
-            PipelineResultQueryResponse.Dashboard.Column.from(alias, NUMBER);
+
+            columns.add(
+                    PipelineResultQueryResponse.Dashboard.Column.from(alias, NUMBER)
+            );
         }
 
         return columns;

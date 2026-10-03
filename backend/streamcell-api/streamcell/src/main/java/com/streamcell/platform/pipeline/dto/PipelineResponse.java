@@ -8,6 +8,7 @@ import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.enums.PipelineType;
 import java.time.LocalDateTime;
 
+import com.streamcell.platform.pipeline.vo.ProgramArgs;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -98,7 +99,7 @@ public class PipelineResponse {
         private List<Long> inputTopicIds;
         private List<Long> outputTopicIds;
         private Integer parallelism;
-        private Map<String, Object> programArgs;
+        private ProgramArgs programArgs;
     }
 
     @Getter

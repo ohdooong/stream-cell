@@ -45,7 +45,7 @@ public class PipelineResultQueryServiceImpl implements PipelineResultQueryServic
                 .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
 
         if (PipelineType.AI_SQL != pipeline.getPipelineType()) {
-            throw new BaseAPIException(ErrorCode.INVALID_AI_SQL_REQUEST);
+            throw new BaseAPIException(ErrorCode.INVALID_PIPELINE_RESULT_PIPELINE_TYPE);
         }
 
         // 가장 최근 Deployment만 가져오기

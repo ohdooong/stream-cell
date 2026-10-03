@@ -1,5 +1,6 @@
 package com.streamcell.platform.pipeline.vo;
 
+import com.streamcell.global._common.vo.BaseVO;
 import lombok.*;
 
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CustomJobConfig {
+public class CustomJobConfig extends BaseVO {
     private Long userId;
     private Long configId;
     private Long pipelineId;
@@ -18,5 +19,5 @@ public class CustomJobConfig {
     private List<Long> inputTopicIds;
     private List<Long> outputTopicIds;
     private Integer parallelism;
-    private Map<String, String> programArgs;
+    private ProgramArgs programArgs;
 }

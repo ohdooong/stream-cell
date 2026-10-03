@@ -2,6 +2,7 @@ package com.streamcell.platform.ai.domain.validator;
 
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
+import com.streamcell.global.security.utils.SecurityUtil;
 import com.streamcell.platform.ai.domain.context.PipelinePlanValidationContext;
 import com.streamcell.platform.pipeline.enums.PipelineStatus;
 import com.streamcell.platform.pipeline.enums.PipelineType;
@@ -21,7 +22,8 @@ public class PipelineValidator implements Validator<PipelinePlanValidationContex
             throw new BaseAPIException(ErrorCode.INVALID_AI_SQL_REQUEST);
         }
 
-        if (!context.getUserId().equals(pipeline.getOwnerUserId())) {
+        Long currentUserId = SecurityUtil.getUserId();
+        if (!pipeline.getOwnerUserId().equals(currentUserId)) {
             throw new BaseAPIException(ErrorCode.FORBIDDEN_PIPELINE);
         }
 
