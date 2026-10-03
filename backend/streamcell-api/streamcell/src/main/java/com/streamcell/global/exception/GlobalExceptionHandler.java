@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<BaseResponse<?>> handleException(Exception exception) {
         //log.error(Arrays.toString(exception.getStackTrace()));
         log.error(getStackTraceAsString(exception));
-        String message = "시스템 오류입니다.\\n관리자에게 문의하세요.";
+        String message = "시스템 오류입니다. 관리자에게 문의하세요.";
         return ResponseEntity.internalServerError()
             .body(BaseResponse.error(message));
     }
