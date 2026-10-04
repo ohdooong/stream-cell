@@ -79,4 +79,11 @@ export const platformApi = {
   async stopPipeline(pipelineId: number) {
     await api<BaseResponse<unknown>>(`${PIPELINE}/pipelines/deployment/${pipelineId}/stop`, { method: 'POST' });
   },
+  async syncPipelineStatus(pipelineId: number) {
+    const status = unwrap(await api<BaseResponse<PipelineStatus>>(`${PIPELINE}/pipelines/${pipelineId}/status`, { method: 'PUT' }));
+    if (!['DRAFT', 'CREATED', 'ARTIFACT_UPLOADED', 'DEPLOYING', 'RUNNING', 'FAILED', 'STOPPING', 'STOPPED', 'FINISHED', 'SUSPENDED'].includes(status)) {
+      throw new Error('Pipeline 상태 응답을 확인할 수 없습니다.');
+    }
+    return status;
+  },
 };
