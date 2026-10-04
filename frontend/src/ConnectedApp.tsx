@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { ApiError } from './api/client';
 import {
   platformApi, type ClusterOverview, type Pipeline, type PipelineDetail as PipelineDetailData, type PipelineStatus, type PipelineType,
@@ -8,6 +8,9 @@ import { useAuth } from './auth/AuthContext';
 import { AiSqlRegistration, PlanPreview } from './pipelines/AiSqlRegistration';
 import { isPipelinePlan } from './pipelines/aiSqlForm';
 import { aiSqlDetail, customJarDetail, programArgsText } from './pipelines/detailData';
+import { CustomJarFields } from './pipelines/CustomJarFields';
+import { CustomJarRecovery } from './pipelines/CustomJarRecovery';
+import { canRegisterCustomJar, customJarDraft, hasCustomJarArtifact, registerCustomJar } from './pipelines/customJarRegistration';
 import { ResultsDashboard } from './results/ResultsDashboard';
 import './connected.css';
 
@@ -129,8 +132,8 @@ function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOu
         {view === 'topics' && <Topics topics={topics} refresh={refreshTopics} success={success} fail={fail} />}
         {view === 'permissions' && <Permissions topics={topics} users={users} activeUserId={activeUserId} success={success} fail={fail} />}
         {view === 'pipelines' && <Pipelines pipelines={pipelines} create={() => setView('create')} open={openPipeline} />}
-        {view === 'create' && <CreatePipeline topics={topics} activeUserId={activeUserId} success={success} fail={fail} done={async (id, type) => { await refreshPipelines(); openPipeline(id, type); }} />}
-        {view === 'detail' && selectedPipeline && <PipelineDetail key={`${selectedPipeline.type}-${selectedPipeline.id}`} id={selectedPipeline.id} type={selectedPipeline.type} topics={topics} success={success} fail={fail} refreshList={refreshPipelines} openResults={openResults} />}
+        {view === 'create' && <CreatePipeline topics={topics} activeUserId={activeUserId} success={success} fail={fail} refreshList={refreshPipelines} done={async (id, type) => { await refreshPipelines(); openPipeline(id, type); }} />}
+        {view === 'detail' && selectedPipeline && <PipelineDetail key={`${selectedPipeline.type}-${selectedPipeline.id}`} id={selectedPipeline.id} type={selectedPipeline.type} userId={activeUserId} topics={topics} success={success} fail={fail} refreshList={refreshPipelines} openResults={openResults} />}
         {view === 'results' && <ResultsDashboard key={activeUserId} pipelines={pipelines} initialPipelineId={resultsPipelineId} openPipeline={openPipeline} />}
         {view === 'failures' && <Unavailable title="실패 분석 API가 필요합니다">원본 Exception과 AI 분석 결과 조회 엔드포인트가 구현되면 이 화면에 연결할 수 있습니다.</Unavailable>}
       </>}</main>
@@ -169,63 +172,59 @@ function PermissionTable({ items }: { items: TopicPermission[] }) { return items
 
 function Pipelines({ pipelines, create, open }: { pipelines: Pipeline[]; create: () => void; open: (id: number, type: PipelineType) => void }) { return <><div className="welcome-row"><div><h2>Pipeline 운영</h2><p>사용자 소유 Pipeline의 현재 상태를 조회합니다.</p></div><button className="primary-button compact" onClick={create}>＋ 새 Pipeline</button></div><section className="panel table-panel">{pipelines.length ? <div className="table-scroll"><table><thead><tr><th>Pipeline</th><th>Type</th><th>Status</th><th>Action</th></tr></thead><tbody>{pipelines.map((p) => <tr key={p.pipelineId}><td><strong>{p.pipelineName}</strong><small>#{p.pipelineId} · {p.description || '설명 없음'}</small></td><td><span className="format-chip">{p.pipelineType}</span></td><td><Status value={p.pipelineStatus} /></td><td><button className="row-action" onClick={() => open(p.pipelineId, p.pipelineType)}>상세 →</button></td></tr>)}</tbody></table></div> : <Empty title="Pipeline이 없습니다">새 Pipeline을 등록하세요.</Empty>}</section></>; }
 
-function CreatePipeline({ topics, activeUserId, success, fail, done }: { topics: Topic[]; activeUserId: number; success: (m: string) => void; fail: (e: unknown) => void; done: (id: number, type: PipelineType) => Promise<void> }) {
+function CreatePipeline({ topics, activeUserId, success, fail, refreshList, done }: { topics: Topic[]; activeUserId: number; success: (m: string) => void; fail: (e: unknown) => void; refreshList: () => Promise<void>; done: (id: number, type: PipelineType) => Promise<void> }) {
   const [type, setType] = useState<PipelineType>('CUSTOM_JAR');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [entryClass, setEntryClass] = useState('');
-  const [inputId, setInputId] = useState(0);
-  const [outputId, setOutputId] = useState(0);
-  const [parallelism, setParallelism] = useState(1);
-  const [args, setArgs] = useState('');
+  const [jarDraft, setJarDraft] = useState(customJarDraft);
+  const [createdPipelineId, setCreatedPipelineId] = useState<number>();
+  const [uploadedPipelineId, setUploadedPipelineId] = useState<number>();
+  const [registrationError, setRegistrationError] = useState('');
+  const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!file) return fail(new Error('JAR 파일을 선택해 주세요.'));
-    setBusy(true);
+    if (busy || inFlight.current || uploadedPipelineId) return;
+    inFlight.current = true; setBusy(true); setRegistrationError('');
+    let pipelineId = createdPipelineId;
     try {
-      const pipeline = await platformApi.createPipeline({
-        ownerUserId: activeUserId, pipelineName: name, description, pipelineType: 'CUSTOM_JAR',
+      const result = await registerCustomJar({
+        pipelineId, userId: activeUserId, draft: jarDraft,
+        pipelineInput: { ownerUserId: activeUserId, pipelineName: name, description, pipelineType: 'CUSTOM_JAR' },
+        onCreated: (id) => { pipelineId = id; setCreatedPipelineId(id); void refreshList().catch(fail); },
       });
+      setUploadedPipelineId(result.pipelineId);
+      success(result.alreadyRegistered ? '서버에서 JAR 등록 완료를 확인했습니다.' : 'Pipeline과 Custom JAR를 등록했습니다.');
       try {
-        await platformApi.uploadCustomJar(pipeline.pipelineId, file, {
-          userId: activeUserId, entryClass,
-          inputTopicIds: inputId ? [inputId] : [], outputTopicIds: outputId ? [outputId] : [],
-          parallelism, programArgs: parseArgs(args),
-        });
-        success('Pipeline과 Custom JAR를 등록했습니다.');
+        await done(result.pipelineId, 'CUSTOM_JAR');
       } catch (error) {
-        fail(new Error(`Pipeline #${pipeline.pipelineId} 생성 후 JAR 등록에 실패했습니다: ${messageOf(error)}`));
-        await done(pipeline.pipelineId, 'CUSTOM_JAR');
-        return;
+        setRegistrationError(`JAR 등록은 완료됐지만 상세 화면을 열지 못했습니다. 다시 상세 보기를 눌러 주세요. ${messageOf(error)}`);
       }
-      await done(pipeline.pipelineId, 'CUSTOM_JAR');
-    } catch (error) { fail(error); }
-    finally { setBusy(false); }
+    } catch (error) {
+      setRegistrationError(`${pipelineId ? `Pipeline #${pipelineId}는 생성되어 있습니다. 입력값을 확인한 뒤 JAR 등록을 다시 시도해 주세요. ` : ''}${messageOf(error)}`);
+    } finally { inFlight.current = false; setBusy(false); }
   }
 
   return <>
     <div className="welcome-row"><div><h2>새 Pipeline 등록</h2><p>데이터와 처리 방식을 선택하고 Pipeline을 구성하세요.</p></div></div>
     <div className="panel pipeline-type-picker"><div className="type-tabs" aria-label="Pipeline 유형">
-      <button type="button" aria-pressed={type === 'CUSTOM_JAR'} className={type === 'CUSTOM_JAR' ? 'active' : ''} onClick={() => setType('CUSTOM_JAR')} disabled={busy}><b>Custom JAR</b><span>직접 빌드한 Flink Job 등록</span></button>
-      <button type="button" aria-pressed={type === 'AI_SQL'} className={type === 'AI_SQL' ? 'active' : ''} onClick={() => setType('AI_SQL')} disabled={busy}><b>AI SQL</b><span>자연어로 분석을 요청하고 SQL 검토</span></button>
+      <button type="button" aria-pressed={type === 'CUSTOM_JAR'} className={type === 'CUSTOM_JAR' ? 'active' : ''} onClick={() => setType('CUSTOM_JAR')} disabled={busy || Boolean(createdPipelineId)}><b>Custom JAR</b><span>직접 빌드한 Flink Job 등록</span></button>
+      <button type="button" aria-pressed={type === 'AI_SQL'} className={type === 'AI_SQL' ? 'active' : ''} onClick={() => setType('AI_SQL')} disabled={busy || Boolean(createdPipelineId)}><b>AI SQL</b><span>자연어로 분석을 요청하고 SQL 검토</span></button>
     </div></div>
     {type === 'AI_SQL'
       ? <AiSqlRegistration topics={topics} userId={activeUserId} onCreated={(id) => done(id, 'AI_SQL')} notify={success} />
       : <form className="panel connected-create" onSubmit={submit}>
+        {createdPipelineId && <p className="jar-registration-message" role="status">Pipeline #{createdPipelineId}의 기본 정보가 저장되었습니다. {uploadedPipelineId ? 'JAR 등록이 완료되었습니다.' : '현재 화면에서 JAR 등록을 이어갈 수 있습니다.'}</p>}
         <div className="connected-form">
-          <Field label="Pipeline 이름"><input required value={name} onChange={(e) => setName(e.target.value)} /></Field>
-          <Field label="설명"><input value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
-          <Field label="JAR 파일" wide><input required type="file" accept=".jar,application/java-archive" onChange={(e) => setFile(e.target.files?.[0] || null)} /></Field>
-          <Field label="Entry Class"><input required value={entryClass} onChange={(e) => setEntryClass(e.target.value)} placeholder="com.example.StreamJob" /></Field>
-          <Field label="Parallelism"><input type="number" min="1" value={parallelism} onChange={(e) => setParallelism(Number(e.target.value))} /></Field>
-          <Field label="Input Topic"><select value={inputId} onChange={(e) => setInputId(Number(e.target.value))}><option value="0">선택 안 함</option>{topics.map((topic) => <option key={topic.topicId} value={topic.topicId}>{topic.topicName}</option>)}</select></Field>
-          <Field label="Output Topic"><select value={outputId} onChange={(e) => setOutputId(Number(e.target.value))}><option value="0">선택 안 함</option>{topics.map((topic) => <option key={topic.topicId} value={topic.topicId}>{topic.topicName}</option>)}</select></Field>
-          <Field label="Program Arguments" wide hint="한 줄에 key=value 형식"><textarea rows={5} value={args} onChange={(e) => setArgs(e.target.value)} /></Field>
+          <Field label="Pipeline 이름"><input required readOnly={busy || Boolean(createdPipelineId)} value={name} onChange={(e) => setName(e.target.value)} /></Field>
+          <Field label="설명"><input readOnly={busy || Boolean(createdPipelineId)} value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
+          <CustomJarFields draft={jarDraft} onChange={setJarDraft} topics={topics} disabled={busy || Boolean(uploadedPipelineId)} />
         </div>
-        <div className="connected-actions"><button className="primary-button compact" disabled={busy}>{busy ? '등록 중…' : 'Pipeline 및 JAR 등록'}</button></div>
+        {registrationError && <p className="form-error jar-registration-message" role="alert">{registrationError}</p>}
+        <div className="connected-actions">{uploadedPipelineId
+          ? <button type="button" className="primary-button compact" disabled={busy} onClick={() => void done(uploadedPipelineId, 'CUSTOM_JAR').catch(fail)}>등록된 Pipeline 상세 보기 →</button>
+          : <button className="primary-button compact" disabled={busy}>{busy ? '등록 중…' : createdPipelineId ? 'JAR 등록 다시 시도' : 'Pipeline 및 JAR 등록'}</button>}</div>
       </form>}
   </>;
 }
@@ -259,11 +258,13 @@ function CustomJarRegisteredDetails({ item, topics, name, description, setName, 
   setName: (value: string) => void; setDescription: (value: string) => void; save: (event: FormEvent) => void; busy: boolean;
 }) {
   const detail = customJarDetail(item);
+  const incomplete = canRegisterCustomJar(item);
   return <form className="panel connected-create detail-registration" onSubmit={save}>
-    <div className="panel-heading"><div><h3>Custom JAR 등록 정보</h3><p>등록 화면과 같은 순서로 저장된 설정을 확인합니다.</p></div><button className="secondary-button" disabled={busy}>기본 정보 저장</button></div>
+    <div className="panel-heading"><div><h3>{incomplete ? 'Pipeline 기본 정보' : 'Custom JAR 등록 정보'}</h3><p>{incomplete ? 'JAR 등록에 사용할 Pipeline의 기본 정보입니다.' : '등록 화면과 같은 순서로 저장된 설정을 확인합니다.'}</p></div><button className="secondary-button" disabled={busy}>기본 정보 저장</button></div>
     <div className="connected-form">
       <Field label="Pipeline 이름"><input value={name} onChange={(event) => setName(event.target.value)} required /></Field>
       <Field label="설명"><input value={description} onChange={(event) => setDescription(event.target.value)} /></Field>
+      {!incomplete && <>
       <Field label="JAR 파일" wide hint={detail.storedFileName ? `서버 저장 파일: ${detailText(detail.storedFileName)}` : '등록된 JAR 파일명'}><input value={detailText(detail.originalFileName)} readOnly /></Field>
       <Field label="Entry Class"><input value={detailText(detail.entryClass)} readOnly /></Field>
       <Field label="Parallelism"><input value={detailText(detail.parallelism)} readOnly /></Field>
@@ -271,6 +272,7 @@ function CustomJarRegisteredDetails({ item, topics, name, description, setName, 
       <Field label="Output Topic"><input value={topicNames(detail.outputTopicIds, topics)} readOnly /></Field>
       <Field label="Program Arguments" wide><textarea rows={5} value={programArgsText(detail.programArgs) || '등록 정보 없음'} readOnly /></Field>
       {detail.flinkJarId !== null && detail.flinkJarId !== undefined && <Field label="Flink JAR ID" wide><input value={detailText(detail.flinkJarId)} readOnly /></Field>}
+      </>}
     </div>
   </form>;
 }
@@ -303,23 +305,22 @@ function AiSqlRegisteredDetails({ item, topics }: { item: PipelineDetailData; to
   </div>;
 }
 
-function PipelineDetail({ id, type, topics, success, fail, refreshList, openResults }: { id: number; type: PipelineType; topics: Topic[]; success: (m: string) => void; fail: (e: unknown) => void; refreshList: () => Promise<void>; openResults: (id: number) => void }) {
+function PipelineDetail({ id, type, userId, topics, success, fail, refreshList, openResults }: { id: number; type: PipelineType; userId: number; topics: Topic[]; success: (m: string) => void; fail: (e: unknown) => void; refreshList: () => Promise<void>; openResults: (id: number) => void }) {
   const [item, setItem] = useState<PipelineDetailData | null>(null); const [name, setName] = useState(''); const [description, setDescription] = useState(''); const [busy, setBusy] = useState(false); const [loadError, setLoadError] = useState(false);
-  async function load() { setBusy(true); setLoadError(false); try { const value = await platformApi.getPipeline(id, type); if (!value || value.pipelineId !== id || value.pipelineType !== type) throw new Error('Pipeline 상세 응답의 ID 또는 유형이 요청과 다릅니다.'); setItem(value); setName(value.pipelineName); setDescription(value.description || ''); } catch (e) { setLoadError(true); fail(e); } finally { setBusy(false); } }
+  async function load() { setBusy(true); setLoadError(false); try { const value = await platformApi.getPipeline(id, type); if (!value || value.pipelineId !== id || value.pipelineType !== type) throw new Error('Pipeline 상세 응답의 ID 또는 유형이 요청과 다릅니다.'); setItem(value); setName(value.pipelineName); setDescription(value.description || ''); return value; } catch (e) { setLoadError(true); fail(e); return null; } finally { setBusy(false); } }
   useEffect(() => { void load(); }, [id, type]);
-  async function save(event: FormEvent) { event.preventDefault(); if (!item || item.pipelineType !== 'CUSTOM_JAR') return; try { await platformApi.updatePipeline({ pipelineId: item.pipelineId, ownerUserId: item.ownerUserId, pipelineName: name, description, pipelineType: item.pipelineType }); await Promise.all([load(), refreshList()]); success('Pipeline 정보를 수정했습니다.'); } catch (e) { fail(e); } }
+  async function save(event: FormEvent) { event.preventDefault(); if (busy || !item || item.pipelineType !== 'CUSTOM_JAR') return; setBusy(true); try { await platformApi.updatePipeline({ pipelineId: item.pipelineId, ownerUserId: item.ownerUserId, pipelineName: name, description, pipelineType: item.pipelineType }); await Promise.all([load(), refreshList()]); success('Pipeline 정보를 수정했습니다.'); } catch (e) { fail(e); } finally { setBusy(false); } }
   async function deploy() { if (!item) return; setBusy(true); try { const result = item.pipelineType === 'AI_SQL' ? await platformApi.deployAiSqlPipeline(item.pipelineId) : await platformApi.deployPipeline(item.pipelineId); success(`Deployment #${result.deploymentId} · ${result.status}`); await Promise.all([load(), refreshList()]); } catch (e) { fail(e); } finally { setBusy(false); } }
   if (!item) return <section className="panel connected-unavailable"><span>API</span><h2>{loadError ? 'Pipeline 상세조회에 실패했습니다' : 'Pipeline 조회 중'}</h2><p>{loadError ? '유형별 상세 API 연결 상태를 확인한 후 다시 시도해 주세요.' : '상세 API 응답을 기다리고 있습니다.'}</p>{loadError && <button className="secondary-button" type="button" onClick={() => void load()}>다시 조회</button>}</section>;
   const deployable = item.pipelineType === 'AI_SQL'
     ? ['DRAFT', 'CREATED'].includes(item.pipelineStatus)
-    : ['ARTIFACT_UPLOADED', 'STOPPED', 'FAILED'].includes(item.pipelineStatus);
-  const deployLabel = busy ? '배포 중…' : item.pipelineType === 'AI_SQL' ? 'AI SQL 배포' : '배포 실행';
+    : ['ARTIFACT_UPLOADED', 'STOPPED', 'FAILED'].includes(item.pipelineStatus) && hasCustomJarArtifact(item);
+  const deployLabel = busy ? '처리 중…' : item.pipelineType === 'AI_SQL' ? 'AI SQL 배포' : '배포 실행';
   return <><div className="welcome-row"><div><h2>{item.pipelineName}</h2><p>Pipeline #{item.pipelineId} · Owner #{item.ownerUserId}</p></div><div className="connected-heading-actions"><Status value={item.pipelineStatus} /><button className="secondary-button" onClick={() => openResults(id)}>결과 Dashboard →</button><button className="primary-button compact" onClick={() => void deploy()} disabled={!deployable || busy}>{deployLabel}</button></div></div><PipelineTypeSummary type={type} />{type === 'AI_SQL'
     ? <AiSqlRegisteredDetails item={item} topics={topics} />
-    : <CustomJarRegisteredDetails item={item} topics={topics} name={name} description={description} setName={setName} setDescription={setDescription} save={save} busy={busy} />}
+    : <><CustomJarRegisteredDetails item={item} topics={topics} name={name} description={description} setName={setName} setDescription={setDescription} save={save} busy={busy} />{canRegisterCustomJar(item) && <CustomJarRecovery item={item} topics={topics} userId={userId} busy={busy} onBusyChange={setBusy} onUploaded={async () => { const [updated] = await Promise.all([load(), refreshList()]); if (!updated) throw new Error('JAR 등록은 완료됐지만 상세 조회에 실패했습니다. 등록 상태를 다시 조회해 주세요.'); success('JAR 등록이 완료되었습니다. Pipeline 상태를 확인해 주세요.'); }} />}</>}
     <PipelineResponseSource item={item} />
     <section className="connected-availability"><h3>운영 기능 연결 상태</h3><p><b>연결됨</b> 유형별 상세 조회, 상태 조회, CUSTOM_JAR 기본 정보 수정, 유형별 배포 및 결과 Dashboard</p><p><span>API 필요</span> 중지, Deployment 이력, 실패 분석</p></section></>;
 }
 
 function Unavailable({ title, children }: { title: string; children: ReactNode }) { return <section className="panel connected-unavailable"><span>API</span><h2>{title}</h2><p>{children}</p></section>; }
-function parseArgs(value: string) { return Object.fromEntries(value.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => { const index = line.indexOf('='); return index < 0 ? [line, ''] : [line.slice(0, index).trim(), line.slice(index + 1).trim()]; })); }

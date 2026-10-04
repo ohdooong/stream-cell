@@ -39,6 +39,22 @@ npm run dev
 
 현재 체크아웃에는 결과 API의 백엔드 구현이 없어 위 응답 규격을 기준으로 연결했습니다. 실제 응답의 필드명이 다르면 매핑을 맞춰야 합니다.
 
+## Custom JAR 등록 실패 복구
+
+Pipeline 생성과 JAR 업로드는 별도 요청입니다. 업로드에 실패하면 등록 화면에 생성된 Pipeline ID와 파일·입력값을 유지하고, **JAR 등록 다시 시도**로 기존 Pipeline에 업로드합니다. 기본 정보가 이미 저장됐으므로 이름·설명과 유형은 이 화면에서 잠깁니다. 이름·설명은 상세 화면에서 수정할 수 있습니다.
+
+화면을 닫았거나 새로고침한 경우에는 Pipeline 목록에서 상세 화면으로 들어가 **JAR 등록 이어하기**를 사용합니다. `DRAFT`, `CREATED`, 또는 Artifact가 없는 `FAILED` 상태에서 제공됩니다. 파일은 다시 선택해야 하며 서버에 저장된 실행 설정이 있으면 미리 채웁니다.
+
+재시도 시 `GET /api/v1/platform/pipeline/pipelines/custom-jar/{pipelineId}`로 등록 상태를 먼저 확인합니다. 이미 등록됐다면 중복 업로드를 건너뛰고 상세 정보를 갱신합니다. 등록 대기 상태일 때는 기존 `POST /api/v1/platform/pipeline/pipelines/{pipelineId}/custom-jar`를 다시 호출합니다.
+
+백엔드 계약 확인 사항:
+
+- JAR 미등록 Pipeline도 상세 API가 기본 정보를 반환해야 합니다. Artifact와 실행 설정은 없으면 null로 반환하며, JAR가 없다는 이유로 Pipeline 자체를 404 처리하지 않아야 합니다.
+- 업로드 실패 시 실행 설정·Artifact·상태 변경은 함께 롤백되어야 합니다. 현재 체크아웃에는 `@Transactional(rollbackFor = Exception.class)`가 있으므로 정상 롤백되면 기존 POST로 재등록할 수 있습니다.
+- 부분 저장된 Artifact/실행 설정이 남으면 현재 중복 검사가 재등록을 거부합니다. 이런 데이터가 생길 수 있는 구조라면 미완료 건을 안전하게 복구하는 처리가 필요합니다. 파일 저장 후 DB 작업이 실패한 경우의 파일 정리도 별도로 처리해야 합니다.
+
+`npm run test:custom-jar`로 중복 Pipeline 방지, 응답 유실 후 재시도, 등록 상태 확인을 검증합니다. `tests/fixtures/custom-jar-api.mjs`는 첫 업로드 실패 후 두 번째 성공을 재현하는 로컬 전용 UI 테스트 서버입니다.
+
 ## JWT 로그인
 
 `npm run dev`에서도 로그인 화면이 표시됩니다. 백엔드가 실행 중이어야 로그인할 수 있습니다.

@@ -15,3 +15,6 @@
 .pipeline-response-source summary{cursor:pointer;color:#75869b;font-size:11px;font-weight:700}
 .pipeline-response-source pre{max-height:360px;overflow:auto;margin:14px 0 0;padding:16px;border-radius:8px;background:#122235;color:#d5e9ef;font:11px/1.65 "DM Mono",monospace;white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:600px){.detail-section-action{margin-left:0}.ai-detail .ai-section header{flex-wrap:wrap}.detail-type-option{padding:14px}}
+.jar-recovery{margin-top:22px;border-color:#b8dcd5}
+.jar-registration-message{margin:18px 24px;font-size:13px;line-height:1.8;color:#52777b;overflow-wrap:anywhere}
+.jar-registration-message.form-error{color:#bb4358}
