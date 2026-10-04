@@ -74,7 +74,7 @@ Kafka value는 UTF-8 JSON이며 공통 필드는 `event_id`(UUID), `event_type`,
 
 Flink에서는 `event_time`을 STRING으로 읽고 `TO_TIMESTAMP_LTZ` 등 사용 환경에 맞는 변환을 적용하세요. 기존 orders의 `yyyy-MM-dd HH:mm:ss` 형식과 다릅니다. 동일 엔티티 Key는 같은 파티션으로 라우팅합니다. 장비 상태는 매번 독립 생성되며 실제 센서 시계열의 연속성을 모델링하지 않습니다. `--seed`는 종류별 값과 선택을 재현하지만 UUID와 현재 시각은 매 실행 달라집니다. 안전 관련 수치와 경보는 데모 시나리오이며 실제 안전기준으로 사용하지 마세요.
 
-전송은 idempotence와 `acks=all`을 사용합니다. 전송 콜백 오류나 flush 후 미전송 메시지가 있으면 종료코드 1을 반환합니다. 재실행 간 중복 제거까지 보장하지 않습니다.
+전송은 기존 `order-producer`와 동일하게 `acks=all`, `retries=3`을 사용하며 `enable.idempotence=false`로 설정합니다. idempotence PID 발급을 요청하지 않도록 하여 `Failed to acquire idempotence PID ... Coordinator load in progress` 메시지가 발생하는 경로를 피합니다. 브로커의 coordinator 상태 자체를 복구하는 설정은 아닙니다. 재시도 중 중복 메시지가 발생할 수 있습니다. 전송 콜백 오류나 flush 후 미전송 메시지가 있으면 종료코드 1을 반환합니다.
 
 ## 검증
 

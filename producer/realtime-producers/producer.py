@@ -56,7 +56,15 @@ def main(argv=None):
                 except KafkaException as exc:
                     if exc.args[0].code() != KafkaError.TOPIC_ALREADY_EXISTS:
                         raise
-        producer = Producer({"bootstrap.servers": args.bootstrap_servers, "client.id": f"streamcell-{args.kind}-producer", "enable.idempotence": True, "acks": "all", "delivery.timeout.ms": 30000})
+        # Match order-producer's delivery policy without idempotent PID allocation.
+        producer = Producer({
+            "bootstrap.servers": args.bootstrap_servers,
+            "client.id": f"streamcell-{args.kind}-producer",
+            "enable.idempotence": False,
+            "acks": "all",
+            "retries": 3,
+            "delivery.timeout.ms": 30000,
+        })
     rounds = 0
     try:
         while not stopped.is_set() and (args.count == 0 or rounds < args.count):
