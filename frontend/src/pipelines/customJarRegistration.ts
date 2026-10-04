@@ -2,31 +2,37 @@ import { platformApi, type Pipeline, type PipelineDetail } from '../api/platform
 import { customJarDetail, programArgsText } from './detailData';
 
 export type CustomJarDraft = {
-  file: File | null; entryClass: string; inputId: number; outputId: number; parallelism: number; args: string;
+  file: File | null; entryClass: string; inputId: number; parallelism: number; args: string;
 };
 
 export function customJarDraft(item?: PipelineDetail): CustomJarDraft {
   const detail = item ? customJarDetail(item) : null;
   return {
     file: null, entryClass: typeof detail?.entryClass === 'string' ? detail.entryClass : '',
-    inputId: detail?.inputTopicIds[0] ?? 0, outputId: detail?.outputTopicIds[0] ?? 0,
+    inputId: detail?.inputTopicIds[0] ?? 0,
     parallelism: Number(detail?.parallelism) || 1, args: programArgsText(detail?.programArgs),
   };
 }
 
 export function hasCustomJarArtifact(item: PipelineDetail) {
   const detail = customJarDetail(item);
-  return [detail.artifactId, detail.originalFileName, detail.storedFileName, detail.flinkJarId]
+  return [detail.artifactId, detail.originalFileName, detail.storedFileName, detail.storedFilePath, detail.flinkJarId]
     .some((value) => (typeof value === 'string' && Boolean(value.trim())) || (typeof value === 'number' && value > 0));
 }
 
+export function isCustomJarRegistered(item: PipelineDetail) {
+  return item.pipelineType === 'CUSTOM_JAR' && (hasCustomJarArtifact(item)
+    || ['ARTIFACT_UPLOADED', 'DEPLOYING', 'RUNNING', 'STOPPING', 'STOPPED', 'FINISHED', 'SUSPENDED'].includes(item.pipelineStatus));
+}
+
 export function canRegisterCustomJar(item: PipelineDetail) {
-  return item.pipelineType === 'CUSTOM_JAR' && ['DRAFT', 'CREATED', 'FAILED'].includes(item.pipelineStatus) && !hasCustomJarArtifact(item);
+  return item.pipelineType === 'CUSTOM_JAR' && ['DRAFT', 'CREATED', 'FAILED'].includes(item.pipelineStatus) && !isCustomJarRegistered(item);
 }
 
 export function validateCustomJarDraft(draft: CustomJarDraft) {
   if (!draft.file) throw new Error('JAR 파일을 선택해 주세요.');
   if (!draft.file.name.toLowerCase().endsWith('.jar')) throw new Error('.jar 파일을 선택해 주세요.');
+  if (!Number.isSafeInteger(draft.inputId) || draft.inputId <= 0) throw new Error('입력 Topic을 하나 선택해 주세요.');
   if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*(\.[a-zA-Z_$][a-zA-Z0-9_$]*)*$/.test(draft.entryClass.trim())) throw new Error('Entry Class를 올바른 클래스 경로로 입력해 주세요.');
   if (!Number.isInteger(draft.parallelism) || draft.parallelism < 1 || draft.parallelism > 8) throw new Error('Parallelism은 1부터 8까지의 정수로 입력해 주세요.');
 }
@@ -44,7 +50,7 @@ export async function registerCustomJar(input: {
     // A lost upload response does not mean the server failed to save the JAR.
     const latest = await api.getPipeline(pipelineId, 'CUSTOM_JAR');
     if (!latest || latest.pipelineId !== pipelineId || latest.pipelineType !== 'CUSTOM_JAR') throw new Error('Pipeline 등록 상태를 확인할 수 없습니다. 상세 정보를 다시 조회해 주세요.');
-    if (hasCustomJarArtifact(latest)) {
+    if (isCustomJarRegistered(latest)) {
       if (['DRAFT', 'CREATED'].includes(latest.pipelineStatus)) throw new Error('JAR 정보는 있지만 등록 완료 상태가 아닙니다. 백엔드의 미완료 등록 정보 복구가 필요합니다.');
       return { pipelineId, alreadyRegistered: true };
     }
@@ -64,7 +70,7 @@ export async function registerCustomJar(input: {
   }));
   await api.uploadCustomJar(pipelineId, draft.file!, {
     userId: input.userId, entryClass: draft.entryClass.trim(),
-    inputTopicIds: draft.inputId ? [draft.inputId] : [], outputTopicIds: draft.outputId ? [draft.outputId] : [],
+    inputTopicIds: [draft.inputId],
     parallelism: draft.parallelism, programArgs,
   });
   return { pipelineId, alreadyRegistered: false };

@@ -30,10 +30,10 @@ export function customJarDetail(item: PipelineDetail) {
     entryClass: first(config.entryClass, item.entryClass),
     parallelism: first(config.parallelism, item.parallelism),
     inputTopicIds: ids(first(config.inputTopicIds, item.inputTopicIds)),
-    outputTopicIds: ids(first(config.outputTopicIds, item.outputTopicIds)),
     programArgs: parseJson(first(config.programArgs, item.programArgs)),
     originalFileName: first(artifact.originalFileName, item.originalFileName),
     storedFileName: first(artifact.storedFileName, item.storedFileName),
+    storedFilePath: first(artifact.storedFilePath, item.storedFilePath),
     flinkJarId: first(artifact.flinkJarId, item.flinkJarId),
   };
 }

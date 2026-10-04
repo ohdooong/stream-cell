@@ -3,9 +3,9 @@ import test from 'node:test';
 import { build } from 'esbuild';
 
 const bundle = await build({ entryPoints: ['src/pipelines/customJarRegistration.ts'], bundle: true, platform: 'node', format: 'esm', write: false, define: { 'import.meta.env': '{}' } });
-const { registerCustomJar, canRegisterCustomJar, customJarDraft } = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`);
+const { registerCustomJar, canRegisterCustomJar, customJarDraft, isCustomJarRegistered } = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`);
 const pipeline = { pipelineId: 42, pipelineType: 'CUSTOM_JAR', pipelineStatus: 'CREATED', ownerUserId: 7, pipelineName: 'orders' };
-const draft = { file: new File(['fixture'], 'orders.jar'), entryClass: 'com.example.Orders', parallelism: 2, inputId: 10, outputId: 0, args: 'env=test\nquery=a=b' };
+const draft = { file: new File(['fixture'], 'orders.jar'), entryClass: 'com.example.Orders', parallelism: 2, inputId: 10, args: 'env=test\nquery=a=b' };
 
 test('failed upload retains the created ID and retry never creates a second pipeline', async () => {
   let createdId;
@@ -20,6 +20,7 @@ test('failed upload retains the created ID and retry never creates a second pipe
       assert.equal(file, draft.file);
       assert.equal(config.userId, 7);
       assert.deepEqual(config.inputTopicIds, [10]);
+      assert.equal('outputTopicIds' in config, false);
       assert.deepEqual(config.programArgs, { env: 'test', query: 'a=b' });
       if (uploads === 1) throw new Error('Upload failed');
       return { artifactId: 1, pipelineId: id };
@@ -43,12 +44,26 @@ test('lost upload response is reconciled with detail before retrying a POST', as
 });
 
 test('unsafe state changes and unreadable detail prevent retry uploads', async () => {
-  for (const latest of [{ ...pipeline, pipelineStatus: 'RUNNING' }, { ...pipeline, pipelineId: 9 }, { ...pipeline, pipelineArtifact: { artifactId: 99 } }]) {
+  for (const latest of [{ ...pipeline, pipelineStatus: 'FAILED', pipelineType: 'AI_SQL' }, { ...pipeline, pipelineId: 9 }, { ...pipeline, pipelineArtifact: { artifactId: 99 } }]) {
     await assert.rejects(registerCustomJar({ pipelineId: 42, draft, userId: 7 }, {
       createPipeline: async () => assert.fail('must not create'), getPipeline: async () => latest,
       uploadCustomJar: async () => assert.fail('must not upload'),
     }));
   }
+});
+
+test('registered server status prevents duplicate uploads even when detail omits Artifact', async () => {
+  for (const status of ['ARTIFACT_UPLOADED', 'RUNNING', 'STOPPED']) {
+    const latest = { ...pipeline, pipelineStatus: status, customJobConfig: { entryClass: 'Job' } };
+    assert.equal(isCustomJarRegistered(latest), true);
+    assert.equal(canRegisterCustomJar(latest), false);
+    const result = await registerCustomJar({ pipelineId: 42, draft, userId: 7 }, {
+      createPipeline: async () => assert.fail('must not create'), getPipeline: async () => latest,
+      uploadCustomJar: async () => assert.fail('must not upload'),
+    });
+    assert.equal(result.alreadyRegistered, true);
+  }
+  assert.equal(isCustomJarRegistered({ ...pipeline, pipelineStatus: 'FAILED' }), false);
 });
 
 test('only incomplete custom JAR registrations can be recovered and saved settings prefill the form', () => {
@@ -66,7 +81,7 @@ test('only incomplete custom JAR registrations can be recovered and saved settin
 });
 
 test('invalid JAR settings are rejected before creating the pipeline', async () => {
-  for (const invalid of [{ ...draft, file: null }, { ...draft, parallelism: 9 }, { ...draft, entryClass: 'not a class' }]) {
+  for (const invalid of [{ ...draft, file: null }, { ...draft, parallelism: 9 }, { ...draft, entryClass: 'not a class' }, ...[0, -1, NaN, 1.5].map((inputId) => ({ ...draft, inputId }))]) {
     await assert.rejects(registerCustomJar({ draft: invalid, userId: 7, pipelineInput: pipeline }, {
       createPipeline: async () => assert.fail('must not create'),
     }));
