@@ -9,6 +9,7 @@ import sys
 import threading
 
 from events import KINDS, create_event
+from kafka_startup import wait_for_topics
 
 
 def main(argv=None):
@@ -21,6 +22,7 @@ def main(argv=None):
     parser.add_argument("--seed", type=int)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--create-topics", action="store_true")
+    parser.add_argument("--startup-timeout", type=float, default=30, help="Seconds to wait for topic metadata and partition leaders")
     parser.add_argument("--partitions", type=int, default=3)
     parser.add_argument("--replication-factor", type=int, default=3)
     args = parser.parse_args(argv)
@@ -30,6 +32,8 @@ def main(argv=None):
         parser.error("anomaly-rate must be between 0 and 1")
     if args.partitions < 1 or args.replication_factor < 1:
         parser.error("partitions and replication-factor must be positive")
+    if not math.isfinite(args.startup_timeout) or args.startup_timeout <= 0:
+        parser.error("startup-timeout must be finite and positive")
     selected = list(KINDS) if args.kind == "all" else [args.kind]
     stopped = threading.Event()
     for sig in (signal.SIGINT, signal.SIGTERM):
@@ -41,21 +45,25 @@ def main(argv=None):
     def delivered(error, message):
         if error:
             failed.append(str(error))
-            print(f"Delivery failed: {error}", file=sys.stderr)
+            print(f"Delivery failed: topic={message.topic()} partition={message.partition()} error={error}", file=sys.stderr)
 
     if not args.dry_run:
         from confluent_kafka import Producer
+        from confluent_kafka.admin import AdminClient, NewTopic
+        admin = AdminClient({"bootstrap.servers": args.bootstrap_servers})
         if args.create_topics:
-            from confluent_kafka.admin import AdminClient, NewTopic
             from confluent_kafka import KafkaException, KafkaError
-            admin = AdminClient({"bootstrap.servers": args.bootstrap_servers})
             futures = admin.create_topics([NewTopic(KINDS[k][0], num_partitions=args.partitions, replication_factor=args.replication_factor) for k in selected], request_timeout=30)
             for topic, future in futures.items():
                 try:
                     future.result()
                 except KafkaException as exc:
                     if exc.args[0].code() != KafkaError.TOPIC_ALREADY_EXISTS:
-                        raise
+                        raise RuntimeError(f"Cannot create topic {topic}: {exc}") from exc
+        topics = [KINDS[k][0] for k in selected]
+        print(f"Checking Kafka topics at {args.bootstrap_servers}: {', '.join(topics)}", file=sys.stderr)
+        wait_for_topics(admin, topics, args.startup_timeout, stopped, allow_missing=args.create_topics)
+        print("Kafka topics ready; starting event delivery.", file=sys.stderr)
         # Match order-producer's delivery policy without idempotent PID allocation.
         producer = Producer({
             "bootstrap.servers": args.bootstrap_servers,

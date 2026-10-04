@@ -23,4 +23,4 @@ else
 fi
 
 # exec forwards signals and preserves the producer's exit status.
-exec "$python_bin" producer.py --kind all "$@"
+exec "$python_bin" producer.py --kind all --create-topics "$@"
