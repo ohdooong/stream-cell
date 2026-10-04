@@ -39,17 +39,19 @@ producer/realtime-producers/.venv/Scripts/python.exe producer/realtime-producers
 
 ### 전체 실행 쉘 스크립트 (Linux / macOS / Git Bash)
 
+스크립트는 기본으로 `--create-topics`를 전달하여 토픽을 생성하며 기존 토픽은 유지합니다. dry-run에서는 Kafka 연결과 토픽 생성을 건너뜁니다. Python 실행기를 직접 사용할 때는 필요한 경우 `--create-topics`를 지정하세요. 토픽 생성 권한이 없는 환경에서는 미리 토픽을 생성한 뒤 Python 실행기를 직접 사용하세요.
+
 위 의존성 설치와 Kafka 시작 후 다음 명령 하나로 10종을 모두 실행합니다. 기존 orders Producer는 포함하지 않습니다.
 
 ```bash
-bash producer/realtime-producers/run-all.sh --create-topics
+bash producer/realtime-producers/run-all.sh
 ```
 
 Kafka 없이 10종 샘플을 확인하거나 공통 전송 주기와 이상 비율을 지정할 수도 있습니다.
 
 ```bash
 bash producer/realtime-producers/run-all.sh --dry-run --count 1
-bash producer/realtime-producers/run-all.sh --create-topics --interval 0.5 --anomaly-rate 0.3
+bash producer/realtime-producers/run-all.sh --interval 0.5 --anomaly-rate 0.3
 ```
 
 스크립트는 작업 디렉터리와 무관하게 자신의 위치에서 `producer.py`를 찾으며, 한 프로세스에서 10종을 실행합니다. `Ctrl+C`로 전체 종료합니다. `.venv`의 Python을 우선 사용하고 없으면 `python3` 또는 `python`을 사용합니다. `PYTHON_BIN` 환경변수로 Python 실행파일 경로를 직접 지정할 수 있습니다. 나머지 인자는 그대로 Producer에 전달됩니다. Linux/macOS에서 처음 설치할 때는 `python3 -m venv producer/realtime-producers/.venv`와 `producer/realtime-producers/.venv/bin/python -m pip install -r producer/realtime-producers/requirements.txt`를 사용하세요.
@@ -63,6 +65,19 @@ producer/realtime-producers/.venv/Scripts/python.exe producer/realtime-producers
 `--count 0`(기본값)은 무제한이며 Ctrl+C로 종료하고 대기 중인 메시지를 flush합니다. `--count N`은 **종류당** N건입니다. 종류별로 다른 주기가 필요하면 터미널 여러 개에서 개별 실행하세요. Kafka UI는 http://localhost:8080 에서 토픽별 메시지를 확인할 수 있습니다.
 
 기본 브로커는 `localhost:19092,localhost:19093,localhost:19094`입니다. `--bootstrap-servers` 또는 `KAFKA_BOOTSTRAP_SERVERS` 환경변수로 변경할 수 있습니다. Docker 네트워크 안에서는 `kafka-1:9092,kafka-2:9092,kafka-3:9092`를 사용하세요. 기존 Compose의 kafka-init을 다시 실행하려면 `docker compose -f infra/docker-compose.yml run --rm kafka-init`을 사용하세요. `--create-topics`는 기존 토픽을 유지하며, 기본 파티션 3개/복제계수 3입니다. 단일 브로커에서는 `--replication-factor 1`을 지정하세요.
+
+## 토픽 준비 확인과 전송 오류
+
+전송 전에 토픽 존재 여부와 파티션 리더를 확인합니다. 토픽 생성 직후 메타데이터가 전파되는 동안에는 기본 30초까지 대기하며, `--startup-timeout 60`으로 조절할 수 있습니다. 준비되지 않은 경우 이벤트를 큐에 쌓지 않고 원인을 출력하며 종료합니다. 이 검사는 실제 전송 성공이나 충분한 ISR을 보장하지 않으므로 전송 콜백도 계속 확인합니다.
+
+`UNKNOWN_TOPIC_OR_PART`가 발생하면 연결한 클러스터의 토픽 목록부터 확인하세요. 현재 Compose는 자동 토픽 생성을 비활성화합니다. 기존 kafka-init이 이미 실행된 환경은 다음 명령으로 새 토픽을 초기화할 수 있습니다.
+
+```bash
+docker compose -f infra/docker-compose.yml run --rm kafka-init
+docker compose -f infra/docker-compose.yml exec kafka-1 kafka-topics --bootstrap-server kafka-1:9092 --describe --topic gas-detection-events
+```
+
+토픽이 있는데도 `Local: Message timed out`이 계속 발생하면 Kafka 브로커 3개가 실행 중인지, 파티션 리더와 ISR이 정상인지, 클라이언트에서 advertised listener 주소에 접속 가능한지 확인하세요. 현재 `acks=all`, `min.insync.replicas=2` 설정에서는 동기화된 복제본 2개 이상이 필요합니다. 호스트에서 실행할 때는 `localhost:19092,localhost:19093,localhost:19094`, Docker 네트워크에서는 내부 브로커 주소를 사용해야 합니다.
 
 ## 데이터 형식
 
