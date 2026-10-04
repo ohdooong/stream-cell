@@ -26,6 +26,7 @@ export function customJarDetail(item: PipelineDetail) {
   const config = asData(first(item.customJobConfig, item.customJarConfig, item.jobConfig));
   const artifact = asData(first(item.pipelineArtifact, item.artifact));
   return {
+    artifactId: first(artifact.artifactId, item.artifactId),
     entryClass: first(config.entryClass, item.entryClass),
     parallelism: first(config.parallelism, item.parallelism),
     inputTopicIds: ids(first(config.inputTopicIds, item.inputTopicIds)),
