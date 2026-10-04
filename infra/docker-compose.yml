@@ -125,7 +125,7 @@ services:
       - kafka-3-confluent-data:/var/lib/kafka/data
 
   # One-shot topic initializer.
-  # Creates the MVP orders topic after the Kafka cluster is reachable.
+  # Creates orders and the ten synthetic streaming topics.
   kafka-init:
     image: confluentinc/cp-kafka:7.7.1
     container_name: streamcell-kafka-init
@@ -141,7 +141,10 @@ services:
       echo 'Waiting for Kafka brokers...' &&
       until kafka-topics --bootstrap-server kafka-1:9092 --list >/dev/null 2>&1; do sleep 3; done &&
       kafka-topics --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 --create --if-not-exists --topic orders --partitions 3 --replication-factor 3 &&
-      echo 'Kafka topic created: orders'
+      for topic in iot-environment iot-equipment iot-energy application-logs http-access-logs security-events worker-safety-events gas-detection-events fire-detection-events vehicle-telemetry; do
+        kafka-topics --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 --create --if-not-exists --topic $$topic --partitions 3 --replication-factor 3 || exit 1;
+      done &&
+      echo 'Kafka topics initialized'
       "
 
   # Kafka UI for local inspection.
