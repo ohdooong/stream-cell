@@ -98,7 +98,9 @@ function Login() {
 
 function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOut: () => Promise<void> }) {
   const { user, authEnabled } = useAuth();
+  const isAdmin = user?.roles.includes('ROLE_ADMIN') ?? false;
   const [view, setView] = useState<View>('overview'); const [users, setUsers] = useState<User[]>([]); const [topics, setTopics] = useState<Topic[]>([]); const [pipelines, setPipelines] = useState<Pipeline[]>([]); const [cluster, setCluster] = useState<ClusterOverview | null>(null); const [activeUserId, setActiveUserId] = useState(defaultUserId); const [selectedPipeline, setSelectedPipeline] = useState<{ id: number; type: PipelineType } | null>(null); const [loading, setLoading] = useState(true); const [notice, setNotice] = useState(''); const [error, setError] = useState('');
+  useEffect(() => { if (view === 'permissions' && !isAdmin) setView('overview'); }, [view, isAdmin]);
   const success = (message: string) => { setError(''); setNotice(message); window.setTimeout(() => setNotice(''), 4000); };
   const fail = (cause: unknown) => { setNotice(''); setError(messageOf(cause)); };
   const refreshTopics = async () => setTopics(await platformApi.getTopics());
@@ -114,7 +116,7 @@ function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOu
   return <div className="app-shell">
     <aside className="sidebar">
       <Brand />
-      <nav>{nav.map(([id, icon, label]) => <button key={id} className={`nav-item ${view === id || (id === 'pipelines' && (view === 'create' || view === 'detail')) ? 'active' : ''}`} onClick={() => setView(id)}><b>{icon}</b><span>{label}</span></button>)}</nav>
+      <nav>{nav.filter(([id]) => id !== 'permissions' || isAdmin).map(([id, icon, label]) => <button key={id} className={`nav-item ${view === id || (id === 'pipelines' && (view === 'create' || view === 'detail')) ? 'active' : ''}`} onClick={() => setView(id)}><b>{icon}</b><span>{label}</span></button>)}</nav>
       <div className="sidebar-bottom">
         <div className="help-card"><p>Backend integration</p><a href="http://localhost:8085/swagger-ui/index.html" target="_blank" rel="noreferrer">Swagger UI ↗</a></div>
         <button className="account-button" onClick={() => void onSignOut()}><span className="avatar">{accountName.slice(0, 1)}</span><span><strong>{accountName}</strong><small>{authEnabled ? '로그아웃' : '개발 사용자'}</small></span></button>
@@ -131,7 +133,7 @@ function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOu
         {view === 'overview' && <Overview cluster={cluster} topics={topics} pipelines={pipelines} navigate={setView} open={openPipeline} />}
         {view === 'cluster' && <Cluster cluster={cluster} refresh={() => void refreshCluster().then(() => success('Cluster 상태를 갱신했습니다.')).catch(fail)} />}
         {view === 'topics' && <Topics topics={topics} refresh={refreshTopics} success={success} fail={fail} />}
-        {view === 'permissions' && <Permissions topics={topics} users={users} activeUserId={activeUserId} success={success} fail={fail} />}
+        {view === 'permissions' && isAdmin && <Permissions topics={topics} users={users} activeUserId={activeUserId} success={success} fail={fail} />}
         {view === 'pipelines' && <Pipelines pipelines={pipelines} create={() => setView('create')} open={openPipeline} />}
         {view === 'create' && <CreatePipeline topics={topics} activeUserId={activeUserId} success={success} fail={fail} refreshList={refreshPipelines} done={async (id, type) => { await refreshPipelines(); openPipeline(id, type); }} />}
         {view === 'detail' && selectedPipeline && <PipelineDetail key={`${selectedPipeline.type}-${selectedPipeline.id}`} id={selectedPipeline.id} type={selectedPipeline.type} userId={activeUserId} topics={topics} success={success} fail={fail} refreshList={refreshPipelines} openResults={openResults} />}
