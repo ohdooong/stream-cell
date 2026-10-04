@@ -103,6 +103,8 @@ flowchart LR
 
 ## 로컬 실행 방법
 
+IoT 센서, 애플리케이션/HTTP 로그, 보안, 작업자 안전, 가스·화재 감지, 차량 데이터 등 Kafka Producer 10종의 실행 방법은 [실시간 Producer 안내](producer/realtime-producers/README.md)를 참고하세요.
+
 ## 향후 고도화 계획
 
 ### Flink
