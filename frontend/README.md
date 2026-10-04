@@ -59,7 +59,7 @@ Pipeline 생성과 JAR 업로드는 별도 요청입니다. 업로드에 실패�
 
 Pipeline 상세 화면 우측 상단의 **배포 중지**는 CUSTOM_JAR / AI_SQL 모두 `RUNNING` 상태에서 사용할 수 있습니다. 확인 후 요청 본문 없이 `POST /api/v1/platform/pipeline/pipelines/deployment/{pipelineId}/stop`을 기존 JWT 클라이언트로 호출합니다.
 
-Swagger의 `202 Accepted`는 중지 요청 접수로 처리하며, 응답만 보고 `STOPPED`로 변경하지 않습니다. 유형별 상세 API를 3초 간격으로 최대 20회 조회하여 실제 상태를 표시하고, 종료 상태가 확인되면 목록도 갱신합니다. 처리 중에는 중복 중지와 배포를 막습니다. 조회 실패 또는 대기 시간이 길어진 경우 **상태 다시 조회**로 확인을 재개할 수 있습니다. 중지 요청 자체가 실패하면 오류를 표시하고 다시 시도할 수 있습니다.
+Swagger의 `202 Accepted`는 중지 요청 접수로 처리하며, 응답만 보고 `STOPPED`로 변경하지 않습니다. 중지 요청이 성공하면 즉시 요청 본문 없이 `PUT /api/v1/platform/pipeline/pipelines/{pipelineId}/status`를 호출하고, 이후 3초 간격으로 같은 API를 호출하여 Flink Job 상태를 동기화합니다. 응답 `body`의 상태 문자열만 기존 상세 정보에 반영하며 JAR 설정과 AI SQL 정보는 유지합니다. 종료 상태가 확인되면 자동 확인을 종료하고 목록을 갱신합니다. 처리 중에는 중복 중지와 배포를 막습니다. 일시적인 상태 확인 실패는 오류를 표시하고 3초 후 재시도하며, **상태 다시 조회**로 즉시 확인할 수도 있습니다. 상세 화면을 벗어나면 자동 확인을 종료합니다. 중지 요청 자체가 실패하면 오류를 표시하고 다시 시도할 수 있습니다.
 
 `npm run test:pipeline-stop`으로 API 요청·오류·상태 조건을 검증합니다. `tests/fixtures/pipeline-stop-api.mjs`는 실제 Job에 영향을 주지 않는 로컬 UI 검증 서버이며, 지연된 중지 완료와 일시 실패 후 재시도를 재현합니다.
 

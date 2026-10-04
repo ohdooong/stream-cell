@@ -310,7 +310,7 @@ function AiSqlRegisteredDetails({ item, topics }: { item: PipelineDetailData; to
 
 function PipelineDetail({ id, type, userId, topics, success, fail, refreshList, openResults }: { id: number; type: PipelineType; userId: number; topics: Topic[]; success: (m: string) => void; fail: (e: unknown) => void; refreshList: () => Promise<void>; openResults: (id: number) => void }) {
   const [item, setItem] = useState<PipelineDetailData | null>(null); const [name, setName] = useState(''); const [description, setDescription] = useState(''); const [busy, setBusy] = useState(false); const [loadError, setLoadError] = useState(false);
-  const stop = usePipelineStop({ id, type, status: item?.pipelineStatus, onUpdated: setItem, refreshList });
+  const stop = usePipelineStop({ id, status: item?.pipelineStatus, onStatusUpdated: (pipelineStatus) => setItem((current) => current ? { ...current, pipelineStatus } : current), refreshList });
   const actionBusy = busy || stop.pending || stop.phase === 'confirm';
   async function load() { setBusy(true); setLoadError(false); try { const value = await platformApi.getPipeline(id, type); if (!value || value.pipelineId !== id || value.pipelineType !== type) throw new Error('Pipeline 상세 응답의 ID 또는 유형이 요청과 다릅니다.'); setItem(value); setName(value.pipelineName); setDescription(value.description || ''); return value; } catch (e) { setLoadError(true); fail(e); return null; } finally { setBusy(false); } }
   useEffect(() => { void load(); }, [id, type]);
