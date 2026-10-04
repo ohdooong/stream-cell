@@ -37,6 +37,23 @@ docker compose -f infra/docker-compose.yml up -d
 producer/realtime-producers/.venv/Scripts/python.exe producer/realtime-producers/producer.py --kind all --create-topics
 ```
 
+### 전체 실행 쉘 스크립트 (Linux / macOS / Git Bash)
+
+위 의존성 설치와 Kafka 시작 후 다음 명령 하나로 10종을 모두 실행합니다. 기존 orders Producer는 포함하지 않습니다.
+
+```bash
+bash producer/realtime-producers/run-all.sh --create-topics
+```
+
+Kafka 없이 10종 샘플을 확인하거나 공통 전송 주기와 이상 비율을 지정할 수도 있습니다.
+
+```bash
+bash producer/realtime-producers/run-all.sh --dry-run --count 1
+bash producer/realtime-producers/run-all.sh --create-topics --interval 0.5 --anomaly-rate 0.3
+```
+
+스크립트는 작업 디렉터리와 무관하게 자신의 위치에서 `producer.py`를 찾으며, 한 프로세스에서 10종을 실행합니다. `Ctrl+C`로 전체 종료합니다. `.venv`의 Python을 우선 사용하고 없으면 `python3` 또는 `python`을 사용합니다. `PYTHON_BIN` 환경변수로 Python 실행파일 경로를 직접 지정할 수 있습니다. 나머지 인자는 그대로 Producer에 전달됩니다. Linux/macOS에서 처음 설치할 때는 `python3 -m venv producer/realtime-producers/.venv`와 `producer/realtime-producers/.venv/bin/python -m pip install -r producer/realtime-producers/requirements.txt`를 사용하세요.
+
 가스 감지 이벤트만 0.5초마다 100건, 이상 이벤트 비율 30%:
 
 ```powershell
