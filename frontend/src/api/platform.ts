@@ -76,4 +76,7 @@ export const platformApi = {
   async deployAiSqlPipeline(pipelineId: number) {
     return unwrap(await api<BaseResponse<Deployment>>(`${PIPELINE}/pipelines/deployment/${pipelineId}/ai-sql/deploy`, { method: 'POST' }));
   },
+  async stopPipeline(pipelineId: number) {
+    await api<BaseResponse<unknown>>(`${PIPELINE}/pipelines/deployment/${pipelineId}/stop`, { method: 'POST' });
+  },
 };

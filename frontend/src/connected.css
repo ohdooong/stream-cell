@@ -18,3 +18,9 @@
 .jar-recovery{margin-top:22px;border-color:#b8dcd5}
 .jar-registration-message{margin:18px 24px;font-size:13px;line-height:1.8;color:#52777b;overflow-wrap:anywhere}
 .jar-registration-message.form-error{color:#bb4358}
+.connected-heading-actions{flex-wrap:wrap;justify-content:flex-end}
+.secondary-button.pipeline-stop-button{border-color:#e4b3b9;color:#b03949;background:#fff6f7}
+.secondary-button.pipeline-stop-button:not(:disabled):hover{background:#ffe8ec;border-color:#cc7784}
+.pipeline-stop-message{margin:0 0 20px;padding:18px 22px;border:1px solid #e9c8cc;border-radius:12px;background:#fffafb;color:#654d56;font-size:13px;line-height:1.7}
+.pipeline-stop-message h3{margin:0 0 8px;font-size:15px}.pipeline-stop-message p{margin:0 0 10px;overflow-wrap:anywhere}.pipeline-stop-message>div{display:flex;gap:10px;justify-content:flex-end}
+@media(max-width:800px){.welcome-row:has(.pipeline-stop-button){align-items:flex-start;flex-direction:column;gap:14px}.connected-heading-actions:has(.pipeline-stop-button){justify-content:flex-start}}
