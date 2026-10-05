@@ -13,6 +13,7 @@ import { CustomJarRecovery } from './pipelines/CustomJarRecovery';
 import { canRegisterCustomJar, customJarDraft, isCustomJarRegistered, registerCustomJar } from './pipelines/customJarRegistration';
 import { canStopPipeline, usePipelineStop } from './pipelines/usePipelineStop';
 import { ResultsDashboard } from './results/ResultsDashboard';
+import { FailuresDashboard, PipelineFailures } from './pipelines/PipelineFailures';
 import './connected.css';
 
 type View = 'overview' | 'cluster' | 'topics' | 'permissions' | 'pipelines' | 'create' | 'detail' | 'results' | 'failures';
@@ -138,7 +139,7 @@ function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOu
         {view === 'create' && <CreatePipeline topics={topics} activeUserId={activeUserId} success={success} fail={fail} refreshList={refreshPipelines} done={async (id, type) => { await refreshPipelines(); openPipeline(id, type); }} />}
         {view === 'detail' && selectedPipeline && <PipelineDetail key={`${selectedPipeline.type}-${selectedPipeline.id}`} id={selectedPipeline.id} type={selectedPipeline.type} userId={activeUserId} topics={topics} success={success} fail={fail} refreshList={refreshPipelines} openResults={openResults} />}
         {view === 'results' && <ResultsDashboard key={activeUserId} pipelines={pipelines} initialPipelineId={resultsPipelineId} openPipeline={openPipeline} />}
-        {view === 'failures' && <Unavailable title="실패 분석 API가 필요합니다">원본 Exception과 AI 분석 결과 조회 엔드포인트가 구현되면 이 화면에 연결할 수 있습니다.</Unavailable>}
+        {view === 'failures' && <FailuresDashboard key={activeUserId} pipelines={pipelines} openPipeline={openPipeline} />}
       </>}</main>
     </section>
   </div>;
@@ -324,11 +325,12 @@ function PipelineDetail({ id, type, userId, topics, success, fail, refreshList, 
   return <><div className="welcome-row"><div><h2>{item.pipelineName}</h2><p>Pipeline #{item.pipelineId} · Owner #{item.ownerUserId}</p></div><div className="connected-heading-actions"><Status value={item.pipelineStatus} /><button className="secondary-button" onClick={() => void load()} disabled={actionBusy}>상태 조회</button><button className="secondary-button" onClick={() => openResults(id)}>결과 Dashboard →</button><button className="primary-button compact" onClick={() => void deploy()} disabled={!deployable || actionBusy}>{deployLabel}</button><button className="secondary-button pipeline-stop-button" onClick={stop.confirm} disabled={actionBusy || !canStopPipeline(item.pipelineStatus)} title="실행 중(RUNNING)인 Pipeline을 중지합니다">{stop.pending ? '중지 처리 중…' : '배포 중지'}</button></div></div>
     {stop.phase === 'confirm' && <section className="pipeline-stop-message" aria-label="Pipeline 배포 중지 확인"><h3>배포를 중지할까요?</h3><p><strong>{item.pipelineName}</strong>의 실행 중인 Flink Job과 실시간 데이터 처리가 중지됩니다.</p><div><button className="secondary-button" onClick={stop.cancel}>취소</button><button className="secondary-button pipeline-stop-button" onClick={() => void stop.stop()}>중지 확인</button></div></section>}
     {(stop.notice || stop.error || stop.pending) && <section className="pipeline-stop-message" aria-label="Pipeline 중지 상태">{stop.notice && <p role="status">{stop.notice}</p>}{stop.error && <p className="form-error" role="alert">{stop.error}</p>}{stop.pending && <><p>서버에서 확인한 현재 상태: {item.pipelineStatus}</p><button className="secondary-button" onClick={stop.refresh} disabled={stop.checking || stop.phase === 'submitting'}>{stop.checking ? '상태 조회 중…' : '상태 다시 조회'}</button></>}</section>}
+    {item.pipelineStatus === 'FAILED' && <PipelineFailures key={id} pipelineId={id} />}
     <PipelineTypeSummary type={type} />{type === 'AI_SQL'
     ? <AiSqlRegisteredDetails item={item} topics={topics} />
     : <><CustomJarRegisteredDetails item={item} topics={topics} name={name} description={description} setName={setName} setDescription={setDescription} save={save} busy={actionBusy} />{canRegisterCustomJar(item) && <CustomJarRecovery item={item} topics={topics} userId={userId} busy={actionBusy} onBusyChange={setBusy} onUploaded={async () => { const [updated] = await Promise.all([load(), refreshList()]); if (!updated) throw new Error('JAR 등록은 완료됐지만 상세 조회에 실패했습니다. 등록 상태를 다시 조회해 주세요.'); success('JAR 등록이 완료되었습니다. Pipeline 상태를 확인해 주세요.'); }} />}</>}
     <PipelineResponseSource item={item} />
-    <section className="connected-availability"><h3>운영 기능 연결 상태</h3><p><b>연결됨</b> 유형별 상세 조회, 상태 조회, CUSTOM_JAR 기본 정보 수정, 유형별 배포·중지 및 결과 Dashboard</p><p><span>API 필요</span> Deployment 이력, 실패 분석</p></section></>;
+    <section className="connected-availability"><h3>운영 기능 연결 상태</h3><p><b>연결됨</b> 유형별 상세 조회, 상태 조회, CUSTOM_JAR 기본 정보 수정, 유형별 배포·중지, 결과 Dashboard 및 원본 Exception 조회</p><p><span>API 필요</span> Deployment 이력, AI 실패 분석</p></section></>;
 }
 
 function Unavailable({ title, children }: { title: string; children: ReactNode }) { return <section className="panel connected-unavailable"><span>API</span><h2>{title}</h2><p>{children}</p></section>; }

@@ -12,6 +12,7 @@
     "test:pipeline-stop": "node --test tests/pipeline-stop.test.mjs",
     "test:auth": "node --test tests/auth.test.mjs",
     "test:results": "node --test tests/results.test.mjs",
+    "test:failures": "node --test tests/failures.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
