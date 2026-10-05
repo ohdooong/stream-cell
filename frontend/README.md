@@ -82,7 +82,7 @@ Swagger의 `202 Accepted`는 중지 요청 접수로 처리하며, 응답만 보
 ## Management Console 데모 범위
 
 - Flink Cluster, TaskManager, Slot 및 실행 중 Job Dashboard
-- Kafka Topic Sync, Schema 편집 및 Event Time 설정
+- Kafka Topic 동기화, Schema 편집 및 Event Time 설정
 - Topic별 사용자 권한 조회·추가와 내 사용 가능 Topic
 - AI_SQL 자연어 요청, Pipeline Plan 및 Flink SQL Preview
 - Custom JAR, Entry Class, Topic, Parallelism 및 Program Arguments 입력
