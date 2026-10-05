@@ -61,6 +61,7 @@ public enum ErrorCode {
 
     FAILED_FLINK_DEPLOY(HttpStatus.BAD_REQUEST, "Flink 배포에 실패했습니다."),
     FAILED_AI_SQL_DEPLOY(HttpStatus.INTERNAL_SERVER_ERROR, "AI SQL Pipeline 배포에 실패하였습니다."),
+    FAILED_PIPELINE_STATUS_SYNC(HttpStatus.INTERNAL_SERVER_ERROR, "Pipeline 상태 동기화에 실패하였습니다."),
 
     FORBIDDEN_TOPICS(HttpStatus.FORBIDDEN, "접근 불가능한 Topic이 포함되어 있습니다."),
     FORBIDDEN_PIPELINE(HttpStatus.FORBIDDEN, "해당 Pipeline의 소유자가 아닙니다."),
@@ -84,7 +85,7 @@ public enum ErrorCode {
 
     JSON_PARSE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "JSON 파싱 에러"),
 
-    UNAVAILABLE_FLINK(HttpStatus.SERVICE_UNAVAILABLE, "Flink 서버 에러입니다.")
+    UNAVAILABLE_FLINK(HttpStatus.SERVICE_UNAVAILABLE, "Flink 서버 에러입니다."),
     ;
 
 
