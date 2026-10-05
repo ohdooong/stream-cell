@@ -53,6 +53,7 @@ public class PipelineResponse {
         private String generatedSql;
 
         private CustomJobConfig customJobConfig;
+        private Artifact pipelineArtifact;
     }
 
     @Getter
