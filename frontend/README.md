@@ -39,6 +39,16 @@ npm run dev
 
 현재 체크아웃에는 결과 API의 백엔드 구현이 없어 위 응답 규격을 기준으로 연결했습니다. 실제 응답의 필드명이 다르면 매핑을 맞춰야 합니다.
 
+## Pipeline 실패 Exception 조회
+
+FAILED 상태의 Pipeline 상세 화면과 **실패 분석** 메뉴에서 `GET /api/v1/platform/pipeline/pipelines/{pipelineId}/failures`를 JWT 클라이언트로 조회합니다. 메뉴에서는 현재 사용자의 FAILED Pipeline만 선택할 수 있습니다.
+
+응답의 `errorExceptionName`, `errorMessage`, `errorTimestamp`를 표시합니다. `errorMessage`의 줄바꿈과 전체 Stack Trace를 유지하며, 발생 시각 문자열(예: `2026-10-05 13:49:59.480000`)은 시간대를 추측하지 않고 그대로 표시합니다. 숫자 시각은 epoch milliseconds 기준 Asia/Seoul로 표시합니다. `body`/`data` 래퍼, 직접 Failure 객체, 기존 상태 DTO의 `failure` 객체를 지원합니다.
+
+조회 오류와 아직 저장된 Exception이 없는 응답을 구분하며 **다시 조회**로 재시도할 수 있습니다. Pipeline 전환/화면 이탈 시 기존 요청을 취소하고 다른 Pipeline의 응답은 표시하지 않습니다. AI 분석은 이 API의 범위에 없으므로 생성하거나 표시하지 않습니다.
+
+검증: `npm run test:failures`. UI 테스트용 API: `node tests/fixtures/pipeline-failures-api.mjs` (실제 백엔드로 전달하지 않는 별도 데이터).
+
 ## Custom JAR 등록 실패 복구
 
 Custom JAR 등록·재등록·상세 화면에서 Output Topic을 제거했습니다. Input Topic은 하나를 필수로 선택하며, multipart의 `createCustomJobConfig` JSON 파트에 `inputTopicIds: [선택한 Topic ID]`로 전달합니다. `outputTopicIds`는 전송하지 않습니다.
