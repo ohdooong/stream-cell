@@ -74,23 +74,50 @@ public class FlinkResponse {
     @Builder
     @NoArgsConstructor(staticName = "from")
     @AllArgsConstructor(staticName = "from")
-    public static class JobExceptionsHistory {
-        private List<JobExceptionsEntry> exceptionEntries;
-        private boolean truncated;
+    public static class JobException {
+        private JobExceptionsHistory exceptionHistory;
+
+        @Setter
+        @Getter
+        @Builder
+        @NoArgsConstructor(staticName = "from")
+        @AllArgsConstructor(staticName = "from")
+        public static class JobExceptionsHistory {
+            private List<JobExceptionsEntry> entries;
+
+            @Setter
+            @Getter
+            @Builder
+            @NoArgsConstructor(staticName = "from")
+            @AllArgsConstructor(staticName = "from")
+            public static class JobExceptionsEntry {
+                private String exceptionName;
+                private String stacktrace;
+                private Long timestamp;
+                private String taskName;
+                private List<ConcurrentExceptions> concurrentExceptions;
+
+                @Setter
+                @Getter
+                @Builder
+                @NoArgsConstructor(staticName = "from")
+                @AllArgsConstructor(staticName = "from")
+                public static class ConcurrentExceptions {
+                    private String exceptionName;
+                    private String stacktrace;
+                    private Long timestamp;
+                    private String taskName;
+                    private String location;
+                    private String endpoint;
+                    private String taskManagerId;
+                    private Object failureLabels;
+                }
+                //private String taskManagerId;
+
+            }
+        }
     }
 
-    @Setter
-    @Getter
-    @Builder
-    @NoArgsConstructor(staticName = "from")
-    @AllArgsConstructor(staticName = "from")
-    public static class JobExceptionsEntry {
-        private String exceptionName;
-        private String stacktrace;
-        private Long timestamp;
-        private String taskName;
-        private String taskManagerId;
-    }
 
 }
 

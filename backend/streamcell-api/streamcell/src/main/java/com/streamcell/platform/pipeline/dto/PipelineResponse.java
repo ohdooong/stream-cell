@@ -129,11 +129,12 @@ public class PipelineResponse {
         private DeploymentStatus deploymentStatus;
         private Failure failure;
 
+        @Getter
         @AllArgsConstructor(staticName = "from")
         public static class Failure {
             private String errorExceptionName;
             private String errorMessage;
-            private Long errorTimestamp;
+            private LocalDateTime errorTimestamp;
         }
     }
 

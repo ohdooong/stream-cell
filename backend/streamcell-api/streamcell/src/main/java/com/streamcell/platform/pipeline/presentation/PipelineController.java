@@ -146,17 +146,32 @@ public class PipelineController {
                 BaseResponse.success(service.updatePipelineStatus(pipelineId)));
     }
 
-    @Operation(summary = "Pipeline Job 상태 업데이트", description = "Pipeline Flink Job 상태를 업데이트합니다. Flink job과 동기화")
+
+    @Operation(summary = "Pipeline Exception 조회", description = "Pipeline Exception정보를 조회합니다.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "처리성공"),
+            @ApiResponse(responseCode = "200", description = "조회성공"),
             @ApiResponse(responseCode = "400", description = "Bad Request"),
             @ApiResponse(responseCode = "404", description = "Not Found"),
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
-    @DeleteMapping("/pipelines/{pipelineId}")
-    public ResponseEntity<BaseResponse<PipelineResponse.PipelineStatus>> deletePipeline(
+    @GetMapping("/pipelines/{pipelineId}/failures")
+    public ResponseEntity<BaseResponse<?>> getPipelineFailuresByPipelineId(
             @PathVariable Long pipelineId) {
-        
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(
+                BaseResponse.success(service.findPipelineFailuresByPipelineId(pipelineId)));
     }
+
+//    @Operation(summary = "Pipeline Job 상태 업데이트", description = "Pipeline Flink Job 상태를 업데이트합니다. Flink job과 동기화")
+//    @ApiResponses({
+//            @ApiResponse(responseCode = "200", description = "처리성공"),
+//            @ApiResponse(responseCode = "400", description = "Bad Request"),
+//            @ApiResponse(responseCode = "404", description = "Not Found"),
+//            @ApiResponse(responseCode = "500", description = "Internal Server Error."),
+//    })
+//    @DeleteMapping("/pipelines/{pipelineId}")
+//    public ResponseEntity<BaseResponse<PipelineResponse.PipelineStatus>> deletePipeline(
+//            @PathVariable Long pipelineId) {
+//
+//        return ResponseEntity.noContent().build();
+//    }
 }

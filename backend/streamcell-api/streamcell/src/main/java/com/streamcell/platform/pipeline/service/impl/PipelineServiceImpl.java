@@ -15,21 +15,21 @@ import com.streamcell.platform.ai.dto.AIDeploymentResponse;
 import com.streamcell.platform.ai.dto.PipelinePlan;
 import com.streamcell.platform.ai.service.AIDeploymentService;
 import com.streamcell.platform.flink.client.FlinkRestClient;
-import com.streamcell.platform.flink.dto.FlinkResponse.JobExceptionsEntry;
-import com.streamcell.platform.flink.dto.FlinkResponse.JobExceptionsHistory;
+import com.streamcell.platform.flink.dto.FlinkResponse;
+import com.streamcell.platform.flink.dto.FlinkResponse.JobException.JobExceptionsHistory.JobExceptionsEntry;
 import com.streamcell.platform.flink.enums.FlinkJobStatus;
 import com.streamcell.platform.pipeline.converter.PipelineConverter;
 import com.streamcell.platform.pipeline.converter.PipelineDeploymentConverter;
 import com.streamcell.platform.pipeline.domain.policy.JobStatusConvertPolicy;
-import com.streamcell.platform.pipeline.enums.DeploymentStatus;
-import com.streamcell.platform.pipeline.enums.PipelineType;
-import com.streamcell.platform.pipeline.validator.PipelineValidator;
 import com.streamcell.platform.pipeline.dto.PipelineRequest;
 import com.streamcell.platform.pipeline.dto.PipelineResponse;
 import com.streamcell.platform.pipeline.enums.ArtifactType;
+import com.streamcell.platform.pipeline.enums.DeploymentStatus;
 import com.streamcell.platform.pipeline.enums.PipelineStatus;
+import com.streamcell.platform.pipeline.enums.PipelineType;
 import com.streamcell.platform.pipeline.repository.PipelineRepository;
 import com.streamcell.platform.pipeline.service.PipelineService;
+import com.streamcell.platform.pipeline.validator.PipelineValidator;
 import com.streamcell.platform.pipeline.vo.*;
 import com.streamcell.platform.topic.converter.TopicConverter;
 import com.streamcell.platform.topic.dto.TopicResponse;
@@ -41,7 +41,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.Temporal;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -185,10 +189,12 @@ public class PipelineServiceImpl implements PipelineService {
                 .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
         CustomJobConfig customJobConfig = repository.findCustomJobConfigByPipelineId(pipelineId)
                 .orElse(null);
+        PipelineArtifact pipelineArtifact = repository.findPipelineArtifactByPipelineId(pipelineId)
+                .orElse(null);
 
         PipelineResponse.CustomJarPipeline result = pipelineConverter.toCustomJarDTO(pipeline);
         result.setCustomJobConfig(pipelineConverter.toDTO(customJobConfig));
-
+        result.setPipelineArtifact(pipelineConverter.toDTO(pipelineArtifact));
         return result;
     }
 
@@ -278,21 +284,25 @@ public class PipelineServiceImpl implements PipelineService {
             && pipelineDeployment.getErrorExceptionName() == null) {
 
             try {
-                JobExceptionsHistory jobExceptions =
+                FlinkResponse.JobException jobExceptions =
                     flinkRestClient.getExceptionsByJobId(deployedFlinkJobId);
 
-                JobExceptionsEntry rootExceptionEntry = jobExceptions.getExceptionEntries().get(0);
+                List<JobExceptionsEntry> entries = jobExceptions.getExceptionHistory().getEntries();
+                JobExceptionsEntry rootExceptionEntry = entries.get(0);
 
                 pipelineDeployment.setErrorExceptionName(rootExceptionEntry.getExceptionName());
                 pipelineDeployment.setErrorMessage(rootExceptionEntry.getStacktrace());
-                pipelineDeployment.setErrorTimestamp(rootExceptionEntry.getTimestamp());
+
+                LocalDateTime timestamp =
+                        LocalDateTime.ofInstant(Instant.ofEpochMilli(rootExceptionEntry.getTimestamp()), ZoneId.systemDefault());
+                pipelineDeployment.setErrorTimestamp(timestamp);
 
                 repository.updatePipelineDeploymentError(pipelineDeployment);
-
             } catch (Exception e) {
-                pipeline.setPipelineStatus(PipelineStatus.FAILED);
-                pipelineDeployment.setStatus(DeploymentStatus.FAILED);
-                log.error(e.getMessage());
+//                pipeline.setPipelineStatus(PipelineStatus.FAILED);
+//                pipelineDeployment.setStatus(DeploymentStatus.FAILED);
+//                log.error(e.getMessage());
+                throw new BaseAPIException(ErrorCode.FAILED_PIPELINE_STATUS_SYNC);
             }
         }
 
@@ -314,6 +324,28 @@ public class PipelineServiceImpl implements PipelineService {
                         pipelineDeployment.getErrorTimestamp()
                     ) : null)
                 .build();
+    }
+
+    @Override
+    public PipelineResponse.PipelineStatus findPipelineFailuresByPipelineId(Long pipelineId) {
+
+        Pipeline pipeline = repository.findPipelineByPipelineId(pipelineId)
+                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE));
+
+        PipelineDeployment deployment = repository.findLatestPipelineDeployMentByPipelineId(pipelineId)
+                .orElseThrow(() -> new BaseAPIException(ErrorCode.NOT_FOUND_PIPELINE_DEPLOYMENT));
+
+        return PipelineResponse.PipelineStatus.builder()
+                .pipelineId(pipelineId)
+                .deploymentId(deployment.getDeploymentId())
+                .flinkJobId(deployment.getFlinkJobId())
+                .pipelineStatus(pipeline.getPipelineStatus())
+                .deploymentStatus(deployment.getStatus())
+                .failure(PipelineResponse.PipelineStatus.Failure.from(
+                        deployment.getErrorExceptionName(),
+                        deployment.getErrorMessage(),
+                        deployment.getErrorTimestamp()
+                )).build();
     }
 
 

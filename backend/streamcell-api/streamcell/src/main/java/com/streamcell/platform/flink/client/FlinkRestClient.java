@@ -115,7 +115,7 @@ public class FlinkRestClient {
     }
 
 
-    public FlinkResponse.JobExceptionsHistory getExceptionsByJobId(String flinkJobId) {
+    public FlinkResponse.JobException getExceptionsByJobId(String flinkJobId) {
         if (flinkJobId == null || flinkJobId.isBlank()) {
             throw new BaseAPIException(ErrorCode.INVALID_FLINK_JOB_ID);
         }
@@ -129,6 +129,6 @@ public class FlinkRestClient {
             .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
                 throw new BaseAPIException(ErrorCode.UNAVAILABLE_FLINK);
             })
-            .body(FlinkResponse.JobExceptionsHistory.class);
+            .body(FlinkResponse.JobException.class);
     }
 }

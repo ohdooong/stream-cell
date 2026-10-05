@@ -26,5 +26,5 @@ public class PipelineDeployment {
     private LocalDateTime lastCheckedAt;
     private String errorExceptionName;
     private String errorMessage;
-    private Long errorTimestamp;
+    private LocalDateTime errorTimestamp;
 }

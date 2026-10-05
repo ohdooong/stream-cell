@@ -30,7 +30,7 @@ public class PipelineDeploymentRequest {
         private LocalDateTime lastCheckedAt;
         private String errorExceptionName;
         private String errorMessage;
-        private Long errorTimestamp;
+        private LocalDateTime errorTimestamp;
     }
 
 }

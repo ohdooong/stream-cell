@@ -184,7 +184,9 @@ public interface PipelineRepository {
                 stopped_at,
                 finished_at,
                 last_checked_at,
-                error_message
+                error_exception_name,
+                error_message,
+                error_timestamp
             from platform.pipeline_deployment
             where pipeline_id = #{pipelineId}
             order by deployment_id desc

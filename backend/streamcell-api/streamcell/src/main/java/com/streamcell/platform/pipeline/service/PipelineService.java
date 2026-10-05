@@ -59,4 +59,13 @@ public interface PipelineService {
      * @return
      */
     PipelineResponse.PipelineStatus updatePipelineStatus(Long pipelineId);
+
+
+    /**
+     * Pipeline의 배포 error메세지 조회
+     *
+     * @param pipelineId
+     * @return
+     */
+    PipelineResponse.PipelineStatus findPipelineFailuresByPipelineId(Long pipelineId);
 }
