@@ -41,6 +41,28 @@ npm run dev
 
 ## Custom JAR 등록 실패 복구
 
+Custom JAR 등록·재등록·상세 화면에서 Output Topic을 제거했습니다. Input Topic은 하나를 필수로 선택하며, multipart의 `createCustomJobConfig` JSON 파트에 `inputTopicIds: [선택한 Topic ID]`로 전달합니다. `outputTopicIds`는 전송하지 않습니다.
+
+업로드 API가 반환한 Artifact를 로그인 세션 메모리에 보관해 상세 응답에서 빠진 파일 정보를 보완합니다. 로그아웃·인증 변경·페이지 새로고침 후에는 상세 API의 정보가 필요합니다. `ARTIFACT_UPLOADED` 등 서버의 등록 완료 상태도 인정하므로 Artifact 응답이 없다는 이유만으로 재등록을 요청하거나 최초 배포를 막지 않습니다. 파일명 자체를 확인할 수 없을 때는 등록 완료와 파일명 조회 불가를 구분해 표시합니다.
+
+현재 백엔드 코드에서 필요한 수정:
+
+- `PipelineResponse.CustomJarPipeline`에 `Artifact pipelineArtifact`를 추가하고, `findCustomJarPipelineByPipelineId`에서 `findPipelineArtifactByPipelineId`로 조회해 반환해야 합니다. 없으면 null로 반환합니다. 재접속 후에도 파일명과 `FAILED` 상태의 재배포 가능 여부를 확인하는 데 필요합니다.
+- `findCustomJobConfigByPipelineId`의 `input_topics`는 VO의 `inputTopicIds`와 이름이 다릅니다. `input_topics AS input_topic_ids` 별칭 또는 명시적 Result 매핑과 JSON 배열 TypeHandler로 `List<Long> inputTopicIds`에 매핑해야 합니다. 전송/저장 단계와 조회 매핑 문제를 구분해 확인하세요.
+- Output Topic 생략을 허용하고, DB에 기본값이 필요하면 빈 배열을 사용하세요. 현재 insert에는 `parallelism` 컬럼도 빠져 있어 등록값을 저장하도록 추가해야 합니다.
+
+권장 상세 응답 필드 예시:
+
+```json
+{
+  "pipelineId": 42,
+  "pipelineType": "CUSTOM_JAR",
+  "pipelineStatus": "ARTIFACT_UPLOADED",
+  "customJobConfig": { "entryClass": "com.example.Job", "inputTopicIds": [10], "parallelism": 2, "programArgs": {} },
+  "pipelineArtifact": { "artifactId": 99, "pipelineId": 42, "originalFileName": "orders.jar", "storedFileName": "stored.jar" }
+}
+```
+
 Pipeline 생성과 JAR 업로드는 별도 요청입니다. 업로드에 실패하면 등록 화면에 생성된 Pipeline ID와 파일·입력값을 유지하고, **JAR 등록 다시 시도**로 기존 Pipeline에 업로드합니다. 기본 정보가 이미 저장됐으므로 이름·설명과 유형은 이 화면에서 잠깁니다. 이름·설명은 상세 화면에서 수정할 수 있습니다.
 
 화면을 닫았거나 새로고침한 경우에는 Pipeline 목록에서 상세 화면으로 들어가 **JAR 등록 이어하기**를 사용합니다. `DRAFT`, `CREATED`, 또는 Artifact가 없는 `FAILED` 상태에서 제공됩니다. 파일은 다시 선택해야 하며 서버에 저장된 실행 설정이 있으면 미리 채웁니다.

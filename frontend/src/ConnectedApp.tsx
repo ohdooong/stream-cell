@@ -10,7 +10,7 @@ import { isPipelinePlan } from './pipelines/aiSqlForm';
 import { aiSqlDetail, customJarDetail, programArgsText } from './pipelines/detailData';
 import { CustomJarFields } from './pipelines/CustomJarFields';
 import { CustomJarRecovery } from './pipelines/CustomJarRecovery';
-import { canRegisterCustomJar, customJarDraft, hasCustomJarArtifact, registerCustomJar } from './pipelines/customJarRegistration';
+import { canRegisterCustomJar, customJarDraft, isCustomJarRegistered, registerCustomJar } from './pipelines/customJarRegistration';
 import { canStopPipeline, usePipelineStop } from './pipelines/usePipelineStop';
 import { ResultsDashboard } from './results/ResultsDashboard';
 import './connected.css';
@@ -262,17 +262,17 @@ function CustomJarRegisteredDetails({ item, topics, name, description, setName, 
 }) {
   const detail = customJarDetail(item);
   const incomplete = canRegisterCustomJar(item);
+  const registered = isCustomJarRegistered(item);
   return <form className="panel connected-create detail-registration" onSubmit={save}>
     <div className="panel-heading"><div><h3>{incomplete ? 'Pipeline 기본 정보' : 'Custom JAR 등록 정보'}</h3><p>{incomplete ? 'JAR 등록에 사용할 Pipeline의 기본 정보입니다.' : '등록 화면과 같은 순서로 저장된 설정을 확인합니다.'}</p></div><button className="secondary-button" disabled={busy}>기본 정보 저장</button></div>
     <div className="connected-form">
       <Field label="Pipeline 이름"><input value={name} onChange={(event) => setName(event.target.value)} required /></Field>
       <Field label="설명"><input value={description} onChange={(event) => setDescription(event.target.value)} /></Field>
       {!incomplete && <>
-      <Field label="JAR 파일" wide hint={detail.storedFileName ? `서버 저장 파일: ${detailText(detail.storedFileName)}` : '등록된 JAR 파일명'}><input value={detailText(detail.originalFileName)} readOnly /></Field>
+      <Field label="JAR 파일" wide hint={detail.storedFileName ? `서버 저장 파일: ${detailText(detail.storedFileName)}` : registered && !detail.originalFileName ? '등록은 완료되었지만 현재 조회 응답에는 파일명이 포함되어 있지 않습니다.' : '등록된 JAR 파일명'}><input value={detailText(detail.originalFileName, registered ? 'JAR 등록 완료 · 파일명 확인 불가' : '등록 정보 없음')} readOnly /></Field>
       <Field label="Entry Class"><input value={detailText(detail.entryClass)} readOnly /></Field>
       <Field label="Parallelism"><input value={detailText(detail.parallelism)} readOnly /></Field>
-      <Field label="Input Topic"><input value={topicNames(detail.inputTopicIds, topics)} readOnly /></Field>
-      <Field label="Output Topic"><input value={topicNames(detail.outputTopicIds, topics)} readOnly /></Field>
+      <Field label="Input Topic"><input value={detail.inputTopicIds.length ? topicNames(detail.inputTopicIds, topics) : registered ? '입력 Topic 조회 정보 없음' : '선택 안 함'} readOnly /></Field>
       <Field label="Program Arguments" wide><textarea rows={5} value={programArgsText(detail.programArgs) || '등록 정보 없음'} readOnly /></Field>
       {detail.flinkJarId !== null && detail.flinkJarId !== undefined && <Field label="Flink JAR ID" wide><input value={detailText(detail.flinkJarId)} readOnly /></Field>}
       </>}
@@ -319,7 +319,7 @@ function PipelineDetail({ id, type, userId, topics, success, fail, refreshList, 
   if (!item) return <section className="panel connected-unavailable"><span>API</span><h2>{loadError ? 'Pipeline 상세조회에 실패했습니다' : 'Pipeline 조회 중'}</h2><p>{loadError ? '유형별 상세 API 연결 상태를 확인한 후 다시 시도해 주세요.' : '상세 API 응답을 기다리고 있습니다.'}</p>{loadError && <button className="secondary-button" type="button" onClick={() => void load()}>다시 조회</button>}</section>;
   const deployable = item.pipelineType === 'AI_SQL'
     ? ['DRAFT', 'CREATED'].includes(item.pipelineStatus)
-    : ['ARTIFACT_UPLOADED', 'STOPPED', 'FAILED'].includes(item.pipelineStatus) && hasCustomJarArtifact(item);
+    : ['ARTIFACT_UPLOADED', 'STOPPED', 'FAILED'].includes(item.pipelineStatus) && isCustomJarRegistered(item);
   const deployLabel = busy ? '처리 중…' : item.pipelineType === 'AI_SQL' ? 'AI SQL 배포' : '배포 실행';
   return <><div className="welcome-row"><div><h2>{item.pipelineName}</h2><p>Pipeline #{item.pipelineId} · Owner #{item.ownerUserId}</p></div><div className="connected-heading-actions"><Status value={item.pipelineStatus} /><button className="secondary-button" onClick={() => void load()} disabled={actionBusy}>상태 조회</button><button className="secondary-button" onClick={() => openResults(id)}>결과 Dashboard →</button><button className="primary-button compact" onClick={() => void deploy()} disabled={!deployable || actionBusy}>{deployLabel}</button><button className="secondary-button pipeline-stop-button" onClick={stop.confirm} disabled={actionBusy || !canStopPipeline(item.pipelineStatus)} title="실행 중(RUNNING)인 Pipeline을 중지합니다">{stop.pending ? '중지 처리 중…' : '배포 중지'}</button></div></div>
     {stop.phase === 'confirm' && <section className="pipeline-stop-message" aria-label="Pipeline 배포 중지 확인"><h3>배포를 중지할까요?</h3><p><strong>{item.pipelineName}</strong>의 실행 중인 Flink Job과 실시간 데이터 처리가 중지됩니다.</p><div><button className="secondary-button" onClick={stop.cancel}>취소</button><button className="secondary-button pipeline-stop-button" onClick={() => void stop.stop()}>중지 확인</button></div></section>}
