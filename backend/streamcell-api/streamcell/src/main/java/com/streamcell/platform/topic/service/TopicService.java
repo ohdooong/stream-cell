@@ -30,6 +30,12 @@ public interface TopicService {
     List<Item> getTopics();
 
     /**
+     * Retrieves a list of input topics.
+     * @return a list of topic items
+     */
+    List<Item> getInputTopics();
+
+    /**
      * Retrieves a topic by its ID.
      * @param topicId the ID of the topic to retrieve
      * @return the topic item
