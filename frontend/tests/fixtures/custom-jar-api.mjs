@@ -15,6 +15,7 @@ createServer(async (req, res) => {
   if (path === '/api/v1/web/user/items') return send([{ userId: 1, name: 'UI 테스트 사용자', email: 'fixture@example.test', status: 'ACTIVE' }]);
   if (path === '/api/v1/web/my/pipeline/pipelines') return send({ body: [...pipelines.values()] });
   if (path === '/api/v1/platform/topic/topics') return send({ body: [{ topicId: 10, topicName: 'orders' }] });
+  if (path === '/api/v1/platform/topic/input-topics') return send({ body: [{ topicId: 10, topicName: 'orders' }] });
   if (path === '/api/v1/platform/flink/cluster-overview') return send({ body: { taskmanagers: 1, 'slots-total': 4, 'slots-available': 4, 'jobs-running': 0, 'flink-version': 'UI fixture' } });
   if (path === '/api/v1/platform/pipeline/pipelines' && req.method === 'POST') {
     creates++;

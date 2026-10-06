@@ -12,6 +12,14 @@ npm run dev
 
 개발 서버는 기본적으로 `/api` 요청을 `http://localhost:8085`으로 프록시합니다. 배포 환경에서는 `.env.example`을 복사한 뒤 `VITE_API_BASE_URL`에 API origin을 지정하세요.
 
+## Pipeline 등록용 입력 Topic
+
+AI SQL·Custom JAR 신규 등록과 JAR 등록 이어하기는 `GET /api/v1/platform/topic/input-topics`를 기존 JWT 클라이언트로 호출합니다. 백엔드가 현재 인증 사용자의 DEPLOY 권한 Topic 목록을 반환하며 프론트엔드는 반환된 목록만 선택지로 사용합니다. `userId` 쿼리는 전달하지 않습니다.
+
+Topic 관리·등록 정보의 읽기 전용 상세는 기존 Topic 조회를 유지합니다. 등록용 목록 조회 실패 시 전체 Topic 목록으로 대체하지 않으며 재조회 버튼을 제공합니다. 목록이 비어 있으면 DEPLOY 권한 요청 안내를 표시하고 등록 폼을 열지 않습니다. 기존 JAR 등록에 저장된 Topic도 새 목록에 없으면 재선택해야 합니다. 프론트엔드 선택 검증은 보조 장치이므로 실제 등록·배포 시 권한 검증은 백엔드에서 계속 수행해야 합니다.
+
+검증: `npm run test:input-topics`.
+
 ## 결과 Dashboard 예시 데모
 
 개발 서버 실행 후 `http://localhost:5173/demo/results`를 열면 로그인과 백엔드 없이 결과 Dashboard를 확인할 수 있습니다.
