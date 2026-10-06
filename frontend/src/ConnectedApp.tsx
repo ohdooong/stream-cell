@@ -10,6 +10,8 @@ import { isPipelinePlan } from './pipelines/aiSqlForm';
 import { aiSqlDetail, customJarDetail, programArgsText } from './pipelines/detailData';
 import { CustomJarFields } from './pipelines/CustomJarFields';
 import { CustomJarRecovery } from './pipelines/CustomJarRecovery';
+import { InputTopicsGate } from './pipelines/InputTopicsGate';
+import { assertInputTopic } from './api/inputTopics';
 import { canRegisterCustomJar, customJarDraft, isCustomJarRegistered, registerCustomJar } from './pipelines/customJarRegistration';
 import { canStopPipeline, usePipelineStop } from './pipelines/usePipelineStop';
 import { ResultsDashboard } from './results/ResultsDashboard';
@@ -136,7 +138,7 @@ function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOu
         {view === 'topics' && <Topics topics={topics} refresh={refreshTopics} success={success} fail={fail} />}
         {view === 'permissions' && isAdmin && <Permissions topics={topics} users={users} activeUserId={activeUserId} success={success} fail={fail} />}
         {view === 'pipelines' && <Pipelines pipelines={pipelines} create={() => setView('create')} open={openPipeline} />}
-        {view === 'create' && <CreatePipeline topics={topics} activeUserId={activeUserId} success={success} fail={fail} refreshList={refreshPipelines} done={async (id, type) => { await refreshPipelines(); openPipeline(id, type); }} />}
+        {view === 'create' && <CreatePipeline key={activeUserId} activeUserId={activeUserId} success={success} fail={fail} refreshList={refreshPipelines} done={async (id, type) => { await refreshPipelines(); openPipeline(id, type); }} />}
         {view === 'detail' && selectedPipeline && <PipelineDetail key={`${selectedPipeline.type}-${selectedPipeline.id}`} id={selectedPipeline.id} type={selectedPipeline.type} userId={activeUserId} topics={topics} success={success} fail={fail} refreshList={refreshPipelines} openResults={openResults} />}
         {view === 'results' && <ResultsDashboard key={activeUserId} pipelines={pipelines} initialPipelineId={resultsPipelineId} openPipeline={openPipeline} />}
         {view === 'failures' && <FailuresDashboard key={activeUserId} pipelines={pipelines} openPipeline={openPipeline} />}
@@ -176,7 +178,11 @@ function PermissionTable({ items }: { items: TopicPermission[] }) { return items
 
 function Pipelines({ pipelines, create, open }: { pipelines: Pipeline[]; create: () => void; open: (id: number, type: PipelineType) => void }) { return <><div className="welcome-row"><div><h2>Pipeline 운영</h2><p>사용자 소유 Pipeline의 현재 상태를 조회합니다.</p></div><button className="primary-button compact" onClick={create}>＋ 새 Pipeline</button></div><section className="panel table-panel">{pipelines.length ? <div className="table-scroll"><table><thead><tr><th>Pipeline</th><th>Type</th><th>Status</th><th>Action</th></tr></thead><tbody>{pipelines.map((p) => <tr key={p.pipelineId}><td><strong>{p.pipelineName}</strong><small>#{p.pipelineId} · {p.description || '설명 없음'}</small></td><td><span className="format-chip">{p.pipelineType}</span></td><td><Status value={p.pipelineStatus} /></td><td><button className="row-action" onClick={() => open(p.pipelineId, p.pipelineType)}>상세 →</button></td></tr>)}</tbody></table></div> : <Empty title="Pipeline이 없습니다">새 Pipeline을 등록하세요.</Empty>}</section></>; }
 
-function CreatePipeline({ topics, activeUserId, success, fail, refreshList, done }: { topics: Topic[]; activeUserId: number; success: (m: string) => void; fail: (e: unknown) => void; refreshList: () => Promise<void>; done: (id: number, type: PipelineType) => Promise<void> }) {
+type CreatePipelineProps = { activeUserId: number; success: (m: string) => void; fail: (e: unknown) => void; refreshList: () => Promise<void>; done: (id: number, type: PipelineType) => Promise<void> };
+function CreatePipeline(props: CreatePipelineProps) {
+  return <InputTopicsGate>{(topics) => <CreatePipelineForm {...props} topics={topics} />}</InputTopicsGate>;
+}
+function CreatePipelineForm({ topics, activeUserId, success, fail, refreshList, done }: CreatePipelineProps & { topics: Topic[] }) {
   const [type, setType] = useState<PipelineType>('CUSTOM_JAR');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -193,6 +199,7 @@ function CreatePipeline({ topics, activeUserId, success, fail, refreshList, done
     inFlight.current = true; setBusy(true); setRegistrationError('');
     let pipelineId = createdPipelineId;
     try {
+      assertInputTopic(topics, jarDraft.inputId);
       const result = await registerCustomJar({
         pipelineId, userId: activeUserId, draft: jarDraft,
         pipelineInput: { ownerUserId: activeUserId, pipelineName: name, description, pipelineType: 'CUSTOM_JAR' },
@@ -328,7 +335,7 @@ function PipelineDetail({ id, type, userId, topics, success, fail, refreshList, 
     {item.pipelineStatus === 'FAILED' && <PipelineFailures key={id} pipelineId={id} />}
     <PipelineTypeSummary type={type} />{type === 'AI_SQL'
     ? <AiSqlRegisteredDetails item={item} topics={topics} />
-    : <><CustomJarRegisteredDetails item={item} topics={topics} name={name} description={description} setName={setName} setDescription={setDescription} save={save} busy={actionBusy} />{canRegisterCustomJar(item) && <CustomJarRecovery item={item} topics={topics} userId={userId} busy={actionBusy} onBusyChange={setBusy} onUploaded={async () => { const [updated] = await Promise.all([load(), refreshList()]); if (!updated) throw new Error('JAR 등록은 완료됐지만 상세 조회에 실패했습니다. 등록 상태를 다시 조회해 주세요.'); success('JAR 등록이 완료되었습니다. Pipeline 상태를 확인해 주세요.'); }} />}</>}
+    : <><CustomJarRegisteredDetails item={item} topics={topics} name={name} description={description} setName={setName} setDescription={setDescription} save={save} busy={actionBusy} />{canRegisterCustomJar(item) && <CustomJarRecovery item={item} userId={userId} busy={actionBusy} onBusyChange={setBusy} onUploaded={async () => { const [updated] = await Promise.all([load(), refreshList()]); if (!updated) throw new Error('JAR 등록은 완료됐지만 상세 조회에 실패했습니다. 등록 상태를 다시 조회해 주세요.'); success('JAR 등록이 완료되었습니다. Pipeline 상태를 확인해 주세요.'); }} />}</>}
     <PipelineResponseSource item={item} />
     <section className="connected-availability"><h3>운영 기능 연결 상태</h3><p><b>연결됨</b> 유형별 상세 조회, 상태 조회, CUSTOM_JAR 기본 정보 수정, 유형별 배포·중지, 결과 Dashboard 및 원본 Exception 조회</p><p><span>API 필요</span> Deployment 이력, AI 실패 분석</p></section></>;
 }

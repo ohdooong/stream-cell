@@ -13,6 +13,7 @@
     "test:auth": "node --test tests/auth.test.mjs",
     "test:results": "node --test tests/results.test.mjs",
     "test:failures": "node --test tests/failures.test.mjs",
+    "test:input-topics": "node --test tests/input-topics.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -1,6 +1,7 @@
 import { api, unwrap } from './client';
 import { pipelineDetailPath } from './pipelineDetail';
 import { rememberCustomJarReceipt, withCustomJarReceipt } from './customJarReceipt';
+import { getInputTopics } from './inputTopics';
 
 type BaseResponse<T> = { status: number; message: string; timestamp: string; body: T };
 
@@ -42,6 +43,7 @@ const TOPIC = '/api/v1/platform/topic';
 const PIPELINE = '/api/v1/platform/pipeline';
 
 export const platformApi = {
+  getInputTopics,
   async getClusterOverview() { return unwrap(await api<BaseResponse<ClusterOverview>>(`${FLINK}/cluster-overview`)); },
   async getTopics() { return unwrap(await api<BaseResponse<Topic[]>>(`${TOPIC}/topics`)); },
   async syncTopics() { return unwrap(await api<BaseResponse<Topic[]>>(`${TOPIC}/sync`, { method: 'POST' })); },
