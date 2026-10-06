@@ -60,9 +60,7 @@ public class PipelineDeploymentController {
                 BaseResponse.success(pipelineDeploymentAISqlService.deploy(pipelineId)));
     }
 
-
-
-    @Operation(summary = "Flink Job 중지", description = "배포한 Flink Job을 중지합니다.")
+    @Operation(summary = "Flink Job 중지", description = "배포된 Flink Job을 중지합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "202", description = "Job Cancel 성공"),
             @ApiResponse(responseCode = "400", description = "Bad Request"),
@@ -70,13 +68,11 @@ public class PipelineDeploymentController {
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @PostMapping("/{pipelineId}/stop")
-
     public ResponseEntity<BaseResponse<?>> cancelPipelineFlinkJob(
             @PathVariable Long pipelineId
     ) {
         return ResponseEntity.ok(
                 BaseResponse.success(pipelineDeploymentCustomJarService.cancelPipelineFlinkJob(pipelineId)));
     }
-
 
 }
