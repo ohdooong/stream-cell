@@ -3,6 +3,7 @@ package com.streamcell.platform.topic.service.impl;
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.global._common.util.JsonUtils;
+import com.streamcell.global.security.utils.SecurityUtil;
 import com.streamcell.platform._common.enums.TopicPermissionType;
 import com.streamcell.platform._common.port.UserLookupPort;
 import com.streamcell.platform.kafka.KafkaManager;
@@ -49,6 +50,16 @@ public class TopicServiceImpl implements TopicService {
     @Override
     public List<Item> getTopics() {
         return repository.findAll()
+                .stream()
+                .map(topicConverter::toDTO)
+                .toList();
+    }
+
+    @Override
+    public List<Item> getInputTopics() {
+        Long currentUserId = SecurityUtil.getUserId();
+
+        return repository.findInputTopicByUserId(currentUserId)
                 .stream()
                 .map(topicConverter::toDTO)
                 .toList();

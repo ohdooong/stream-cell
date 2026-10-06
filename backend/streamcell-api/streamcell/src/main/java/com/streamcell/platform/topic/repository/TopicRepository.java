@@ -90,6 +90,26 @@ public interface TopicRepository {
 
     @Select("""
         select
+            tm.topic_id,
+            tm.topic_name,
+            tm.display_name,
+            tm.description,
+            tm.schema_json,
+            tm.time_field,
+            tm.message_format
+          from platform.topic_permission a
+          join web.users b
+            on a.user_id = b.user_id
+          join platform.topic_metadata tm
+            on a.topic_id = tm.topic_id
+         where 1=1
+           and a.permission_type = 'DEPLOY'
+           and a.user_id = #{userId}
+    """)
+    List<Topic> findInputTopicByUserId(Long userId);
+
+    @Select("""
+        select
                a.permission_id
              , a.topic_id
              , tm.topic_name
@@ -138,4 +158,6 @@ public interface TopicRepository {
             values (b.topic_id, b.user_id, #{permissionType}, 'ADMIN', now(), 'ADMIN', now())
     """)
     int mergeIntoTopicPermission(Long topicId, Long userId, TopicPermissionType permissionType);
+
+
 }

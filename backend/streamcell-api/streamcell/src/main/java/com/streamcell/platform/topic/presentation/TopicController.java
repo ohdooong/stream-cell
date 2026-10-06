@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,20 +39,34 @@ public class TopicController {
         @ApiResponse(responseCode = "500", description = "Internal Server Error.")
     })
     @PostMapping("/sync")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BaseResponse<List<Item>>> syncTopics() throws Exception {
         return ResponseEntity.ok(BaseResponse.success(service.syncTopics()));
     }
 
-    @Operation(summary = "Topic 조회 메서드", description = "Topic 목록 조회")
+    @Operation(summary = "Topic 전체 조회 메서드", description = "Topic 전체 목록 조회")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "조회성공"),
         @ApiResponse(responseCode = "400", description = "Bad Request"),
         @ApiResponse(responseCode = "500", description = "Internal Server Error.")
     })
     @GetMapping("/topics")
-    public ResponseEntity<BaseResponse<List<Item>>> getTopics() {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BaseResponse<List<Item>>> getAllTopics() {
         return ResponseEntity.ok(BaseResponse.success(service.getTopics()));
     }
+
+    @Operation(summary = "Input Topic 조회 메서드", description = "Pipeline 등록 시 Input Topic을 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회성공"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error.")
+    })
+    @GetMapping("/input-topics")
+    public ResponseEntity<BaseResponse<List<Item>>> getInputTopics() {
+        return ResponseEntity.ok(BaseResponse.success(service.getInputTopics()));
+    }
+
 
     @Operation(summary = "Topic 상세정보 조회(메타데이터)", description = "Topic 상세정보 조회")
     @ApiResponses({
@@ -71,6 +86,7 @@ public class TopicController {
             @ApiResponse(responseCode = "400", description = "Bad Request"),
     })
     @PutMapping("/topics/{topicId}/schema")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BaseResponse<Integer>> updateTopicSchema(
         @PathVariable Long topicId,
         @RequestBody @Valid TopicRequest.Schema schema) {
@@ -87,6 +103,7 @@ public class TopicController {
         @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @GetMapping("/topics/{topicId}/permissions")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BaseResponse<List<TopicResponse.TopicPermission>>> getPermissionsOfTopic(
         @PathVariable Long topicId
     ) {
@@ -103,6 +120,7 @@ public class TopicController {
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @PostMapping("/topics/{topicId}/permissions")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BaseResponse<List<TopicResponse.TopicPermission>>> postUsersPermissionsOfTopic(
             @PathVariable Long topicId,
             @RequestBody TopicRequest.TopicPermission topicPermission
@@ -119,6 +137,7 @@ public class TopicController {
         @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @GetMapping("/topics/permissions")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BaseResponse<List<TopicResponse.TopicPermission>>> getPermissionsOfTopicByUserId(
         @RequestParam Long userId
     ) {
