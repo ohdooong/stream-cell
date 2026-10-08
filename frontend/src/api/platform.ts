@@ -45,9 +45,9 @@ const PIPELINE = '/api/v1/platform/pipeline';
 export const platformApi = {
   getInputTopics,
   async getClusterOverview() { return unwrap(await api<BaseResponse<ClusterOverview>>(`${FLINK}/cluster-overview`)); },
-  async getTopics() { return unwrap(await api<BaseResponse<Topic[]>>(`${TOPIC}/topics`)); },
+  async getTopics(signal?: AbortSignal) { return unwrap(await api<BaseResponse<Topic[]>>(`${TOPIC}/topics`, { signal })); },
   async syncTopics() { return unwrap(await api<BaseResponse<Topic[]>>(`${TOPIC}/sync`, { method: 'POST' })); },
-  async getTopic(topicId: number) { return unwrap(await api<BaseResponse<Topic>>(`${TOPIC}/topics/${topicId}`)); },
+  async getTopic(topicId: number, signal?: AbortSignal) { return unwrap(await api<BaseResponse<Topic>>(`${TOPIC}/topics/${topicId}`, { signal })); },
   async updateTopicSchema(topicId: number, input: TopicSchemaInput) {
     return unwrap(await api<BaseResponse<number>>(`${TOPIC}/topics/${topicId}/schema`, { method: 'PUT', body: JSON.stringify(input) }));
   },

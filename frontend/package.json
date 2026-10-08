@@ -14,6 +14,7 @@
     "test:results": "node --test tests/results.test.mjs",
     "test:failures": "node --test tests/failures.test.mjs",
     "test:input-topics": "node --test tests/input-topics.test.mjs",
+    "test:topics": "node --test tests/topics.test.mjs tests/topic-sync.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
