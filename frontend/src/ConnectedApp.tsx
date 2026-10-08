@@ -16,11 +16,13 @@ import { canRegisterCustomJar, customJarDraft, isCustomJarRegistered, registerCu
 import { canStopPipeline, usePipelineStop } from './pipelines/usePipelineStop';
 import { ResultsDashboard } from './results/ResultsDashboard';
 import { FailuresDashboard, PipelineFailures } from './pipelines/PipelineFailures';
+import { TopicBrowser } from './topics/TopicBrowser';
+import { isAdminOnlyView } from './topics/access';
 import './connected.css';
 
-type View = 'overview' | 'cluster' | 'topics' | 'permissions' | 'pipelines' | 'create' | 'detail' | 'results' | 'failures';
-const titles: Record<View, string> = { overview: 'Overview', cluster: 'Flink Cluster', topics: 'Topic 관리', permissions: 'Topic 권한', pipelines: 'Pipeline 운영', create: '새 Pipeline', detail: 'Pipeline 상세', results: '결과 Dashboard', failures: '실패 분석' };
-const nav: Array<[View, string, string]> = [['overview', '▦', 'Overview'], ['cluster', '◉', 'Flink Cluster'], ['topics', '≡', 'Topics'], ['permissions', '⌁', 'Topic 권한'], ['pipelines', '⌘', 'Pipelines'], ['results', '▥', '결과 Dashboard'], ['failures', '△', '실패 분석']];
+type View = 'overview' | 'cluster' | 'topics' | 'topic-admin' | 'permissions' | 'pipelines' | 'create' | 'detail' | 'results' | 'failures';
+const titles: Record<View, string> = { overview: 'Overview', cluster: 'Flink Cluster', topics: 'Topic 조회', 'topic-admin': 'Topic 관리', permissions: 'Topic 권한', pipelines: 'Pipeline 운영', create: '새 Pipeline', detail: 'Pipeline 상세', results: '결과 Dashboard', failures: '실패 분석' };
+const nav: Array<[View, string, string]> = [['overview', '▦', 'Overview'], ['cluster', '◉', 'Flink Cluster'], ['topics', '≡', 'Topic 조회'], ['topic-admin', '⚙', 'Topic 관리'], ['permissions', '⌁', 'Topic 권한'], ['pipelines', '⌘', 'Pipelines'], ['results', '▥', '결과 Dashboard'], ['failures', '△', '실패 분석']];
 
 function messageOf(error: unknown) { return error instanceof ApiError ? error.message : error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'; }
 function Brand() { return <div className="brand inverse"><span className="brand-symbol"><i /><i /><i /></span><strong>StreamCell</strong></div>; }
@@ -103,10 +105,11 @@ function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOu
   const { user, authEnabled } = useAuth();
   const isAdmin = user?.roles.includes('ROLE_ADMIN') ?? false;
   const [view, setView] = useState<View>('overview'); const [users, setUsers] = useState<User[]>([]); const [topics, setTopics] = useState<Topic[]>([]); const [pipelines, setPipelines] = useState<Pipeline[]>([]); const [cluster, setCluster] = useState<ClusterOverview | null>(null); const [activeUserId, setActiveUserId] = useState(defaultUserId); const [selectedPipeline, setSelectedPipeline] = useState<{ id: number; type: PipelineType } | null>(null); const [loading, setLoading] = useState(true); const [notice, setNotice] = useState(''); const [error, setError] = useState('');
-  useEffect(() => { if (view === 'permissions' && !isAdmin) setView('overview'); }, [view, isAdmin]);
+  useEffect(() => { if (isAdminOnlyView(view) && !isAdmin) setView('topics'); }, [view, isAdmin]);
+  const [topicRefreshKey, setTopicRefreshKey] = useState(0);
   const success = (message: string) => { setError(''); setNotice(message); window.setTimeout(() => setNotice(''), 4000); };
   const fail = (cause: unknown) => { setNotice(''); setError(messageOf(cause)); };
-  const refreshTopics = async () => setTopics(await platformApi.getTopics());
+  const refreshTopics = async () => { setTopics(await platformApi.getTopics()); setTopicRefreshKey((value) => value + 1); };
   const refreshPipelines = async () => setPipelines(await platformApi.getPipelines(activeUserId));
   const refreshCluster = async () => setCluster(await platformApi.getClusterOverview());
   useEffect(() => { Promise.allSettled([platformApi.getUsers(), platformApi.getTopics(), platformApi.getClusterOverview()]).then(([u, t, c]) => { if (u.status === 'fulfilled') setUsers(u.value); if (t.status === 'fulfilled') setTopics(t.value); if (c.status === 'fulfilled') setCluster(c.value); const count = [u, t, c].filter((item) => item.status === 'rejected').length; if (count) setError(`일부 API를 불러오지 못했습니다. 백엔드(기본 포트 8085) 실행 상태를 확인해 주세요. (${count}/3)`); setLoading(false); }); }, []);
@@ -119,7 +122,7 @@ function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOu
   return <div className="app-shell">
     <aside className="sidebar">
       <Brand />
-      <nav>{nav.filter(([id]) => id !== 'permissions' || isAdmin).map(([id, icon, label]) => <button key={id} className={`nav-item ${view === id || (id === 'pipelines' && (view === 'create' || view === 'detail')) ? 'active' : ''}`} onClick={() => setView(id)}><b>{icon}</b><span>{label}</span></button>)}</nav>
+      <nav>{nav.filter(([id]) => !isAdminOnlyView(id) || isAdmin).map(([id, icon, label]) => <button key={id} className={`nav-item ${view === id || (id === 'pipelines' && (view === 'create' || view === 'detail')) ? 'active' : ''}`} onClick={() => setView(id)}><b>{icon}</b><span>{label}</span></button>)}</nav>
       <div className="sidebar-bottom">
         <div className="help-card"><p>Backend integration</p><a href="http://localhost:8085/swagger-ui/index.html" target="_blank" rel="noreferrer">Swagger UI ↗</a></div>
         <button className="account-button" onClick={() => void onSignOut()}><span className="avatar">{accountName.slice(0, 1)}</span><span><strong>{accountName}</strong><small>{authEnabled ? '로그아웃' : '개발 사용자'}</small></span></button>
@@ -135,7 +138,8 @@ function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOu
       <main className="page-content">{loading ? <Empty title="API 연결 중">백엔드 데이터를 불러오고 있습니다.</Empty> : <>
         {view === 'overview' && <Overview cluster={cluster} topics={topics} pipelines={pipelines} navigate={setView} open={openPipeline} />}
         {view === 'cluster' && <Cluster cluster={cluster} refresh={() => void refreshCluster().then(() => success('Cluster 상태를 갱신했습니다.')).catch(fail)} />}
-        {view === 'topics' && <Topics topics={topics} refresh={refreshTopics} success={success} fail={fail} />}
+        {view === 'topics' && <TopicBrowser key={activeUserId} refreshKey={topicRefreshKey} />}
+        {view === 'topic-admin' && isAdmin && <Topics topics={topics} refresh={refreshTopics} success={success} fail={fail} />}
         {view === 'permissions' && isAdmin && <Permissions topics={topics} users={users} activeUserId={activeUserId} success={success} fail={fail} />}
         {view === 'pipelines' && <Pipelines pipelines={pipelines} create={() => setView('create')} open={openPipeline} />}
         {view === 'create' && <CreatePipeline key={activeUserId} activeUserId={activeUserId} success={success} fail={fail} refreshList={refreshPipelines} done={async (id, type) => { await refreshPipelines(); openPipeline(id, type); }} />}
