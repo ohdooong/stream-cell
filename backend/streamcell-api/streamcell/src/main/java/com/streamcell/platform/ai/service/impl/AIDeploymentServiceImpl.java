@@ -3,6 +3,7 @@ package com.streamcell.platform.ai.service.impl;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.streamcell.global._common.enums.ErrorCode;
 import com.streamcell.global._common.exception.BaseAPIException;
+import com.streamcell.global.security.utils.SecurityUtil;
 import com.streamcell.platform.ai.client.AIClient;
 import com.streamcell.platform.ai.domain.validator.PreviewBasicValidator;
 import com.streamcell.platform.ai.dto.AIClientResponse;
@@ -161,8 +162,11 @@ public class AIDeploymentServiceImpl implements AIDeploymentService {
 
     private PipelinePlanValidationContext validatePipelinePlanForPreview(
         PipelinePlan pipelinePlan) {
+
+        Long currentUserId = SecurityUtil.getUserId();
+
         PipelinePlanValidationContext context =
-            pipelinePlanValidationContextResolver.resolve(1L, null, pipelinePlan);  // TODO userId 1L로 고정해놓았지만 수정무조건 필요함!!
+            pipelinePlanValidationContextResolver.resolve(currentUserId, null, pipelinePlan);  // TODO userId 1L로 고정해놓았지만 수정무조건 필요함!!
 
         CompositeValidator<PipelinePlanValidationContext> compositeValidator =
             new CompositeValidator<PipelinePlanValidationContext>()
