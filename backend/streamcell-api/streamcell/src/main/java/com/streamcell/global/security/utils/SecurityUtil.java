@@ -1,5 +1,7 @@
 package com.streamcell.global.security.utils;
 
+import com.streamcell.global._common.enums.ErrorCode;
+import com.streamcell.global._common.exception.BaseAPIException;
 import com.streamcell.global.security.CustomUserDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +27,6 @@ public class SecurityUtil {
             return customUserDetails.getUserId();
         }
 
-        return null;
+        throw new BaseAPIException(ErrorCode.NOT_FOUND_USER);
     }
 }

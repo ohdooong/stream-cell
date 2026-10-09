@@ -144,7 +144,7 @@ public class AIDeploymentServiceImpl implements AIDeploymentService {
     public PipelinePlanValidationContext validatePipelinePlan(Long pipelineId, PipelinePlan pipelinePlan) {
         Long currentUserId = SecurityUtil.getUserId();
         PipelinePlanValidationContext context =
-                pipelinePlanValidationContextResolver.resolve(currentUserId, pipelineId, pipelinePlan);  // TODO userId 1L로 고정해놓았지만 수정무조건 필요함!!
+                pipelinePlanValidationContextResolver.resolve(currentUserId, pipelineId, pipelinePlan);
 
         CompositeValidator<PipelinePlanValidationContext> compositeValidator =
                 new CompositeValidator<PipelinePlanValidationContext>()
