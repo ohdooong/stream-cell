@@ -40,7 +40,7 @@ export function TopicBrowser({ refreshKey = 0 }: { refreshKey?: number }) {
     const controller = new AbortController();
     let active = true;
     setLoading(true); setError(''); setTopics([]); setSelectedId(null); setDetail(null);
-    void platformApi.getTopics(controller.signal).then((items) => {
+    void platformApi.getMyTopics(controller.signal).then((items) => {
       if (!active) return;
       if (!Array.isArray(items)) throw new Error('Topic 목록 응답 형식을 확인해 주세요.');
       setTopics(items);

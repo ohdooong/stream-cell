@@ -42,10 +42,17 @@ const FLINK = '/api/v1/platform/flink';
 const TOPIC = '/api/v1/platform/topic';
 const PIPELINE = '/api/v1/platform/pipeline';
 
+async function getTopicList(isAdmin: boolean, signal?: AbortSignal): Promise<Topic[]> {
+  const path = isAdmin ? `${TOPIC}/topics` : '/api/v1/web/my/topic/topics';
+  return unwrap(await api<BaseResponse<Topic[]>>(path, { signal }));
+}
+
 export const platformApi = {
   getInputTopics,
   async getClusterOverview() { return unwrap(await api<BaseResponse<ClusterOverview>>(`${FLINK}/cluster-overview`)); },
-  async getTopics(signal?: AbortSignal) { return unwrap(await api<BaseResponse<Topic[]>>(`${TOPIC}/topics`, { signal })); },
+  getTopicsForRole: getTopicList,
+  async getTopics(signal?: AbortSignal) { return getTopicList(true, signal); },
+  async getMyTopics(signal?: AbortSignal) { return getTopicList(false, signal); },
   async syncTopics() { return unwrap(await api<BaseResponse<Topic[]>>(`${TOPIC}/sync`, { method: 'POST' })); },
   async getTopic(topicId: number, signal?: AbortSignal) { return unwrap(await api<BaseResponse<Topic>>(`${TOPIC}/topics/${topicId}`, { signal })); },
   async updateTopicSchema(topicId: number, input: TopicSchemaInput) {

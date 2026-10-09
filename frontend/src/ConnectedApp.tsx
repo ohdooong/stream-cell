@@ -109,10 +109,24 @@ function Console({ defaultUserId, onSignOut }: { defaultUserId: number; onSignOu
   const [topicRefreshKey, setTopicRefreshKey] = useState(0);
   const success = (message: string) => { setError(''); setNotice(message); window.setTimeout(() => setNotice(''), 4000); };
   const fail = (cause: unknown) => { setNotice(''); setError(messageOf(cause)); };
-  const refreshTopics = async () => { setTopics(await platformApi.getTopics()); setTopicRefreshKey((value) => value + 1); };
+  const refreshTopics = async () => { setTopics(await platformApi.getTopicsForRole(isAdmin)); setTopicRefreshKey((value) => value + 1); };
   const refreshPipelines = async () => setPipelines(await platformApi.getPipelines(activeUserId));
   const refreshCluster = async () => setCluster(await platformApi.getClusterOverview());
-  useEffect(() => { Promise.allSettled([platformApi.getUsers(), platformApi.getTopics(), platformApi.getClusterOverview()]).then(([u, t, c]) => { if (u.status === 'fulfilled') setUsers(u.value); if (t.status === 'fulfilled') setTopics(t.value); if (c.status === 'fulfilled') setCluster(c.value); const count = [u, t, c].filter((item) => item.status === 'rejected').length; if (count) setError(`일부 API를 불러오지 못했습니다. 백엔드(기본 포트 8085) 실행 상태를 확인해 주세요. (${count}/3)`); setLoading(false); }); }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+    setLoading(true); setTopics([]);
+    Promise.allSettled([platformApi.getUsers(), platformApi.getTopicsForRole(isAdmin, controller.signal), platformApi.getClusterOverview()]).then(([u, t, c]) => {
+      if (!active) return;
+      if (u.status === 'fulfilled') setUsers(u.value);
+      if (t.status === 'fulfilled') setTopics(t.value);
+      if (c.status === 'fulfilled') setCluster(c.value);
+      const count = [u, t, c].filter((item) => item.status === 'rejected').length;
+      if (count) setError(`일부 API를 불러오지 못했습니다. 백엔드(기본 포트 8085) 실행 상태를 확인해 주세요. (${count}/3)`);
+      setLoading(false);
+    });
+    return () => { active = false; controller.abort(); };
+  }, [isAdmin, activeUserId]);
   useEffect(() => { platformApi.getPipelines(activeUserId).then(setPipelines).catch(fail); }, [activeUserId]);
   const activeUser = users.find((item) => item.userId === activeUserId);
   const [resultsPipelineId, setResultsPipelineId] = useState<number | null>(null);

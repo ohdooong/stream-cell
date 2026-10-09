@@ -22,15 +22,15 @@ Topic 관리·등록 정보의 읽기 전용 상세는 기존 Topic 조회를 �
 
 ## 사용자 Topic 조회 / 관리자 Topic 관리
 
-**Topic 조회**는 모든 로그인 사용자에게 표시되는 읽기 전용 화면입니다. 기존 `GET /api/v1/platform/topic/topics`로 목록을 조회하고, 선택 시 `GET /api/v1/platform/topic/topics/{topicId}`로 저장된 메타데이터를 조회합니다. 표시 이름, 설명, Message Format, Event Time Field, Schema JSON을 보여 주며 미등록 값은 임의로 채우지 않습니다. 목록·상세 실패와 빈 목록을 구분하고 재조회할 수 있습니다. Topic 전환/화면 이탈 시 상세 요청을 취소합니다.
+**Topic 조회**는 모든 로그인 사용자에게 표시되는 읽기 전용 화면입니다. `GET /api/v1/web/my/topic/topics`로 자신에게 권한이 등록된 Topic 목록을 조회하고, 선택 시 기존 `GET /api/v1/platform/topic/topics/{topicId}`로 저장된 메타데이터를 조회합니다. 기존 JWT를 전달하고 `userId` 쿼리는 보내지 않습니다. 표시 이름, 설명, Message Format, Event Time Field, Schema JSON을 보여 주며 미등록 값은 임의로 채우지 않습니다. 목록·상세 실패와 빈 목록을 구분하고 재조회할 수 있습니다. Topic 전환/화면 이탈 시 상세 요청을 취소합니다.
 
 **Topic 관리**와 **Topic 권한** 메뉴는 `ROLE_ADMIN`에게만 표시합니다. Topic 동기화와 메타데이터 저장은 관리자 화면에서만 사용할 수 있습니다. 메뉴뿐 아니라 해당 화면 렌더링도 검사하며 ADMIN 역할을 잃으면 Topic 조회로 이동합니다. 프론트엔드의 화면 제어는 보조 장치이며 백엔드의 권한 검사를 대체하지 않습니다.
 
-백엔드 작업 계약(프론트엔드만 수정했으며 아래 서버 정책 확인·추가 구현 필요):
+로그인 후 초기 로딩과 상단 새로고침도 일반 사용자는 `/api/v1/web/my/topic/topics`, ADMIN은 전체 목록 `/api/v1/platform/topic/topics`를 사용합니다. ADMIN의 읽기 전용 **Topic 조회** 메뉴도 자신의 권한 Topic 목록을 사용하며, 전체 목록은 **Topic 관리**에서 확인합니다. Pipeline 등록 목록 `/api/v1/platform/topic/input-topics`는 기존 DEPLOY 필터링을 유지합니다. 사용자 목록 조회 실패 시 ADMIN 전체 목록이나 DEPLOY 목록으로 우회하지 않습니다.
 
-최신 master에서는 `GET /api/v1/platform/topic/topics`가 이미 ADMIN 전용입니다. 따라서 일반 사용자 화면이 정상 동작하려면 아래의 역할별 목록 필터링 변경이 선행되어야 합니다. 서버가 403을 반환하면 프론트엔드는 오류와 재조회 버튼을 표시하며 다른 API로 우회하지 않습니다.
+백엔드 권한 확인 사항(프론트엔드만 수정):
 
-- 기존 `GET /api/v1/platform/topic/topics`는 ADMIN에게 전체 목록, 일반 사용자에게 조회 권한이 있는 Topic만 반환하도록 변경합니다. `GET /topics/{topicId}`도 동일한 조회 권한 검사가 필요합니다. JWT 인증 사용자 ID를 사용하고, 사용자가 전달한 `userId`를 신뢰하지 않습니다. 새 조회 API는 필수가 아닙니다. 별도 `/api/v1/web/my/topic` API를 사용하려면 구현 후 경로를 프론트엔드와 맞춰야 합니다.
+- 사용자 전용 `/api/v1/web/my/topic/topics`는 JWT 인증 사용자 기준으로 허용된 목록을 반환하고, 기존 전체 목록 API는 ADMIN 전용을 유지합니다. `GET /api/v1/platform/topic/topics/{topicId}`도 해당 사용자의 조회 권한을 검사해야 합니다. 프론트엔드는 사용자 목록에서 선택한 Topic만 상세 조회하지만 서버 검사를 대체하지 않습니다.
 - 조회는 저장된 DB 메타데이터만 읽고 Kafka Sync 또는 DB 변경을 수행하지 않습니다. 목록은 기존 `TopicResponse.Item[]`, 상세는 `TopicResponse.Item`과 `BaseResponse.body` 구조를 유지하면 됩니다. 메타데이터 필드는 `topicId`, `topicName`, `displayName`, `description`, `messageFormat`, `timeField`, `schemaJson`입니다.
 - `POST /api/v1/platform/topic/sync`, `PUT /api/v1/platform/topic/topics/{topicId}/schema`와 Topic 권한 관리 API는 최신 master의 ADMIN 제한을 유지합니다. 글로벌 관리자 역할과 Topic 권한 enum의 `ADMIN`은 구분합니다. 인증되지 않은 요청은 401, 권한 부족은 403으로 처리합니다.
 - Sync 시 관리자가 이미 입력한 표시 이름·설명·Schema·Event Time·Message Format을 덮어쓰지 않도록 보존합니다. 메타데이터 수정은 JSON 형식, Message Format, 지정된 시간 필드의 유효성을 서버에서 검증합니다.
