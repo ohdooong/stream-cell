@@ -29,7 +29,7 @@ test('console guards both the ADMIN navigation and the editable Topic component'
   assert.match(source, /if \(isAdminOnlyView\(view\) && !isAdmin\) setView\('topics'\)/);
 });
 
-test('read-only list and detail use existing GET APIs with JWT and abort signals, without userId', async () => {
+test('read-only list uses the my-Topic GET API and detail keeps the existing API, with JWT and abort signals', async () => {
   setAccessToken('topic-fixture-jwt');
   const controller = new AbortController();
   const calls = [];
@@ -41,9 +41,42 @@ test('read-only list and detail use existing GET APIs with JWT and abort signals
     assert.equal(init.signal, controller.signal);
     return Response.json({ body: url.endsWith('/10') ? topic : [topic] });
   };
-  assert.deepEqual(await platformApi.getTopics(controller.signal), [topic]);
+  assert.deepEqual(await platformApi.getMyTopics(controller.signal), [topic]);
   assert.deepEqual(await platformApi.getTopic(10, controller.signal), topic);
-  assert.deepEqual(calls, ['/api/v1/platform/topic/topics', '/api/v1/platform/topic/topics/10']);
+  assert.deepEqual(calls, ['/api/v1/web/my/topic/topics', '/api/v1/platform/topic/topics/10']);
+});
+
+test('console initial loading and refresh choose my Topics for users and the full list for ADMIN', async () => {
+  const calls = [];
+  globalThis.fetch = async (url) => { calls.push(url); return Response.json({ body: [topic] }); };
+  assert.deepEqual(await platformApi.getTopicsForRole(false), [topic]);
+  assert.deepEqual(await platformApi.getTopicsForRole(true), [topic]);
+  assert.deepEqual(await platformApi.getTopics(), [topic]);
+  assert.deepEqual(calls, ['/api/v1/web/my/topic/topics', '/api/v1/platform/topic/topics', '/api/v1/platform/topic/topics']);
+  const source = await readFile(new URL('../src/ConnectedApp.tsx', import.meta.url), 'utf8');
+  const consoleSource = source.slice(source.indexOf('function Console('), source.indexOf('function Overview('));
+  assert.match(consoleSource, /refreshTopics = async.*getTopicsForRole\(isAdmin\)/);
+  assert.match(consoleSource, /Promise\.allSettled\(.*getTopicsForRole\(isAdmin, controller\.signal\)/);
+  assert.doesNotMatch(consoleSource, /platformApi\.getTopics\(/);
+  const browserSource = await readFile(new URL('../src/topics/TopicBrowser.tsx', import.meta.url), 'utf8');
+  assert.match(browserSource, /platformApi\.getMyTopics\(controller\.signal\)/);
+  assert.doesNotMatch(browserSource, /platformApi\.getTopics\(/);
+});
+
+test('my-Topic list supports body/data/direct responses and an empty permission list', async () => {
+  for (const payload of [{ body: [topic] }, { data: [topic] }, [topic], { body: [] }]) {
+    globalThis.fetch = async () => Response.json(payload);
+    assert.deepEqual(await platformApi.getMyTopics(), Array.isArray(payload) ? payload : payload.body ?? payload.data);
+  }
+});
+
+test('my-Topic list errors are exposed without falling back to the ADMIN or DEPLOY endpoints', async () => {
+  for (const status of [403, 500]) {
+    const calls = [];
+    globalThis.fetch = async (url) => { calls.push(url); return Response.json({ message: '내 Topic 조회 실패' }, { status }); };
+    await assert.rejects(platformApi.getMyTopics(), (error) => error.status === status && error.message === '내 Topic 조회 실패');
+    assert.deepEqual(calls, ['/api/v1/web/my/topic/topics']);
+  }
 });
 
 test('permission denial is surfaced; it does not trigger sync or a DEPLOY-list fallback', async () => {
