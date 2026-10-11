@@ -3,7 +3,10 @@ package com.streamcell.global.exception;
 import com.streamcell.global._common.dto.BaseResponse;
 import com.streamcell.global._common.exception.BaseAPIException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -30,6 +33,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(exception.getErrorCode().getStatus())
                 .body(BaseResponse.error(exception.getErrorCode(), null));
     }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<BaseResponse<?>> handleAuthorizationDeniedException(AuthorizationDeniedException exception) {
+        //log.error(Arrays.toString(exception.getStackTrace()));
+        log.error(getStackTraceAsString(exception));
+        String message = exception.getMessage();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(BaseResponse.error(HttpStatus.FORBIDDEN.value(), "접근 권한이 없습니다.", null));
+    }
+
+
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<BaseResponse<?>> handleException(Exception exception) {
