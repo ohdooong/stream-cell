@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Pipeline Result API", description = "Pipeline Result(파이프라인 실시간 결과) API 컨트롤러")
@@ -29,6 +30,7 @@ public class PipelineResultQueryController {
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @GetMapping("/pipelines/{pipelineId}/results")
+    @PreAuthorize("@pipelineSecurity.isOwner(#pipelineId, authentication.principal.userId)")
     public ResponseEntity<BaseResponse<?>> getPipelineResults(
             @PathVariable Long pipelineId,
             @RequestParam @Valid @NotNull Integer limit,

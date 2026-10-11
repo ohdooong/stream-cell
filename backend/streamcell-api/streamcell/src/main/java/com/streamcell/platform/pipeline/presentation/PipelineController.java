@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -47,6 +48,7 @@ public class PipelineController {
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @PatchMapping("/pipelines")
+    @PreAuthorize("@pipelineSecurity.isOwner(#updateItem.pipelineId, authentication.principal.userId)")
     public ResponseEntity<BaseResponse<PipelineResponse.Pipeline>> updatePipeline(
             @RequestBody @Valid PipelineRequest.Update updateItem) {
         return ResponseEntity.ok(
@@ -61,6 +63,7 @@ public class PipelineController {
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @GetMapping("/pipelines/custom-jar/{pipelineId}")
+    @PreAuthorize("@pipelineSecurity.isOwner(#pipelineId, authentication.principal.userId)")
     public ResponseEntity<BaseResponse<?>> getCustomJarPipelineByPipelineId(
             @PathVariable Long pipelineId) {
         return ResponseEntity.ok(
@@ -75,6 +78,7 @@ public class PipelineController {
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @GetMapping("/pipelines/ai-sql/{pipelineId}")
+    @PreAuthorize("@pipelineSecurity.isOwner(#pipelineId, authentication.principal.userId)")
     public ResponseEntity<BaseResponse<?>> getAISqlPipelineByPipelineId(
             @PathVariable Long pipelineId) {
         return ResponseEntity.ok(
@@ -93,6 +97,7 @@ public class PipelineController {
     })
     @PostMapping(value = "/pipelines/{pipelineId}/custom-jar",
                  consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("@pipelineSecurity.isOwner(#pipelineId, authentication.principal.userId)")
     public ResponseEntity<BaseResponse<PipelineResponse.Artifact>> createFlinkCustomJar(
         @RequestPart MultipartFile file,
         @RequestPart @Valid PipelineRequest.CreateCustomJobConfig createCustomJobConfig,
@@ -111,6 +116,7 @@ public class PipelineController {
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @PostMapping("/pipelines/{pipelineId}/ai-sql")
+    @PreAuthorize("@pipelineSecurity.isOwner(#pipelineId, authentication.principal.userId)")
     public ResponseEntity<BaseResponse<?>> createFlinkAISql(
             @PathVariable Long pipelineId,
             @RequestBody PipelineRequest.CreateAISqlConfig createAISqlConfig) {
@@ -140,6 +146,7 @@ public class PipelineController {
         @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @PutMapping("/pipelines/{pipelineId}/status")
+    @PreAuthorize("@pipelineSecurity.isOwner(#pipelineId, authentication.principal.id)")
     public ResponseEntity<BaseResponse<PipelineResponse.PipelineStatus>> putPipelineStatus(
         @PathVariable Long pipelineId) {
         return ResponseEntity.ok(

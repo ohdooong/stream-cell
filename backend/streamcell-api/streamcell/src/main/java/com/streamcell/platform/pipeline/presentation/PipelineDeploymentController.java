@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Platform Pipeline Deployment API", description = "Pipeline Deployment 관리 API 컨트롤러")
@@ -33,6 +34,7 @@ public class PipelineDeploymentController {
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @PostMapping(value = "/{pipelineId}/deploy")
+    @PreAuthorize("@pipelineSecurity.isOwner(#pipelineId, authentication.principal.userId)")
     public ResponseEntity<BaseResponse<PipelineResponse.Deployment>> deployCustomJarToFlink(
             @PathVariable Long pipelineId) {
 
@@ -54,6 +56,7 @@ public class PipelineDeploymentController {
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @PostMapping(value = "/{pipelineId}/ai-sql/deploy")
+    @PreAuthorize("@pipelineSecurity.isOwner(#pipelineId, authentication.principal.userId)")
     public ResponseEntity<BaseResponse<?>> deployAISqlToFlink(
             @PathVariable Long pipelineId) {
         return ResponseEntity.ok(
@@ -68,6 +71,7 @@ public class PipelineDeploymentController {
             @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @PostMapping("/{pipelineId}/stop")
+    @PreAuthorize("@pipelineSecurity.isOwner(#pipelineId, authentication.principal.userId)")
     public ResponseEntity<BaseResponse<?>> cancelPipelineFlinkJob(
             @PathVariable Long pipelineId
     ) {
