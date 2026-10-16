@@ -107,7 +107,7 @@ IoT 센서, 애플리케이션/HTTP 로그, 보안, 작업자 안전, 가스·�
 
 ## 서버 Docker 배포
 
-이미 실행 중인 PostgreSQL·Kafka·Flink에 프론트엔드와 백엔드를 연결하는 운영 설정은 [서버 배포 안내](infra/production/README.md)를 참고하세요. Dockerfile, Compose, HTTPS 프록시 옵션, 환경변수 초기화·검사, 배포·롤백 및 DB·업로드 백업 도구가 포함되어 있습니다.
+이미 실행 중인 PostgreSQL·Kafka·Flink에 프론트엔드와 백엔드를 연결하는 운영 설정은 [서버 배포 안내](infra/production/README.md)를 참고하세요. Dockerfile, HTTP 접속용 Compose, 환경변수 초기화·검사, 배포·롤백 및 DB·업로드 백업 도구가 포함되어 있습니다.
 
 ## 향후 고도화 계획
 

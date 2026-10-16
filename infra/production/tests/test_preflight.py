@@ -17,12 +17,11 @@ def valid_config():
             "KAFKA_BOOTSTRAP_SERVERS": "kafka-1:9092,kafka-2:9092",
             "FLINK_JOB_MANAGER_URL": "http://flink-jobmanager:8081",
             "FLINK_SQL_GATEWAY": "http://flink-sql-gateway:8083",
-            "ATLAS_URL": "https://atlas.internal", "ATLAS_AGENT_ID": "test-agent",
+            "ATLAS_URL": "http://atlas.internal:8080", "ATLAS_AGENT_ID": "test-agent",
             "ATLAS_API_KEY": "test-api-key",
             "JWT_SECRET": base64.b64encode(bytes(range(64))).decode("ascii"),
         }},
         "frontend": {"image": "streamcell/frontend:20261016-1"},
-        "caddy": {"environment": {"APP_DOMAIN": "streamcell.company.test", "ACME_EMAIL": "ops@company.test"}},
     }}
 
 
@@ -30,7 +29,6 @@ class DeploymentValidationTests(unittest.TestCase):
     def test_existing_docker_and_remote_service_configurations(self):
         config = valid_config()
         self.assertEqual(validate_config(config), [])
-        del config["services"]["caddy"]
         config["services"]["backend"]["environment"]["POSTGRES_URL"] = "jdbc:postgresql://10.20.0.5:5432/streamcell?sslmode=require"
         self.assertEqual(validate_config(config), [])
 
@@ -56,13 +54,11 @@ class DeploymentValidationTests(unittest.TestCase):
             config["services"]["backend"]["environment"]["KAFKA_BOOTSTRAP_SERVERS"] = value
             self.assertTrue(any("KAFKA_BOOTSTRAP_SERVERS" in error for error in validate_config(config)))
 
-    def test_placeholder_credentials_and_public_domain_are_rejected(self):
+    def test_placeholder_credentials_are_rejected(self):
         config = valid_config()
         config["services"]["backend"]["environment"]["POSTGRES_PASSWORD"] = "replace-with-existing-db-password"
-        config["services"]["caddy"]["environment"]["APP_DOMAIN"] = "streamcell.example.com"
         errors = validate_config(config)
         self.assertTrue(any("POSTGRES_PASSWORD" in error for error in errors))
-        self.assertTrue(any("APP_DOMAIN" in error for error in errors))
 
     def test_rollback_requires_a_named_release(self):
         for tag in ("latest", "replace-with-release-tag", "invalid/tag"):

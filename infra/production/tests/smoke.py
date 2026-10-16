@@ -1,6 +1,7 @@
 """Exercise production images against an isolated temporary DB; never use real infrastructure."""
 import argparse
 import base64
+from http.client import HTTPConnection
 import json
 import os
 from pathlib import Path
@@ -45,7 +46,7 @@ def main():
         "COMPOSE_FILE": "compose.yaml:compose.infra.yaml",
         "COMPOSE_PATH_SEPARATOR": ":", "COMPOSE_PROJECT_NAME": project,
         "IMAGE_PREFIX": prefix, "IMAGE_TAG": tag, "INFRA_NETWORK": network,
-        "FRONTEND_HTTP_PORT": "0",
+        "FRONTEND_BIND_ADDRESS": "127.0.0.1", "FRONTEND_HTTP_PORT": "0",
         "POSTGRES_URL": "jdbc:postgresql://postgres:5432/streamcell",
         "POSTGRES_USERNAME": "streamcell", "POSTGRES_PASSWORD": "isolated-smoke-db-password",
         "FLINK_JDBC_URL": "jdbc:postgresql://postgres:5432/streamcell",
@@ -127,6 +128,16 @@ def main():
 
             app_attempted = True
             app(["up", "-d", "--no-build", "--wait", "--wait-timeout", "180"])
+            published = app(["port", "frontend", "8080"]).splitlines()[0]
+            host, port = published.rsplit(":", 1)
+            connection = HTTPConnection(host, int(port), timeout=10)
+            try:
+                connection.request("GET", "/healthz")
+                response = connection.getresponse()
+                assert response.status == 200 and response.read().strip() == b"ok"
+            finally:
+                connection.close()
+            print("OK: direct HTTP access through the published frontend port", flush=True)
             assert request("/healthz")[0] == 200
             assert request("/actuator/health")[0] == 404
             assert request("/api/v1/web/user/items")[0] in (401, 403)
@@ -160,7 +171,7 @@ def main():
             assert not list(backup.glob("*.partial"))
             assert request("/api/v1/web/user/items", token=token)[0] == 200
             print("OK: database/upload backup and API resume", flush=True)
-            print("Smoke test passed. Kafka, Flink, Atlas and public DNS/TLS were not exercised.", flush=True)
+            print("Smoke test passed. Kafka, Flink, Atlas and remote HTTP access were not exercised.", flush=True)
         except Exception:
             if app_attempted:
                 # Only synthetic secrets and test data exist in this isolated stack.

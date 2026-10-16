@@ -7,9 +7,9 @@
 - 프론트엔드 TypeScript/Vite 운영 빌드와 기존 프론트엔드 테스트 전체.
 - Linux Docker 이미지 빌드: 프론트엔드 Node 22 → Nginx, 백엔드 Java 24 → Spring Boot executable JAR.
 - 배포 설정 검사 단위 테스트 6개.
-- Compose 4개 조합: 원격/기존 Docker 인프라 × 신규 HTTPS 프록시 유무.
+- HTTP Compose 4개 조합: 원격/기존 Docker 인프라 × 전체 인터페이스/로컬 수신 주소.
 - 읽기 전용 파일시스템·권한 제한 상태의 Nginx 설정 검사.
-- Caddy HTTPS 설정 문법 검사.
+- 서버에 게시한 HTTP 포트에서 `/healthz` 200 응답과 본문 확인.
 - Linux Bash 배포 스크립트 문법 검사.
 - 격리된 PostgreSQL 16에서 수정한 V2 DDL 및 읽기 전용 스키마 검사.
 - 기존 AI 설정 고유키가 없을 때 배포 검사 실패 및 선택적 마이그레이션 적용 후 통과.
@@ -25,10 +25,10 @@
 ## 대상 서버에서 확인할 사항
 
 - 실제 서버 OS·아키텍처, 메모리·디스크, Docker 및 Compose 설치.
-- `.env`의 실제 인프라 주소·계정, Atlas 설정, 공개 도메인과 인증서 이메일.
+- `.env`의 실제 인프라 주소·계정, Atlas 설정과 HTTP 수신 포트.
 - 기존 DB에 `check-schema.sql`을 실행한 결과 및 기존 업로드 파일 경로.
 - 실제 Kafka `advertised.listeners`, Flink REST/SQL Gateway와 connector JAR, Atlas 연결.
-- 운영 도메인의 DNS·방화벽과 HTTPS 인증서 발급·갱신.
+- 서버 IP와 HTTP 수신 주소·포트, 방화벽·보안 그룹 및 외부 PC에서의 접속.
 - 기존 Pipeline에 영향을 주지 않는 테스트 Pipeline으로 배포·결과 조회.
 - Java 24 지원 종료에 따른 LTS 전환 계획. 기존 springdoc 2.x는 Spring Boot 4 공식 호환 범위 밖이며 운영 프로필은 API 문서를 비활성화합니다.
 
