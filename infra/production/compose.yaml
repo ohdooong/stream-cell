@@ -1,0 +1,71 @@
+name: ${COMPOSE_PROJECT_NAME:-streamcell-app}
+
+x-logging: &logging
+  driver: local
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  backend:
+    image: ${IMAGE_PREFIX:-streamcell}/backend:${IMAGE_TAG:?Set a unique IMAGE_TAG}
+    build:
+      context: ../../backend/streamcell-api/streamcell
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m,mode=1777
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      POSTGRES_URL: ${POSTGRES_URL:?Set the existing PostgreSQL JDBC URL}
+      POSTGRES_USERNAME: ${POSTGRES_USERNAME:?Set the existing database user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set the existing database password}
+      FLINK_JDBC_URL: ${FLINK_JDBC_URL:?Set the JDBC URL reachable from Flink}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:?Set the existing Kafka brokers}
+      FLINK_JOB_MANAGER_URL: ${FLINK_JOB_MANAGER_URL:?Set the Flink REST URL}
+      FLINK_SQL_GATEWAY: ${FLINK_SQL_GATEWAY:?Set the Flink SQL Gateway URL}
+      ATLAS_URL: ${ATLAS_URL:?Set the Atlas URL}
+      ATLAS_AGENT_ID: ${ATLAS_AGENT_ID:?Set the Atlas agent ID}
+      ATLAS_API_KEY: ${ATLAS_API_KEY:?Set the Atlas API key}
+      JWT_SECRET: ${JWT_SECRET:?Generate a Base64 JWT signing key}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:--XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError -Djava.io.tmpdir=/tmp}
+      TZ: Asia/Seoul
+    volumes:
+      - backend-uploads:/data/uploads
+    networks: [app]
+    stop_grace_period: 45s
+    mem_limit: ${BACKEND_MEMORY_LIMIT:-1g}
+    cpus: ${BACKEND_CPUS:-1.0}
+    logging: *logging
+
+  frontend:
+    image: ${IMAGE_PREFIX:-streamcell}/frontend:${IMAGE_TAG:?Set a unique IMAGE_TAG}
+    build:
+      context: ../../frontend
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+    # Bind only to localhost. Caddy or an existing host reverse proxy serves users.
+    ports:
+      - "127.0.0.1:${FRONTEND_HTTP_PORT:-8088}:8080"
+    networks: [app]
+    depends_on:
+      backend:
+        condition: service_healthy
+    mem_limit: 128m
+    cpus: 0.5
+    logging: *logging
+
+networks:
+  app:
+    driver: bridge
+
+volumes:
+  backend-uploads:

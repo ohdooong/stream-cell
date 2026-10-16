@@ -35,6 +35,10 @@ public class SecurityConfig {
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.GET,
+                    "/actuator/health",
+                    "/actuator/health/liveness",
+                    "/actuator/health/readiness").permitAll()
                 .requestMatchers(SecurityConstants.PERMIT_ALL_END_POINTS).permitAll()
                 //.requestMatchers("/api/v1/**").permitAll()
                 .requestMatchers(HttpMethod.POST, SecurityConstants.LOGOUT_API_END_POINT).authenticated()

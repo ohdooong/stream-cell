@@ -1,0 +1,12 @@
+# Use only when the existing infrastructure runs on this Docker host.
+# This network is owned by the existing stack and is never created/deleted here.
+services:
+  backend:
+    networks:
+      - app
+      - infrastructure
+
+networks:
+  infrastructure:
+    external: true
+    name: ${INFRA_NETWORK:-streamcell-net}

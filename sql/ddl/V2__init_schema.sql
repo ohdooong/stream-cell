@@ -158,15 +158,16 @@ CREATE TABLE IF NOT EXISTS platform.ai_config (
       ai_config_id   bigserial
           primary key,
       pipeline_id    bigint                  not null
-          references pipeline
+          references platform.pipeline(pipeline_id)
               on delete cascade,
       input_topic_id bigint                  not null
-          references topic_metadata
+          references platform.topic_metadata(topic_id)
               on delete cascade,
       created_by     varchar(255)            not null,
       created_at     timestamp default now() not null,
       updated_by     varchar(255)            not null,
-      updated_at     timestamp default now() not null
+      updated_at     timestamp default now() not null,
+      CONSTRAINT uk_ai_config_pipeline_topic UNIQUE (pipeline_id, input_topic_id)
 );
 
 

@@ -1,0 +1,6 @@
+# Shell entrypoints must work after a Windows checkout.
+*.sh text eol=lf
+**/gradlew text eol=lf
+Dockerfile text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
