@@ -7,6 +7,8 @@ const pipelines = new Map([
 ]);
 const stops = new Map();
 const acceptedAt = new Map();
+const syncs = new Map();
+const events = [];
 createServer(async (req, res) => {
   const path = new URL(req.url, 'http://127.0.0.1:18087').pathname;
   res.setHeader('Content-Type', 'application/json');
@@ -20,20 +22,31 @@ createServer(async (req, res) => {
     const id = Number(detail[2]);
     const pipeline = pipelines.get(id);
     if (!pipeline) return send({ message: 'Not found' }, 404);
+    return send({ body: pipeline });
+  }
+  const sync = path.match(/^\/api\/v1\/platform\/pipeline\/pipelines\/(\d+)\/status$/);
+  if (sync && req.method === 'PUT') {
+    const id = Number(sync[1]);
+    const pipeline = pipelines.get(id);
+    if (!pipeline) return send({ message: 'Not found' }, 404);
+    events.push({ method: 'PUT', pipelineId: id, at: Date.now() });
+    syncs.set(id, (syncs.get(id) || 0) + 1);
+    if (id === 72 && syncs.get(id) === 1) return send({ message: '테스트용 일시적 상태 동기화 실패' }, 500);
     if (acceptedAt.has(id)) {
       const elapsed = Date.now() - acceptedAt.get(id);
       pipeline.pipelineStatus = elapsed < 3000 ? 'RUNNING' : elapsed < 9000 ? 'STOPPING' : 'STOPPED';
     }
-    return send({ body: pipeline });
+    return send({ status: 200, body: pipeline.pipelineStatus });
   }
   const stop = path.match(/^\/api\/v1\/platform\/pipeline\/pipelines\/deployment\/(\d+)\/stop$/);
   if (stop && req.method === 'POST') {
     const id = Number(stop[1]);
     stops.set(id, (stops.get(id) || 0) + 1);
+    events.push({ method: 'POST', pipelineId: id, at: Date.now() });
     if (id === 72 && stops.get(id) === 1) return send({ message: '테스트용 일시적 중지 실패입니다. 다시 시도해 주세요.' }, 500);
     acceptedAt.set(id, Date.now());
     return send({ status: 202, message: 'Job Cancel 성공', body: null }, 202);
   }
-  if (path === '/fixture/stats') return send({ stops: Object.fromEntries(stops) });
+  if (path === '/fixture/stats') return send({ stops: Object.fromEntries(stops), syncs: Object.fromEntries(syncs), events });
   return send({ message: 'Unsupported fixture path' }, 404);
 }).listen(18087, '127.0.0.1', () => console.log('Pipeline stop fixture: http://127.0.0.1:18087 (test data only)'));

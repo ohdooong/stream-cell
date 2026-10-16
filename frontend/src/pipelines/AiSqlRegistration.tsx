@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { aiSqlApi, type AiSqlPreview, type PipelinePlan } from '../api/aiSql';
 import { ApiError } from '../api/client';
 import { platformApi, type Topic } from '../api/platform';
+import { assertInputTopic } from '../api/inputTopics';
 import {
   initialAiSqlDraft, isAiSqlPreview, toAiSqlConfigInput, toAiSqlInput,
   toAiSqlPreviewRequest, validateAiSqlInput, type AiSqlDraft,
@@ -106,6 +107,7 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
     event.preventDefault();
     if (busy || createdId !== null) return;
     const problems = validateAiSqlInput(input, details);
+    try { assertInputTopic(topics, draft.topicId); } catch (cause) { problems.push(errorMessage(cause)); }
     if (loadingTopics) problems.push('Topic 정보를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
     if (draft.topicId !== null && topicErrors[draft.topicId]) problems.push('상세 조회에 실패한 Topic을 다시 불러와 주세요.');
     setErrors(problems);
@@ -131,6 +133,7 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
     let pipelineId = basePipelineId;
     setBusy('save'); setErrors([]);
     try {
+      assertInputTopic(topics, draft.topicId);
       if (pipelineId === null) {
         const pipeline = await platformApi.createPipeline({
           ownerUserId: input.ownerUserId,
@@ -173,12 +176,12 @@ export function AiSqlRegistration({ topics, userId, onCreated, notify }: Props) 
           <label>Pipeline 이름 <em>필수</em><input value={draft.name} onChange={(e) => update({ name: e.target.value })} maxLength={100} required placeholder="상품별 주문 집계" /></label>
           <label>설명 <small>선택</small><input value={draft.description} onChange={(e) => update({ description: e.target.value })} maxLength={1000} placeholder="이 Pipeline의 목적을 입력하세요" /></label>
         </div>
-        <fieldset className="ai-topic-fieldset"><legend>입력 Topic <em>필수 · 하나만 선택</em></legend>
+        <fieldset className="ai-topic-fieldset"><legend>입력 Topic <em>DEPLOY 권한 · 하나만 선택</em></legend>
           {topics.length ? <div className="ai-topic-options">{topics.map((topic) => <label key={topic.topicId} className={draft.topicId === topic.topicId ? 'selected' : ''}>
             <input type="radio" name="ai-input-topic" checked={draft.topicId === topic.topicId} onChange={() => selectTopic(topic.topicId)} />
             <span><strong>{topic.displayName || topic.topicName}</strong><small>{topic.topicName}</small></span>
             <i>{topic.messageFormat || 'Schema'}</i>
-          </label>)}</div> : <p className="ai-empty">선택할 Topic이 없습니다. Topic 관리에서 동기화한 후 다시 등록해 주세요.</p>}
+          </label>)}</div> : <p className="ai-empty">DEPLOY 권한이 있는 Topic이 없습니다. 관리자에게 권한을 요청해 주세요.</p>}
         </fieldset>
         {draft.topicId !== null && [draft.topicId].map((id) => <div className="ai-topic-schema" key={id}>
           <div><strong>{topics.find((topic) => topic.topicId === id)?.topicName || `Topic #${id}`}</strong><span>{topicLoading[id] ? '불러오는 중…' : 'Topic Schema'}</span></div>

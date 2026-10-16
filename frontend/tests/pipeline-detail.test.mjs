@@ -10,14 +10,13 @@ test('Custom JAR detail supports registered configuration and artifact data', ()
     pipelineId: 1,
     customJobConfig: {
       entryClass: 'com.example.Job', parallelism: 2,
-      inputTopicIds: '[10]', outputTopicIds: [11], programArgs: '{"env":"prod"}',
+      inputTopicIds: '[10]', programArgs: '{"env":"prod"}',
     },
     pipelineArtifact: { originalFileName: 'job.jar', storedFileName: '1-job.jar', flinkJarId: 'jar-1' },
   });
   assert.equal(detail.entryClass, 'com.example.Job');
   assert.equal(detail.parallelism, 2);
   assert.deepEqual(detail.inputTopicIds, [10]);
-  assert.deepEqual(detail.outputTopicIds, [11]);
   assert.equal(detail.originalFileName, 'job.jar');
   assert.equal(detail.flinkJarId, 'jar-1');
   assert.equal(programArgsText(detail.programArgs), 'env=prod');

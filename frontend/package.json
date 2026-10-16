@@ -8,10 +8,13 @@
     "build": "tsc -b && vite build",
     "test:ai-sql": "node --test tests/ai-sql.test.mjs",
     "test:pipeline-detail": "node --test tests/pipeline-detail.test.mjs",
-    "test:custom-jar": "node --test tests/custom-jar.test.mjs",
+    "test:custom-jar": "node --test tests/custom-jar.test.mjs tests/custom-jar-api.test.mjs",
     "test:pipeline-stop": "node --test tests/pipeline-stop.test.mjs",
     "test:auth": "node --test tests/auth.test.mjs",
     "test:results": "node --test tests/results.test.mjs",
+    "test:failures": "node --test tests/failures.test.mjs",
+    "test:input-topics": "node --test tests/input-topics.test.mjs",
+    "test:topics": "node --test tests/topics.test.mjs tests/topic-sync.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

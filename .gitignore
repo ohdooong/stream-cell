@@ -15,3 +15,14 @@ archive
 .idea
 *-api-key.txt
 producer/order-producer/.venv
+
+# Deployment secrets and backups
+**/.env
+**/.env.local
+**/.env.production
+**/.env.production.local
+infra/production/backups/
+infra/production/.release-*
+infra/production/.validation-*
+__pycache__/
+.artifacts/

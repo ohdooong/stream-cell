@@ -1,0 +1,15 @@
+.pipeline-failures { margin: 20px 0; min-width: 0; }
+.failure-entry { padding: 0 24px 24px; }
+.failure-entry + .failure-entry { padding-top: 24px; border-top: 1px solid #e8edf4; }
+.failure-entry-heading { display: flex; gap: 12px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; margin-bottom: 12px; }
+.failure-entry-heading h4 { margin: 0; color: #b73549; font-size: 14px; overflow-wrap: anywhere; }
+.failure-entry-heading span { color: #6b7a90; font-size: 12px; }
+.failure-entry pre { margin: 0; padding: 18px; max-height: 420px; overflow: auto; background: #131e31; color: #e4eaf5; border-radius: 10px; font: 12px/1.8 Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.failure-empty { padding: 24px; color: #6b7a90; }
+.failure-empty h4 { margin: 0 0 8px; color: #35445b; }
+.failure-empty p { margin: 0; line-height: 1.7; overflow-wrap: anywhere; }
+.failure-selector { display: flex; gap: 16px; justify-content: space-between; align-items: end; padding: 24px; }
+.failure-selector label { display: grid; gap: 10px; flex: 1; min-width: 0; font-size: 13px; color: #35445b; }
+.failure-selector select { width: 100%; min-width: 0; padding: 12px; border: 1px solid #dce4ef; border-radius: 8px; background: white; color: #24344c; }
+.failure-note { font-size: 12px; color: #6b7a90; line-height: 1.7; }
+@media (max-width: 700px) { .failure-selector { align-items: stretch; flex-direction: column; } .failure-entry { padding: 0 16px 16px; } }

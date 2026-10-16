@@ -2,11 +2,17 @@ import { useRef, useState, type FormEvent } from 'react';
 import type { PipelineDetail, Topic } from '../api/platform';
 import { CustomJarFields } from './CustomJarFields';
 import { customJarDraft, registerCustomJar } from './customJarRegistration';
+import { InputTopicsGate } from './InputTopicsGate';
+import { assertInputTopic } from '../api/inputTopics';
 
-export function CustomJarRecovery({ item, topics, userId, busy, onBusyChange, onUploaded }: {
-  item: PipelineDetail; topics: Topic[]; userId: number; busy: boolean;
+type Props = {
+  item: PipelineDetail; userId: number; busy: boolean;
   onBusyChange: (busy: boolean) => void; onUploaded: () => Promise<void>;
-}) {
+};
+export function CustomJarRecovery(props: Props) {
+  return <InputTopicsGate key={`${props.userId}-${props.item.pipelineId}`}>{(topics) => <CustomJarRecoveryForm {...props} topics={topics} />}</InputTopicsGate>;
+}
+function CustomJarRecoveryForm({ item, topics, userId, busy, onBusyChange, onUploaded }: Props & { topics: Topic[] }) {
   const [draft, setDraft] = useState(() => customJarDraft(item));
   const [error, setError] = useState('');
   const [uploaded, setUploaded] = useState(false);
@@ -16,6 +22,7 @@ export function CustomJarRecovery({ item, topics, userId, busy, onBusyChange, on
     if (busy || inFlight.current || uploaded) return;
     inFlight.current = true; onBusyChange(true); setError('');
     try {
+      assertInputTopic(topics, draft.inputId);
       await registerCustomJar({ pipelineId: item.pipelineId, userId, draft });
       setUploaded(true);
       await onUploaded();

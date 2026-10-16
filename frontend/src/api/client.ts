@@ -1,3 +1,5 @@
+import { clearCustomJarReceipts } from './customJarReceipt';
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
 
 let accessToken: string | null = null;
@@ -10,6 +12,7 @@ export class ApiError extends Error {
 }
 
 export function setAccessToken(token: string | null) {
+  if (token !== accessToken) clearCustomJarReceipts();
   accessToken = token;
 }
 

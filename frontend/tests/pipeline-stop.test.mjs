@@ -33,6 +33,35 @@ test('stop surfaces backend errors instead of reporting success', async () => {
   }
 });
 
+test('status sync uses PUT without a body and reads the status string from the response envelope', async () => {
+  setAccessToken('fixture-jwt');
+  const requests = [];
+  const states = ['RUNNING', 'STOPPING', 'STOPPED'];
+  globalThis.fetch = async (url, init) => {
+    requests.push({ url, init });
+    return Response.json({ status: 200, body: states[requests.length - 1] });
+  };
+  for (const state of states) assert.equal(await platformApi.syncPipelineStatus(42), state);
+  for (const request of requests) {
+    assert.equal(request.url, '/api/v1/platform/pipeline/pipelines/42/status');
+    assert.equal(request.init.method, 'PUT');
+    assert.equal(request.init.body, undefined);
+    assert.equal(request.init.headers.get('Authorization'), 'Bearer fixture-jwt');
+  }
+});
+
+test('invalid status sync responses cannot mark the pipeline stopped', async () => {
+  for (const body of [null, {}, { pipelineStatus: 'STOPPED' }, 'UNKNOWN']) {
+    globalThis.fetch = async () => Response.json({ status: 200, body });
+    await assert.rejects(platformApi.syncPipelineStatus(42), /상태 응답/);
+  }
+});
+
+test('status synchronization surfaces a backend failure for polling to retry', async () => {
+  globalThis.fetch = async () => Response.json({ message: 'Flink 상태 조회 실패' }, { status: 500 });
+  await assert.rejects(platformApi.syncPipelineStatus(42), (error) => error.status === 500 && error.message === 'Flink 상태 조회 실패');
+});
+
 test('only RUNNING can be stopped and transitional states do not mean completion', () => {
   const statuses = ['DRAFT', 'CREATED', 'ARTIFACT_UPLOADED', 'DEPLOYING', 'RUNNING', 'FAILED', 'STOPPING', 'STOPPED', 'FINISHED', 'SUSPENDED'];
   for (const status of statuses) assert.equal(canStopPipeline(status), status === 'RUNNING');

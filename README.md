@@ -39,7 +39,7 @@
 |  | Vite | 5.4 | Build |
 | Backend | Spring Boot | 4.1.0 | Kafka, Flink, Pipeline, Deployment, AI 관리 API |
 |  | JDK | 24 | Java Development Kit |
-|  | Gradle | 9.3.1 | Build |
+|  | Gradle | 9.5.1 | Build |
 | Database | PostgreSQL | 16 | Platform 메타데이터, 스트림 처리결과 저장 |
 | Event Broker | Kafka | 4.2.1 | 실시간 Event(데이터) 수집계층 |
 | Stream Processing | Flink | 1.19 | 실시간 Event(데이터) 처리계층 |
@@ -104,6 +104,10 @@ flowchart LR
 ## 로컬 실행 방법
 
 IoT 센서, 애플리케이션/HTTP 로그, 보안, 작업자 안전, 가스·화재 감지, 차량 데이터 등 Kafka Producer 10종의 실행 방법은 [실시간 Producer 안내](producer/realtime-producers/README.md)를 참고하세요.
+
+## 서버 Docker 배포
+
+이미 실행 중인 PostgreSQL·Kafka·Flink에 프론트엔드와 백엔드를 연결하는 운영 설정은 [서버 배포 안내](infra/production/README.md)를 참고하세요. Dockerfile, Compose, HTTPS 프록시 옵션, 환경변수 초기화·검사, 배포·롤백 및 DB·업로드 백업 도구가 포함되어 있습니다.
 
 ## 향후 고도화 계획
 

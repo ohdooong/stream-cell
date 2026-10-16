@@ -12,6 +12,33 @@ npm run dev
 
 개발 서버는 기본적으로 `/api` 요청을 `http://localhost:8085`으로 프록시합니다. 배포 환경에서는 `.env.example`을 복사한 뒤 `VITE_API_BASE_URL`에 API origin을 지정하세요.
 
+## Pipeline 등록용 입력 Topic
+
+AI SQL·Custom JAR 신규 등록과 JAR 등록 이어하기는 `GET /api/v1/platform/topic/input-topics`를 기존 JWT 클라이언트로 호출합니다. 백엔드가 현재 인증 사용자의 DEPLOY 권한 Topic 목록을 반환하며 프론트엔드는 반환된 목록만 선택지로 사용합니다. `userId` 쿼리는 전달하지 않습니다.
+
+Topic 관리·등록 정보의 읽기 전용 상세는 기존 Topic 조회를 유지합니다. 등록용 목록 조회 실패 시 전체 Topic 목록으로 대체하지 않으며 재조회 버튼을 제공합니다. 목록이 비어 있으면 DEPLOY 권한 요청 안내를 표시하고 등록 폼을 열지 않습니다. 기존 JAR 등록에 저장된 Topic도 새 목록에 없으면 재선택해야 합니다. 프론트엔드 선택 검증은 보조 장치이므로 실제 등록·배포 시 권한 검증은 백엔드에서 계속 수행해야 합니다.
+
+검증: `npm run test:input-topics`.
+
+## 사용자 Topic 조회 / 관리자 Topic 관리
+
+**Topic 조회**는 모든 로그인 사용자에게 표시되는 읽기 전용 화면입니다. `GET /api/v1/web/my/topic/topics`로 자신에게 권한이 등록된 Topic 목록을 조회하고, 선택 시 기존 `GET /api/v1/platform/topic/topics/{topicId}`로 저장된 메타데이터를 조회합니다. 기존 JWT를 전달하고 `userId` 쿼리는 보내지 않습니다. 표시 이름, 설명, Message Format, Event Time Field, Schema JSON을 보여 주며 미등록 값은 임의로 채우지 않습니다. 목록·상세 실패와 빈 목록을 구분하고 재조회할 수 있습니다. Topic 전환/화면 이탈 시 상세 요청을 취소합니다.
+
+**Topic 관리**와 **Topic 권한** 메뉴는 `ROLE_ADMIN`에게만 표시합니다. Topic 동기화와 메타데이터 저장은 관리자 화면에서만 사용할 수 있습니다. 메뉴뿐 아니라 해당 화면 렌더링도 검사하며 ADMIN 역할을 잃으면 Topic 조회로 이동합니다. 프론트엔드의 화면 제어는 보조 장치이며 백엔드의 권한 검사를 대체하지 않습니다.
+
+로그인 후 초기 로딩과 상단 새로고침도 일반 사용자는 `/api/v1/web/my/topic/topics`, ADMIN은 전체 목록 `/api/v1/platform/topic/topics`를 사용합니다. ADMIN의 읽기 전용 **Topic 조회** 메뉴도 자신의 권한 Topic 목록을 사용하며, 전체 목록은 **Topic 관리**에서 확인합니다. Pipeline 등록 목록 `/api/v1/platform/topic/input-topics`는 기존 DEPLOY 필터링을 유지합니다. 사용자 목록 조회 실패 시 ADMIN 전체 목록이나 DEPLOY 목록으로 우회하지 않습니다.
+
+백엔드 권한 확인 사항(프론트엔드만 수정):
+
+- 사용자 전용 `/api/v1/web/my/topic/topics`는 JWT 인증 사용자 기준으로 허용된 목록을 반환하고, 기존 전체 목록 API는 ADMIN 전용을 유지합니다. `GET /api/v1/platform/topic/topics/{topicId}`도 해당 사용자의 조회 권한을 검사해야 합니다. 프론트엔드는 사용자 목록에서 선택한 Topic만 상세 조회하지만 서버 검사를 대체하지 않습니다.
+- 조회는 저장된 DB 메타데이터만 읽고 Kafka Sync 또는 DB 변경을 수행하지 않습니다. 목록은 기존 `TopicResponse.Item[]`, 상세는 `TopicResponse.Item`과 `BaseResponse.body` 구조를 유지하면 됩니다. 메타데이터 필드는 `topicId`, `topicName`, `displayName`, `description`, `messageFormat`, `timeField`, `schemaJson`입니다.
+- `POST /api/v1/platform/topic/sync`, `PUT /api/v1/platform/topic/topics/{topicId}/schema`와 Topic 권한 관리 API는 최신 master의 ADMIN 제한을 유지합니다. 글로벌 관리자 역할과 Topic 권한 enum의 `ADMIN`은 구분합니다. 인증되지 않은 요청은 401, 권한 부족은 403으로 처리합니다.
+- Sync 시 관리자가 이미 입력한 표시 이름·설명·Schema·Event Time·Message Format을 덮어쓰지 않도록 보존합니다. 메타데이터 수정은 JSON 형식, Message Format, 지정된 시간 필드의 유효성을 서버에서 검증합니다.
+- VIEW/QUERY/DEPLOY 권한의 조회 허용 관계를 서버 정책으로 명확하게 정의합니다. `GET /input-topics`는 기존대로 DEPLOY 권한만 조회하고, Topic 조회 목록을 그대로 등록용 선택지로 재사용하지 않습니다. 현재 로컬 체크아웃의 `TopicServiceImpl.hasPermission()`은 `topicPermissionType` 인자를 사용하지 않으므로 실제 권한 종류를 검사하도록 수정해야 합니다(작업 중인 백엔드 브랜치에서 재확인 필요).
+- 일반 사용자 목록 필터링, 다른 Topic ID로 상세 접근 차단, 일반 사용자 동기화·수정·권한 부여 거부, ADMIN 정상 처리, Sync 후 메타데이터 보존을 서버 테스트로 검증합니다.
+
+검증: `npm run test:topics`.
+
 ## 결과 Dashboard 예시 데모
 
 개발 서버 실행 후 `http://localhost:5173/demo/results`를 열면 로그인과 백엔드 없이 결과 Dashboard를 확인할 수 있습니다.
@@ -39,7 +66,39 @@ npm run dev
 
 현재 체크아웃에는 결과 API의 백엔드 구현이 없어 위 응답 규격을 기준으로 연결했습니다. 실제 응답의 필드명이 다르면 매핑을 맞춰야 합니다.
 
+## Pipeline 실패 Exception 조회
+
+FAILED 상태의 Pipeline 상세 화면과 **실패 분석** 메뉴에서 `GET /api/v1/platform/pipeline/pipelines/{pipelineId}/failures`를 JWT 클라이언트로 조회합니다. 메뉴에서는 현재 사용자의 FAILED Pipeline만 선택할 수 있습니다.
+
+응답의 `errorExceptionName`, `errorMessage`, `errorTimestamp`를 표시합니다. `errorMessage`의 줄바꿈과 전체 Stack Trace를 유지하며, 발생 시각 문자열(예: `2026-10-05 13:49:59.480000`)은 시간대를 추측하지 않고 그대로 표시합니다. 숫자 시각은 epoch milliseconds 기준 Asia/Seoul로 표시합니다. `body`/`data` 래퍼, 직접 Failure 객체, 기존 상태 DTO의 `failure` 객체를 지원합니다.
+
+조회 오류와 아직 저장된 Exception이 없는 응답을 구분하며 **다시 조회**로 재시도할 수 있습니다. Pipeline 전환/화면 이탈 시 기존 요청을 취소하고 다른 Pipeline의 응답은 표시하지 않습니다. AI 분석은 이 API의 범위에 없으므로 생성하거나 표시하지 않습니다.
+
+검증: `npm run test:failures`. UI 테스트용 API: `node tests/fixtures/pipeline-failures-api.mjs` (실제 백엔드로 전달하지 않는 별도 데이터).
+
 ## Custom JAR 등록 실패 복구
+
+Custom JAR 등록·재등록·상세 화면에서 Output Topic을 제거했습니다. Input Topic은 하나를 필수로 선택하며, multipart의 `createCustomJobConfig` JSON 파트에 `inputTopicIds: [선택한 Topic ID]`로 전달합니다. `outputTopicIds`는 전송하지 않습니다.
+
+업로드 API가 반환한 Artifact를 로그인 세션 메모리에 보관해 상세 응답에서 빠진 파일 정보를 보완합니다. 로그아웃·인증 변경·페이지 새로고침 후에는 상세 API의 정보가 필요합니다. `ARTIFACT_UPLOADED` 등 서버의 등록 완료 상태도 인정하므로 Artifact 응답이 없다는 이유만으로 재등록을 요청하거나 최초 배포를 막지 않습니다. 파일명 자체를 확인할 수 없을 때는 등록 완료와 파일명 조회 불가를 구분해 표시합니다.
+
+현재 백엔드 코드에서 필요한 수정:
+
+- `PipelineResponse.CustomJarPipeline`에 `Artifact pipelineArtifact`를 추가하고, `findCustomJarPipelineByPipelineId`에서 `findPipelineArtifactByPipelineId`로 조회해 반환해야 합니다. 없으면 null로 반환합니다. 재접속 후에도 파일명과 `FAILED` 상태의 재배포 가능 여부를 확인하는 데 필요합니다.
+- `findCustomJobConfigByPipelineId`의 `input_topics`는 VO의 `inputTopicIds`와 이름이 다릅니다. `input_topics AS input_topic_ids` 별칭 또는 명시적 Result 매핑과 JSON 배열 TypeHandler로 `List<Long> inputTopicIds`에 매핑해야 합니다. 전송/저장 단계와 조회 매핑 문제를 구분해 확인하세요.
+- Output Topic 생략을 허용하고, DB에 기본값이 필요하면 빈 배열을 사용하세요. 현재 insert에는 `parallelism` 컬럼도 빠져 있어 등록값을 저장하도록 추가해야 합니다.
+
+권장 상세 응답 필드 예시:
+
+```json
+{
+  "pipelineId": 42,
+  "pipelineType": "CUSTOM_JAR",
+  "pipelineStatus": "ARTIFACT_UPLOADED",
+  "customJobConfig": { "entryClass": "com.example.Job", "inputTopicIds": [10], "parallelism": 2, "programArgs": {} },
+  "pipelineArtifact": { "artifactId": 99, "pipelineId": 42, "originalFileName": "orders.jar", "storedFileName": "stored.jar" }
+}
+```
 
 Pipeline 생성과 JAR 업로드는 별도 요청입니다. 업로드에 실패하면 등록 화면에 생성된 Pipeline ID와 파일·입력값을 유지하고, **JAR 등록 다시 시도**로 기존 Pipeline에 업로드합니다. 기본 정보가 이미 저장됐으므로 이름·설명과 유형은 이 화면에서 잠깁니다. 이름·설명은 상세 화면에서 수정할 수 있습니다.
 
@@ -59,7 +118,7 @@ Pipeline 생성과 JAR 업로드는 별도 요청입니다. 업로드에 실패�
 
 Pipeline 상세 화면 우측 상단의 **배포 중지**는 CUSTOM_JAR / AI_SQL 모두 `RUNNING` 상태에서 사용할 수 있습니다. 확인 후 요청 본문 없이 `POST /api/v1/platform/pipeline/pipelines/deployment/{pipelineId}/stop`을 기존 JWT 클라이언트로 호출합니다.
 
-Swagger의 `202 Accepted`는 중지 요청 접수로 처리하며, 응답만 보고 `STOPPED`로 변경하지 않습니다. 유형별 상세 API를 3초 간격으로 최대 20회 조회하여 실제 상태를 표시하고, 종료 상태가 확인되면 목록도 갱신합니다. 처리 중에는 중복 중지와 배포를 막습니다. 조회 실패 또는 대기 시간이 길어진 경우 **상태 다시 조회**로 확인을 재개할 수 있습니다. 중지 요청 자체가 실패하면 오류를 표시하고 다시 시도할 수 있습니다.
+Swagger의 `202 Accepted`는 중지 요청 접수로 처리하며, 응답만 보고 `STOPPED`로 변경하지 않습니다. 중지 요청이 성공하면 즉시 요청 본문 없이 `PUT /api/v1/platform/pipeline/pipelines/{pipelineId}/status`를 호출하고, 이후 3초 간격으로 같은 API를 호출하여 Flink Job 상태를 동기화합니다. 응답 `body`의 상태 문자열만 기존 상세 정보에 반영하며 JAR 설정과 AI SQL 정보는 유지합니다. 종료 상태가 확인되면 자동 확인을 종료하고 목록을 갱신합니다. 처리 중에는 중복 중지와 배포를 막습니다. 일시적인 상태 확인 실패는 오류를 표시하고 3초 후 재시도하며, **상태 다시 조회**로 즉시 확인할 수도 있습니다. 상세 화면을 벗어나면 자동 확인을 종료합니다. 중지 요청 자체가 실패하면 오류를 표시하고 다시 시도할 수 있습니다.
 
 `npm run test:pipeline-stop`으로 API 요청·오류·상태 조건을 검증합니다. `tests/fixtures/pipeline-stop-api.mjs`는 실제 Job에 영향을 주지 않는 로컬 UI 검증 서버이며, 지연된 중지 완료와 일시 실패 후 재시도를 재현합니다.
 
@@ -82,7 +141,7 @@ Swagger의 `202 Accepted`는 중지 요청 접수로 처리하며, 응답만 보
 ## Management Console 데모 범위
 
 - Flink Cluster, TaskManager, Slot 및 실행 중 Job Dashboard
-- Kafka Topic Sync, Schema 편집 및 Event Time 설정
+- Kafka Topic 동기화, Schema 편집 및 Event Time 설정
 - Topic별 사용자 권한 조회·추가와 내 사용 가능 Topic
 - AI_SQL 자연어 요청, Pipeline Plan 및 Flink SQL Preview
 - Custom JAR, Entry Class, Topic, Parallelism 및 Program Arguments 입력

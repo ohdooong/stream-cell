@@ -15,6 +15,7 @@ createServer(async (req, res) => {
   if (path === '/api/v1/web/user/items') return send([{ userId: 1, name: 'UI 테스트 사용자', email: 'fixture@example.test', status: 'ACTIVE' }]);
   if (path === '/api/v1/web/my/pipeline/pipelines') return send({ body: [...pipelines.values()] });
   if (path === '/api/v1/platform/topic/topics') return send({ body: [{ topicId: 10, topicName: 'orders' }] });
+  if (path === '/api/v1/platform/topic/input-topics') return send({ body: [{ topicId: 10, topicName: 'orders' }] });
   if (path === '/api/v1/platform/flink/cluster-overview') return send({ body: { taskmanagers: 1, 'slots-total': 4, 'slots-available': 4, 'jobs-running': 0, 'flink-version': 'UI fixture' } });
   if (path === '/api/v1/platform/pipeline/pipelines' && req.method === 'POST') {
     creates++;
@@ -33,9 +34,11 @@ createServer(async (req, res) => {
     const parts = await new Request('http://127.0.0.1:18086', { method: 'POST', headers: { 'Content-Type': req.headers['content-type'] }, body }).formData();
     const config = JSON.parse(await parts.get('createCustomJobConfig').text());
     const artifact = { artifactId: id, pipelineId: id, originalFileName: parts.get('file').name, storedFileName: 'stored.jar' };
-    Object.assign(pipelines.get(id), { pipelineStatus: 'ARTIFACT_UPLOADED', pipelineArtifact: artifact, customJobConfig: config });
+    if (config.inputTopicIds.length !== 1 || 'outputTopicIds' in config) return send({ message: '입력 Topic 하나만 전송해야 합니다.' }, 400);
+    // Match the current backend: upload returns Artifact; detail omits it.
+    Object.assign(pipelines.get(id), { pipelineStatus: 'ARTIFACT_UPLOADED', customJobConfig: config });
     return send({ body: artifact });
   }
-  if (path === '/fixture/stats') return send({ creates, attempts: Object.fromEntries(attempts) });
+  if (path === '/fixture/stats') return send({ creates, attempts: Object.fromEntries(attempts), configs: [...pipelines.values()].map((pipeline) => ({ pipelineId: pipeline.pipelineId, config: pipeline.customJobConfig })) });
   send({ message: '지원하지 않는 UI fixture 경로입니다.' }, 404);
 }).listen(18086, '127.0.0.1', () => console.log('Custom JAR UI fixture: http://127.0.0.1:18086 (test data only)'));
