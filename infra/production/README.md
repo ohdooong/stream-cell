@@ -3,22 +3,22 @@
 PostgreSQL, Kafka, Flink가 **이미 실행 중인 Linux 서버**에 배포하는 구성입니다. 기존 인프라 컨테이너와 데이터를 생성·변경·재시작하지 않습니다. 이 디렉터리는 `infra/docker-compose.yml`과 별개의 Compose 프로젝트입니다.
 
 ```text
-브라우저 → HTTPS :443 → Caddy(선택) → frontend Nginx :8080
-                                         └ /api/* → backend :8085
-                                                        ├ 기존 PostgreSQL
-                                                        ├ 기존 Kafka
-                                                        ├ 기존 Flink REST / SQL Gateway
-                                                        └ Atlas
+브라우저 → HTTP 서버IP:8088 → frontend Nginx :8080
+                                └ /api/* → backend :8085
+                                               ├ 기존 PostgreSQL
+                                               ├ 기존 Kafka
+                                               ├ 기존 Flink REST / SQL Gateway
+                                               └ Atlas
 ```
 
-프론트엔드는 `/api` 상대 경로를 사용하므로 별도 CORS 설정이 필요 없습니다. Vite 개발 서버를 운영하지 않습니다. 로그인 활성화·데모 비활성화는 이미지 빌드 시 고정됩니다. 백엔드와 인프라 포트는 이 구성에서 외부에 공개하지 않습니다.
+접속 주소는 `http://서버IP:8088`입니다. 프론트엔드는 `/api` 상대 경로를 사용하므로 별도 CORS 설정이 필요 없습니다. 로그인 활성화·데모 비활성화는 이미지 빌드 시 고정됩니다. Nginx가 HTTP 요청을 받고 API 요청을 내부 백엔드로 전달합니다.
 
 ## 서버 준비
 
 - Docker Engine, Compose v2.24 이상, BuildKit, Python 3.9 이상, Bash, Git, curl이 필요합니다. 서버에 Node나 JDK를 설치할 필요는 없습니다.
-- 앱 컨테이너 기본 메모리 한도 합계는 약 1.4GB입니다. 이미지 빌드를 위한 추가 메모리·디스크와 **기존 Kafka/Flink/DB 사용량**을 함께 확보하세요. 빌드가 부담되면 별도 Linux 빌드 환경에서 이미지를 만들고 레지스트리를 통해 전달할 수 있습니다.
-- HTTPS 신규 구성 시 도메인의 A/AAAA 레코드가 이 서버를 가리켜야 하며 TCP 80/443에 접근할 수 있어야 합니다. 잘못된 AAAA 레코드도 수정하세요. SSH는 관리 주소에만 허용하고 DB/Kafka/Flink 관리 포트의 기존 방화벽·포트 바인딩도 확인하세요.
-- 기존 프록시가 80/443을 사용한다면 Caddy 옵션을 빼고 그 프록시에서 HTTPS를 처리하세요. Docker 그룹과 Docker 소켓 접근 권한은 서버 관리자 수준으로 취급합니다.
+- 앱 컨테이너 기본 메모리 한도 합계는 약 1.2GB입니다. 이미지 빌드를 위한 추가 메모리·디스크와 **기존 Kafka/Flink/DB 사용량**을 함께 확보하세요. 빌드가 부담되면 별도 Linux 빌드 환경에서 이미지를 만들고 레지스트리를 통해 전달할 수 있습니다.
+- 접속할 PC에서 서버의 TCP 8088 포트에 접근할 수 있도록 서버 방화벽과 클라우드 보안 그룹을 설정하세요. 다른 포트를 쓰려면 `FRONTEND_HTTP_PORT`를 변경합니다.
+- SSH는 관리 주소에만 허용하고 DB/Kafka/Flink 관리 포트의 기존 방화벽·포트 바인딩도 확인하세요. Docker 그룹과 Docker 소켓 접근 권한은 서버 관리자 수준으로 취급합니다.
 
 ## 1. 서버별 설정
 
@@ -53,7 +53,9 @@ editor infra/production/.env
 
 | 설정 | 입력할 값 |
 | --- | --- |
-| `IMAGE_TAG` | 배포마다 새 버전. 예: `20261016-1`, 검토한 Git 커밋 SHA |
+| `IMAGE_TAG` | 프론트엔드·백엔드 이미지에 붙일 배포 버전. 첫 배포 예: `20261016-1` |
+| `FRONTEND_HTTP_PORT` | 브라우저에서 접속할 서버 포트. 기본 `8088` |
+| `FRONTEND_BIND_ADDRESS` | 서버의 수신 주소. 기본 `0.0.0.0`으로 외부 HTTP 접속 허용 |
 | `POSTGRES_URL` | API 컨테이너에서 접근 가능한 `jdbc:postgresql://주소:포트/DB` |
 | `POSTGRES_USERNAME`, `POSTGRES_PASSWORD` | 기존 DB의 실제 계정과 비밀번호 |
 | `FLINK_JDBC_URL` | **Flink 컨테이너**에서 접근 가능한 PostgreSQL JDBC URL |
@@ -61,8 +63,25 @@ editor infra/production/.env
 | `FLINK_JOB_MANAGER_URL` | Flink REST URL, 예: `http://flink-jobmanager:8081` |
 | `FLINK_SQL_GATEWAY` | SQL Gateway URL, 예: `http://flink-sql-gateway:8083` |
 | `ATLAS_URL`, `ATLAS_AGENT_ID`, `ATLAS_API_KEY` | 기존 Atlas 주소·에이전트·키 |
-| `APP_DOMAIN`, `ACME_EMAIL` | Caddy 사용 시 실제 도메인과 인증서 연락 이메일 |
 | `INFRA_NETWORK` | 같은 Docker 호스트의 기존 인프라 네트워크 이름 |
+
+### IMAGE_TAG 입력 방법
+
+`IMAGE_TAG`는 배포 버전을 구분하는 이름입니다. 첫 배포에는 예시 파일의 `20261016-1`을 그대로 사용해도 됩니다.
+
+```dotenv
+IMAGE_PREFIX=streamcell
+IMAGE_TAG=20261016-1
+```
+
+`deploy.sh deploy`를 실행하면 다음 두 이미지를 이 이름으로 빌드합니다.
+
+```text
+streamcell/frontend:20261016-1
+streamcell/backend:20261016-1
+```
+
+수정한 코드를 다시 배포할 때는 `20261016-2`, 다음 날짜 첫 배포는 `20261017-1`처럼 새 태그를 사용하세요. `v1.0.0`이나 검토한 Git 커밋의 짧은 SHA도 사용할 수 있습니다. 영문·숫자·점·밑줄·하이픈으로 작성하며 공백과 `/`는 넣지 않습니다. 이전 태그의 이미지를 남겨 두면 그 버전으로 롤백할 수 있습니다. 별도 빌드 호스트나 레지스트리에서 이미지를 받아 `up`으로 시작할 때는 전달받은 이미지와 같은 태그를 입력합니다.
 
 프로덕션은 PostgreSQL 드라이버를 직접 사용합니다. 개발용 `jdbc:log4jdbc:postgresql://...` URL을 넣지 마세요. API와 Flink의 JDBC URL은 달라도 되지만, 현재 애플리케이션은 두 연결에 **같은 DB 계정·비밀번호**를 사용합니다. 해당 계정에 기존 `web`, `platform` 접근 권한과 Flink 결과 테이블 생성·쓰기 권한이 필요합니다.
 
@@ -73,7 +92,7 @@ editor infra/production/.env
 기본 설정을 사용합니다.
 
 ```dotenv
-COMPOSE_FILE=compose.yaml:compose.infra.yaml:compose.https.yaml
+COMPOSE_FILE=compose.yaml:compose.infra.yaml
 INFRA_NETWORK=streamcell-net
 ```
 
@@ -91,7 +110,7 @@ PostgreSQL, Kafka, Flink 컨테이너가 해당 네트워크에 연결되어 있
 `COMPOSE_FILE`에서 `compose.infra.yaml`을 제거하고, 인프라 주소를 실제 사설 DNS/IP로 변경합니다.
 
 ```dotenv
-COMPOSE_FILE=compose.yaml:compose.https.yaml
+COMPOSE_FILE=compose.yaml
 POSTGRES_URL=jdbc:postgresql://10.20.0.10:5432/streamcell
 ```
 
@@ -99,18 +118,16 @@ POSTGRES_URL=jdbc:postgresql://10.20.0.10:5432/streamcell
 
 Kafka는 bootstrap 접속 후 브로커의 `advertised.listeners`로 재접속합니다. 브로커가 `localhost:19092` 등을 광고하면 API/Flink에서 동작하지 않습니다. 같은 Docker 네트워크에서는 `kafka-1:9092` 등의 내부 리스너, 원격에서는 양쪽에서 접근 가능한 광고 주소를 사용합니다. 현재 SQL 생성기는 Spring Kafka 설정의 bootstrap 주소를 사용하며, SASL/TLS Kafka 옵션을 생성 SQL에 전달하지 않습니다. SASL/TLS가 필수인 클러스터는 해당 기능을 추가한 뒤 AI_SQL을 사용해야 합니다.
 
-### 기존 HTTPS 프록시 사용
+### HTTP 접속 주소와 포트
 
-`COMPOSE_FILE`에서 `compose.https.yaml`을 제거합니다. 동일 호스트의 프록시 upstream은 `http://127.0.0.1:8088`입니다. `/api` 경로를 포함한 전체 요청을 전달하고 `Host`, `X-Forwarded-For`, `X-Forwarded-Proto` 헤더를 설정하세요. 업로드 한도는 최소 50MiB, AI 요청 read timeout은 300초로 맞춥니다.
+기본값은 서버의 모든 IPv4 인터페이스에서 8088 포트로 요청을 받습니다.
 
-기존 프록시도 컨테이너라면 해당 컨테이너의 `127.0.0.1`로 앱에 접근할 수 없습니다. 앱 네트워크에 연결한 뒤 `frontend:8080`으로 전달하거나 Docker 호스트의 사설 주소를 통해 연결하도록 별도 설정하세요. API의 8085 포트는 직접 공개하지 않습니다.
-
-공개 IP만 있고 도메인이 없는 초기 점검은 SSH 터널로 진행할 수 있습니다.
-
-```bash
-ssh -L 8088:127.0.0.1:8088 user@server
-# PC 브라우저: http://localhost:8088
+```dotenv
+FRONTEND_BIND_ADDRESS=0.0.0.0
+FRONTEND_HTTP_PORT=8088
 ```
+
+브라우저에서 `http://서버IP:8088`로 접속하세요. 포트를 `80`으로 변경했다면 `http://서버IP`로 접속할 수 있습니다. 서버에 이미 같은 포트를 사용하는 서비스가 있다면 다른 포트를 선택하세요. 특정 서버 주소에서만 받으려면 `FRONTEND_BIND_ADDRESS`를 해당 IPv4 주소로 설정합니다. `127.0.0.1`로 설정하면 서버 내부에서만 접속됩니다. 백엔드 8085는 Docker 내부에서만 사용하며 프론트엔드가 `/api` 요청을 전달합니다.
 
 ## 2. 기존 DB와 업로드 확인
 
@@ -160,19 +177,19 @@ bash infra/production/deploy.sh deploy
 bash infra/production/deploy.sh status
 ```
 
-`check`는 비밀값을 출력하지 않고 필수값, JWT 키 길이, 운영 JDBC 형식, Kafka 주소, 릴리스 태그, HTTPS 도메인, Docker 엔진과 외부 네트워크 존재 여부를 검사합니다. 실제 자격 증명·네트워크 접속 성공까지 보장하지는 않습니다.
+`check`는 비밀값을 출력하지 않고 필수값, JWT 키 길이, 운영 JDBC 형식, Kafka 주소, 릴리스 태그, Docker 엔진과 외부 네트워크 존재 여부를 검사합니다. 실제 자격 증명·네트워크 접속 성공까지 보장하지는 않습니다.
 
 `deploy`는 두 이미지를 빌드하고, API readiness 성공 후 프론트엔드를 시작합니다. API readiness에는 DB 연결 검사가 포함됩니다. API는 일반 사용자로 실행되며 루트 파일시스템은 읽기 전용이고, 업로드 디렉터리만 영구 볼륨에 저장됩니다. 로그는 콘솔에 기록하고 Docker가 회전합니다. Atlas 키와 본문을 기록하는 기존 HTTP 로깅 인터셉터는 운영 프로필에서 비활성화합니다. 업로드 요청 전체 크기는 50MiB 이하여야 하므로 실제 파일은 multipart 오버헤드를 고려해 그보다 작게 사용하세요.
 
-Caddy는 도메인 DNS와 80/443 접근이 정상일 때 인증서를 발급·갱신합니다. Compose가 실행 중이라고 해서 인증서 발급까지 완료된 것은 아니므로 아래 외부 확인을 수행하세요.
+서버 외부의 접속할 PC에서도 HTTP 연결을 확인하세요. 아래 주소의 `SERVER_IP`와 포트는 실제 설정으로 바꿉니다.
 
 ```bash
-curl --fail https://YOUR_DOMAIN/healthz
-curl --fail -I https://YOUR_DOMAIN/
+curl --fail http://SERVER_IP:8088/healthz
+curl --fail -I http://SERVER_IP:8088/
 # 인증 없이 보호 API를 호출하면 401 또는 403이어야 합니다.
-curl -s -o /dev/null -w '%{http_code}\n' https://YOUR_DOMAIN/api/v1/web/user/items
+curl -s -o /dev/null -w '%{http_code}\n' http://SERVER_IP:8088/api/v1/web/user/items
 # 운영 엔드포인트는 웹 프록시에서 차단되어 404여야 합니다.
-curl -s -o /dev/null -w '%{http_code}\n' https://YOUR_DOMAIN/actuator/health
+curl -s -o /dev/null -w '%{http_code}\n' http://SERVER_IP:8088/actuator/health
 ```
 
 브라우저에서 운영 계정 로그인 → Topic 동기화·조회 → 기존 Pipeline 상세·상태 → 테스트 Pipeline의 JAR 등록/배포 또는 AI SQL 생성 → 결과 조회를 확인하세요. 기존 운영 Pipeline을 검증 목적으로 중지하지 마세요. DB readiness가 정상이어도 Kafka/Flink/Atlas 연결이나 사용자 권한이 정상이라는 의미는 아닙니다.
@@ -220,7 +237,7 @@ python3 infra/production/backup.py
 python3 infra/production/backup.py --postgres-image postgres:17-alpine
 ```
 
-백업은 `infra/production/backups/<UTC시간>/`에 저장됩니다. `database.dump`, `uploads.tar.gz`, `manifest.json`이 모두 있고 `.partial`이 없어야 완료된 백업입니다. 다른 서버의 제한된 저장소로 복사하고 보관 기간을 정하세요. `.env`와 Caddy 인증서 볼륨은 이 백업에 포함되지 않으므로 별도로 보호·보관합니다. 원격 DB에 사용자 지정 CA/클라이언트 인증서가 필요하면 해당 인증서를 마운트하는 백업 실행 환경을 준비하세요. 이 도구는 `sslmode`만 URL에서 전달합니다.
+백업은 `infra/production/backups/<UTC시간>/`에 저장됩니다. `database.dump`, `uploads.tar.gz`, `manifest.json`이 모두 있고 `.partial`이 없어야 완료된 백업입니다. 다른 서버의 제한된 저장소로 복사하고 보관 기간을 정하세요. `.env`는 이 백업에 포함되지 않으므로 별도로 보호·보관합니다. 원격 DB에 사용자 지정 CA/클라이언트 인증서가 필요하면 해당 인증서를 마운트하는 백업 실행 환경을 준비하세요. 이 도구는 `sslmode`만 URL에서 전달합니다.
 
 복구는 운영 DB 위에 바로 덮어쓰기보다 별도 DB/볼륨에서 먼저 검증합니다.
 
@@ -243,7 +260,6 @@ docker compose --env-file .env logs --tail=200 backend
 docker compose --env-file .env exec -T backend \
   curl --fail --silent http://127.0.0.1:8085/actuator/health/readiness
 docker compose --env-file .env exec -T frontend nginx -t
-docker compose --env-file .env logs --tail=100 caddy  # Caddy 옵션 사용 시
 ```
 
 - DB 연결 실패: 컨테이너 기준 주소, 네트워크, 비밀번호, JDBC 접두어, PostgreSQL `pg_hba.conf`/TLS 설정을 확인합니다.
@@ -252,7 +268,7 @@ docker compose --env-file .env logs --tail=100 caddy  # Caddy 옵션 사용 시
 - AI SQL 배포 실패: Atlas 설정, SQL Gateway v2 endpoint, Flink에 설치된 Kafka/JDBC/PostgreSQL connector JAR, Flink에서 접근하는 sink DB 주소·권한을 확인합니다.
 - 502/504: 백엔드 health와 로그를 확인합니다. Nginx는 Docker DNS를 주기적으로 다시 조회하므로 API 교체 후 새 IP로 연결합니다.
 - JAR 경로 오류: 업로드 볼륨과 DB의 저장 경로를 함께 확인합니다.
-- DNS/인증서 실패: 도메인 A/AAAA, 외부 80/443 접근, 기존 포트 점유와 Caddy 로그를 확인합니다.
+- 외부 HTTP 접속 실패: 서버 IP, `FRONTEND_BIND_ADDRESS`, `FRONTEND_HTTP_PORT`, 기존 포트 점유와 방화벽·보안 그룹을 확인합니다.
 
 ## 검증 및 남은 운영 판단
 
@@ -282,8 +298,8 @@ docker build -t streamcell-deployment-validation-frontend frontend
 python3 infra/production/tests/smoke.py
 ```
 
-이 검증은 V2 DDL·스키마 검사, BCrypt 관리자 생성과 중복 방지, 운영 컨테이너 시작·DB readiness, JWT 로그인·API 프록시, SPA 경로·비공개 actuator, 컨테이너 교체 후 업로드 보존, DB·파일 백업과 API 재시작을 확인합니다. Kafka/Flink/Atlas 연결 및 실제 공개 DNS·TLS 발급은 대상 서버에서 별도로 검증해야 합니다.
+이 검증은 V2 DDL·스키마 검사, BCrypt 관리자 생성과 중복 방지, 운영 컨테이너 시작·DB readiness, JWT 로그인·API 프록시, SPA 경로·비공개 actuator, 컨테이너 교체 후 업로드 보존, DB·파일 백업과 API 재시작을 확인합니다. Kafka/Flink/Atlas 연결 및 서버 외부에서의 HTTP 접근은 대상 서버에서 별도로 검증해야 합니다.
 
 프로젝트의 기존 Gradle Java 24 설정과 일치하는 이미지를 사용합니다. Java 24는 장기 지원 버전이 아니며 업데이트 제공 기간이 종료되어 있으므로, 공개 운영 전에는 지원 중인 LTS JDK로의 전환을 권장합니다. Spring Boot 4와 함께 쓰는 기존 springdoc 2.x도 공식 호환 범위 밖이므로 호환되는 3.x 버전으로 전환하고 API 문서가 필요한 개발 환경에서 확인해야 합니다. 운영 프로필에서는 API 문서를 비활성화합니다. 이 배포 작업에서는 라이브러리·Java 버전을 일괄 변경하지 않습니다.
 
-참고: [Compose 시작 순서와 healthcheck](https://docs.docker.com/compose/how-tos/startup-order/), [Spring Boot health endpoint](https://docs.spring.io/spring-boot/reference/actuator/endpoints.html), [Caddy 자동 HTTPS](https://caddyserver.com/docs/automatic-https), [Temurin 지원 기간](https://adoptium.net/support/), [springdoc 호환성](https://springdoc.org/).
+참고: [Compose 시작 순서와 healthcheck](https://docs.docker.com/compose/how-tos/startup-order/), [Spring Boot health endpoint](https://docs.spring.io/spring-boot/reference/actuator/endpoints.html), [Temurin 지원 기간](https://adoptium.net/support/), [springdoc 호환성](https://springdoc.org/).

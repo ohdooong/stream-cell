@@ -89,15 +89,6 @@ def validate_config(config):
         if ":" not in image or tag == "latest" or "replace-with" in tag or not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}", tag):
             errors.append(f"{name}: set a valid, unique IMAGE_TAG; do not use latest.")
 
-    caddy = config.get("services", {}).get("caddy")
-    if caddy:
-        values = caddy.get("environment", {})
-        domain = required("APP_DOMAIN", values)
-        email = required("ACME_EMAIL", values)
-        if not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,}", domain) or domain.endswith("example.com"):
-            errors.append("APP_DOMAIN: set a real DNS hostname without scheme, path or port.")
-        if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
-            errors.append("ACME_EMAIL: set a certificate contact email.")
     return errors
 
 
