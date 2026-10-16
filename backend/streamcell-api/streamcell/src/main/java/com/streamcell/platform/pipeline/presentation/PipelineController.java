@@ -146,7 +146,7 @@ public class PipelineController {
         @ApiResponse(responseCode = "500", description = "Internal Server Error."),
     })
     @PutMapping("/pipelines/{pipelineId}/status")
-    @PreAuthorize("@pipelineSecurity.isOwner(#pipelineId, authentication.principal.id)")
+    @PreAuthorize("@pipelineSecurity.isOwner(#pipelineId, authentication.principal.userId)")
     public ResponseEntity<BaseResponse<PipelineResponse.PipelineStatus>> putPipelineStatus(
         @PathVariable Long pipelineId) {
         return ResponseEntity.ok(
