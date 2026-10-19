@@ -81,13 +81,13 @@ docker compose -f infra/docker-compose.yml exec kafka-1 kafka-topics --bootstrap
 
 ## 데이터 형식
 
-Kafka value는 UTF-8 JSON이며 공통 필드는 `event_id`(UUID), `event_type`, `schema_version`, `event_time`(UTC ISO 8601 밀리초), `site_id`, `zone_id`, `is_anomaly`입니다. 종류별 필드는 위 표를 참고하세요. 정상/이상 여부에 따라 관련 수치와 상태를 함께 변경합니다. `--anomaly-rate 0`은 정상만, `1`은 이상만 생성합니다. 기본값 0.1은 확률이므로 실제 건수의 정확한 10%를 보장하지 않습니다.
+Kafka value는 UTF-8 JSON이며 공통 필드는 `event_id`(UUID), `event_type`, `schema_version`, `event_time`(`yyyy-MM-dd HH:mm:ss`), `site_id`, `zone_id`, `is_anomaly`입니다. 10종 모두 기존 orders Producer와 동일하게 `datetime.now().strftime("%Y-%m-%d %H:%M:%S")`로 실행 환경의 로컬 시각을 초 단위까지 기록합니다. `T`, `Z`, 밀리초, 시간대 오프셋은 포함하지 않습니다. orders와 같은 시각 기준을 사용하려면 실행 환경의 시간대도 같게 설정하세요. 종류별 필드는 위 표를 참고하세요. 정상/이상 여부에 따라 관련 수치와 상태를 함께 변경합니다. `--anomaly-rate 0`은 정상만, `1`은 이상만 생성합니다. 기본값 0.1은 확률이므로 실제 건수의 정확한 10%를 보장하지 않습니다.
 
 ```json
-{"event_id":"example-uuid","event_type":"gas","schema_version":1,"event_time":"2026-10-04T00:00:00.000Z","site_id":"site-001","zone_id":"zone-001","is_anomaly":true,"sensor_id":"gas-001","co_ppm":150.0,"h2s_ppm":30.0,"oxygen_pct":17.0,"combustible_gas_pct_lel":40.0,"alarm_active":true}
+{"event_id":"example-uuid","event_type":"gas","schema_version":1,"event_time":"2026-10-19 09:00:00","site_id":"site-001","zone_id":"zone-001","is_anomaly":true,"sensor_id":"gas-001","co_ppm":150.0,"h2s_ppm":30.0,"oxygen_pct":17.0,"combustible_gas_pct_lel":40.0,"alarm_active":true}
 ```
 
-Flink에서는 `event_time`을 STRING으로 읽고 `TO_TIMESTAMP_LTZ` 등 사용 환경에 맞는 변환을 적용하세요. 기존 orders의 `yyyy-MM-dd HH:mm:ss` 형식과 다릅니다. 동일 엔티티 Key는 같은 파티션으로 라우팅합니다. 장비 상태는 매번 독립 생성되며 실제 센서 시계열의 연속성을 모델링하지 않습니다. `--seed`는 종류별 값과 선택을 재현하지만 UUID와 현재 시각은 매 실행 달라집니다. 안전 관련 수치와 경보는 데모 시나리오이며 실제 안전기준으로 사용하지 마세요.
+Flink에서는 orders와 동일한 `yyyy-MM-dd HH:mm:ss` 파싱 설정을 사용하세요. 수정 전에 Kafka에 적재된 ISO 8601 메시지는 변환되지 않으므로 이전 메시지를 재처리할 경우 별도 처리가 필요합니다. 동일 엔티티 Key는 같은 파티션으로 라우팅합니다. 장비 상태는 매번 독립 생성되며 실제 센서 시계열의 연속성을 모델링하지 않습니다. `--seed`는 종류별 값과 선택을 재현하지만 UUID와 현재 시각은 매 실행 달라집니다. 안전 관련 수치와 경보는 데모 시나리오이며 실제 안전기준으로 사용하지 마세요.
 
 전송은 기존 `order-producer`와 동일하게 `acks=all`, `retries=3`을 사용하며 `enable.idempotence=false`로 설정합니다. idempotence PID 발급을 요청하지 않도록 하여 `Failed to acquire idempotence PID ... Coordinator load in progress` 메시지가 발생하는 경로를 피합니다. 브로커의 coordinator 상태 자체를 복구하는 설정은 아닙니다. 재시도 중 중복 메시지가 발생할 수 있습니다. 전송 콜백 오류나 flush 후 미전송 메시지가 있으면 종료코드 1을 반환합니다.
 
