@@ -1,6 +1,6 @@
 """Synthetic streaming scenarios. Thresholds are demo values, not safety standards."""
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 
 KINDS = {
@@ -50,5 +50,5 @@ def create_event(kind, rng, anomaly_rate=0.1):
     else:
         raise ValueError(f"Unknown producer: {kind}")
     return dict(event_id=str(uuid.uuid4()), event_type=kind, schema_version=1,
-                event_time=datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+                event_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 site_id=site, zone_id=zone, is_anomaly=abnormal, **data)
