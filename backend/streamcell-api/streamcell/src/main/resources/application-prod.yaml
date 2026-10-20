@@ -60,4 +60,3 @@ logging:
     org.mybatis: WARN
     org.apache.ibatis: WARN
     # The existing interceptor logs Atlas credentials and request/response bodies.
-    com.streamcell.global.interceptor.RestClientLoggingInterceptor: OFF
