@@ -27,9 +27,9 @@ flink:
     api-version: v2
   kafka:
     bootstrap-servers:
-      - http://192.168.245.184:19092
-      - http://192.168.245.184:19093
-      - http://192.168.245.184:19094
+      - kafka-1:9092
+      - kafka-2:9092
+      - kafka-3:9092
   jdbc:
     url: ${FLINK_JDBC_URL}
     username: ${POSTGRES_USERNAME}

@@ -2,6 +2,7 @@ package com.streamcell.platform.ai.domain.generator;
 
 import com.streamcell.platform.ai.domain.context.KafkaSourceDDLGenerationContext;
 import com.streamcell.platform.ai.domain.policy.FlinkSQLPolicy;
+import com.streamcell.platform.flink.config.FlinkKafkaProperties;
 import com.streamcell.platform.pipeline.vo.Pipeline;
 import com.streamcell.platform.topic.vo.Topic;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import java.util.Map;
 public class KafkaSourceDDLGenerator {
 
     private final KafkaProperties kafkaProperties;
+    private final FlinkKafkaProperties flinkKafkaProperties;
 
     public String generate(KafkaSourceDDLGenerationContext context) {
         //return generateColumns(context);
@@ -82,7 +84,8 @@ public class KafkaSourceDDLGenerator {
                'format' = 'json'
                """.formatted(
                        sourceTopic.getTopicName(),
-                       String.join(",", kafkaProperties.getBootstrapServers()),
+//                       String.join(",", kafkaProperties.getBootstrapServers()),
+                       String.join(",", flinkKafkaProperties.getBootstrapServers()),
                        pipeline.getPipelineId());
     }
 
