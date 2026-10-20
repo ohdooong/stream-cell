@@ -93,7 +93,26 @@ Flink에서는 orders와 동일한 `yyyy-MM-dd HH:mm:ss` 파싱 설정을 사용
 
 전송은 기존 `order-producer`와 동일하게 `acks=all`, `retries=3`을 사용하며 `enable.idempotence=false`로 설정합니다. idempotence PID 발급을 요청하지 않도록 하여 `Failed to acquire idempotence PID ... Coordinator load in progress` 메시지가 발생하는 경로를 피합니다. 브로커의 coordinator 상태 자체를 복구하는 설정은 아닙니다. 재시도 중 중복 메시지가 발생할 수 있습니다. 전송 콜백 오류나 flush 후 미전송 메시지가 있으면 종료코드 1을 반환합니다.
 
+## Flink SQL 필드명 호환성
+
+프로젝트의 Flink 1.19 계열에 맞춰 모든 이벤트 필드명을 [공식 예약어 목록](https://nightlies.apache.org/flink/flink-docs-release-1.19/docs/dev/table/sql/overview/#reserved-keywords)과 대소문자 구분 없이 대조했습니다. SQL 예약어와 겹치는 필드는 다음과 같이 변경했습니다.
+
+| Kafka 토픽 | 이전 필드명 | 새 필드명 |
+| --- | --- | --- |
+| http-access-logs | method | http_method |
+| http-access-logs | path | request_path |
+| application-logs | level | log_level |
+| security-events | action | security_action |
+
+나머지 7종과 기존 `order-producer`의 메시지 필드에는 이 목록과 일치하는 이름이 없습니다. 토픽 이름과 메시지 Key는 그대로입니다.
+
+실행 중인 Producer는 새 코드로 재시작하고, 등록한 소스 스키마와 Flink 테이블 정의, SELECT·필터 등의 필드 참조도 새 이름으로 갱신하세요. 이미 Kafka에 적재된 메시지의 필드명은 변경되지 않습니다. 이전 메시지를 재처리하려면 이전 필드명을 읽는 테이블이나 별도 변환을 사용하세요. 이전 필드명을 SQL에서 참조할 때는 공식 문서의 안내대로 백틱으로 감싸야 합니다.
+
+`testdata/flink-1.19-reserved-keywords.txt`는 공식 문서의 키워드 목록을 저장한 테스트 자료입니다. 전체 이벤트 필드를 이 목록과 비교하고, JSON Schema 및 필드 타입 문서와 생성 메시지가 일치하는지도 검사합니다. Flink 버전을 올릴 때 목록을 다시 확인하세요.
+
 ## JSON Schema
+
+토픽의 간단한 설명과 `{"event_id": "STRING", ...}` 형식의 필드 타입 목록은 [SCHEMAS.md](SCHEMAS.md)를 참고하세요.
 
 `schemas/`에 10종 Kafka **value 본문**의 JSON Schema(Draft 2020-12)를 제공합니다. `--dry-run` 출력의 `topic`, `key`, `value` 래퍼는 포함하지 않습니다. 각 파일은 외부 참조 없이 사용할 수 있습니다.
 

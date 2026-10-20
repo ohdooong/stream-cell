@@ -33,12 +33,12 @@ def create_event(kind, rng, anomaly_rate=0.1):
         factor = number(0.85, 0.99)
         data = dict(meter_id=f"meter-{entity:03d}", voltage_v=voltage, current_a=current, power_factor=factor, active_power_kw=round(voltage * current * factor / 1000), frequency_hz=number(59.8, 60.2))
     elif kind == "application-log":
-        data = dict(service_name=rng.choice(["streamcell-api", "pipeline-service", "collector"]), instance_id=f"instance-{entity:03d}", level="ERROR" if abnormal else rng.choice(["INFO", "DEBUG"]), message="Upstream request timed out" if abnormal else "Request processed successfully", trace_id=uuid.uuid4().hex, duration_ms=rng.randint(2000, 5000) if abnormal else rng.randint(5, 150), error_code="UPSTREAM_TIMEOUT" if abnormal else None)
+        data = dict(service_name=rng.choice(["streamcell-api", "pipeline-service", "collector"]), instance_id=f"instance-{entity:03d}", log_level="ERROR" if abnormal else rng.choice(["INFO", "DEBUG"]), message="Upstream request timed out" if abnormal else "Request processed successfully", trace_id=uuid.uuid4().hex, duration_ms=rng.randint(2000, 5000) if abnormal else rng.randint(5, 150), error_code="UPSTREAM_TIMEOUT" if abnormal else None)
     elif kind == "http-access":
         status = rng.choice([500, 502, 503]) if abnormal else rng.choice([200, 201, 204])
-        data = dict(service_name="streamcell-api", method=rng.choice(["GET", "POST"]), path=rng.choice(["/api/topics", "/api/pipelines", "/api/deployments"]), status_code=status, latency_ms=rng.randint(1000, 5000) if abnormal else rng.randint(10, 200), response_bytes=0 if abnormal else rng.randint(100, 10000), client_ip=f"192.0.2.{entity}")
+        data = dict(service_name="streamcell-api", http_method=rng.choice(["GET", "POST"]), request_path=rng.choice(["/api/topics", "/api/pipelines", "/api/deployments"]), status_code=status, latency_ms=rng.randint(1000, 5000) if abnormal else rng.randint(10, 200), response_bytes=0 if abnormal else rng.randint(100, 10000), client_ip=f"192.0.2.{entity}")
     elif kind == "security":
-        data = dict(user_id=f"user-{entity:03d}", action="LOGIN", outcome="FAILURE" if abnormal else "SUCCESS", source_ip=f"198.51.100.{entity}", failed_attempts=rng.randint(5, 20) if abnormal else 0, risk_score=rng.randint(80, 100) if abnormal else rng.randint(0, 20), reason="REPEATED_INVALID_PASSWORD" if abnormal else "AUTHENTICATED")
+        data = dict(user_id=f"user-{entity:03d}", security_action="LOGIN", outcome="FAILURE" if abnormal else "SUCCESS", source_ip=f"198.51.100.{entity}", failed_attempts=rng.randint(5, 20) if abnormal else 0, risk_score=rng.randint(80, 100) if abnormal else rng.randint(0, 20), reason="REPEATED_INVALID_PASSWORD" if abnormal else "AUTHENTICATED")
     elif kind == "worker-safety":
         data = dict(worker_id=f"worker-{entity:03d}", helmet_detected=not abnormal, safety_vest_detected=True, fall_detected=abnormal and rng.choice([True, False]), heart_rate_bpm=rng.randint(130, 180) if abnormal else rng.randint(65, 100), restricted_zone_entered=abnormal, alert_type="UNSAFE_WORKER" if abnormal else "NONE")
     elif kind == "gas":
