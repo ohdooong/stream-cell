@@ -83,13 +83,34 @@ docker compose -f infra/docker-compose.yml exec kafka-1 kafka-topics --bootstrap
 
 Kafka value는 UTF-8 JSON이며 공통 필드는 `event_id`(UUID), `event_type`, `schema_version`, `event_time`(`yyyy-MM-dd HH:mm:ss`), `site_id`, `zone_id`, `is_anomaly`입니다. 10종 모두 기존 orders Producer와 동일하게 `datetime.now().strftime("%Y-%m-%d %H:%M:%S")`로 실행 환경의 로컬 시각을 초 단위까지 기록합니다. `T`, `Z`, 밀리초, 시간대 오프셋은 포함하지 않습니다. orders와 같은 시각 기준을 사용하려면 실행 환경의 시간대도 같게 설정하세요. 종류별 필드는 위 표를 참고하세요. 정상/이상 여부에 따라 관련 수치와 상태를 함께 변경합니다. `--anomaly-rate 0`은 정상만, `1`은 이상만 생성합니다. 기본값 0.1은 확률이므로 실제 건수의 정확한 10%를 보장하지 않습니다.
 
+모든 숫자 필드는 JSON 정수로 전송합니다. 소수로 생성하던 측정값과 계산한 유효전력은 정수로 반올림합니다. 위·경도, 역률, 접근거리도 정수화하므로 소수 정밀도는 유지되지 않습니다. 불리언 필드는 `true`/`false`를 유지합니다.
+
 ```json
-{"event_id":"example-uuid","event_type":"gas","schema_version":1,"event_time":"2026-10-19 09:00:00","site_id":"site-001","zone_id":"zone-001","is_anomaly":true,"sensor_id":"gas-001","co_ppm":150.0,"h2s_ppm":30.0,"oxygen_pct":17.0,"combustible_gas_pct_lel":40.0,"alarm_active":true}
+{"event_id":"example-uuid","event_type":"gas","schema_version":1,"event_time":"2026-10-19 09:00:00","site_id":"site-001","zone_id":"zone-001","is_anomaly":true,"sensor_id":"gas-001","co_ppm":150,"h2s_ppm":30,"oxygen_pct":17,"combustible_gas_pct_lel":40,"alarm_active":true}
 ```
 
 Flink에서는 orders와 동일한 `yyyy-MM-dd HH:mm:ss` 파싱 설정을 사용하세요. 수정 전에 Kafka에 적재된 ISO 8601 메시지는 변환되지 않으므로 이전 메시지를 재처리할 경우 별도 처리가 필요합니다. 동일 엔티티 Key는 같은 파티션으로 라우팅합니다. 장비 상태는 매번 독립 생성되며 실제 센서 시계열의 연속성을 모델링하지 않습니다. `--seed`는 종류별 값과 선택을 재현하지만 UUID와 현재 시각은 매 실행 달라집니다. 안전 관련 수치와 경보는 데모 시나리오이며 실제 안전기준으로 사용하지 마세요.
 
 전송은 기존 `order-producer`와 동일하게 `acks=all`, `retries=3`을 사용하며 `enable.idempotence=false`로 설정합니다. idempotence PID 발급을 요청하지 않도록 하여 `Failed to acquire idempotence PID ... Coordinator load in progress` 메시지가 발생하는 경로를 피합니다. 브로커의 coordinator 상태 자체를 복구하는 설정은 아닙니다. 재시도 중 중복 메시지가 발생할 수 있습니다. 전송 콜백 오류나 flush 후 미전송 메시지가 있으면 종료코드 1을 반환합니다.
+
+## JSON Schema
+
+`schemas/`에 10종 Kafka **value 본문**의 JSON Schema(Draft 2020-12)를 제공합니다. `--dry-run` 출력의 `topic`, `key`, `value` 래퍼는 포함하지 않습니다. 각 파일은 외부 참조 없이 사용할 수 있습니다.
+
+모든 필드는 필수이며 추가 필드는 허용하지 않습니다. 숫자 타입은 모두 `integer`이고, 불리언은 `boolean`입니다. `application-log.error_code`는 `string` 또는 `null`이며, `null`일 때도 필드를 포함합니다. `event_type`과 `schema_version`은 종류별 고정값입니다. `event_time`은 시간대 없는 `yyyy-MM-dd HH:mm:ss` 문자열로, 표준 `date-time` 대신 패턴으로 명시합니다. 이 스키마는 현재 생성기의 필드 구조와 타입을 기술하며, 정상·이상 조건별 수치 범위나 필드 간 관계까지 검증하지는 않습니다.
+
+| --kind | Kafka 토픽 | JSON Schema |
+| --- | --- | --- |
+| environment | iot-environment | [environment.schema.json](schemas/environment.schema.json) |
+| equipment | iot-equipment | [equipment.schema.json](schemas/equipment.schema.json) |
+| energy | iot-energy | [energy.schema.json](schemas/energy.schema.json) |
+| application-log | application-logs | [application-log.schema.json](schemas/application-log.schema.json) |
+| http-access | http-access-logs | [http-access.schema.json](schemas/http-access.schema.json) |
+| security | security-events | [security.schema.json](schemas/security.schema.json) |
+| worker-safety | worker-safety-events | [worker-safety.schema.json](schemas/worker-safety.schema.json) |
+| gas | gas-detection-events | [gas.schema.json](schemas/gas.schema.json) |
+| fire | fire-detection-events | [fire.schema.json](schemas/fire.schema.json) |
+| vehicle | vehicle-telemetry | [vehicle.schema.json](schemas/vehicle.schema.json) |
 
 ## 검증
 

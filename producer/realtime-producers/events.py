@@ -22,7 +22,7 @@ def create_event(kind, rng, anomaly_rate=0.1):
     entity = rng.randint(1, 20)
     site = f"site-{rng.randint(1, 3):03d}"
     zone = f"zone-{rng.randint(1, 5):03d}"
-    number = lambda low, high: round(rng.uniform(low, high), 2)
+    number = lambda low, high: round(rng.uniform(low, high))
     if kind == "environment":
         data = dict(device_id=f"env-{entity:03d}", temperature_c=number(45, 65) if abnormal else number(18, 30), humidity_pct=number(30, 75), pm25_ug_m3=number(100, 200) if abnormal else number(5, 30), battery_pct=number(10, 100))
     elif kind == "equipment":
@@ -31,7 +31,7 @@ def create_event(kind, rng, anomaly_rate=0.1):
         voltage = number(210, 230)
         current = number(80, 120) if abnormal else number(5, 30)
         factor = number(0.85, 0.99)
-        data = dict(meter_id=f"meter-{entity:03d}", voltage_v=voltage, current_a=current, power_factor=factor, active_power_kw=round(voltage * current * factor / 1000, 3), frequency_hz=number(59.8, 60.2))
+        data = dict(meter_id=f"meter-{entity:03d}", voltage_v=voltage, current_a=current, power_factor=factor, active_power_kw=round(voltage * current * factor / 1000), frequency_hz=number(59.8, 60.2))
     elif kind == "application-log":
         data = dict(service_name=rng.choice(["streamcell-api", "pipeline-service", "collector"]), instance_id=f"instance-{entity:03d}", level="ERROR" if abnormal else rng.choice(["INFO", "DEBUG"]), message="Upstream request timed out" if abnormal else "Request processed successfully", trace_id=uuid.uuid4().hex, duration_ms=rng.randint(2000, 5000) if abnormal else rng.randint(5, 150), error_code="UPSTREAM_TIMEOUT" if abnormal else None)
     elif kind == "http-access":

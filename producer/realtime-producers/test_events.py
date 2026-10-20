@@ -22,9 +22,20 @@ class EventsTest(unittest.TestCase):
                     datetime.strptime(event["event_time"], "%Y-%m-%d %H:%M:%S")
                     json.dumps(event, allow_nan=False)
                     if kind == "energy":
-                        self.assertAlmostEqual(event["active_power_kw"], event["voltage_v"] * event["current_a"] * event["power_factor"] / 1000, places=3)
+                        self.assertEqual(event["active_power_kw"], round(event["voltage_v"] * event["current_a"] * event["power_factor"] / 1000))
                     if kind in ("gas", "fire"):
                         self.assertEqual(event["alarm_active"], bool(rate))
+
+    def test_all_numeric_fields_are_json_integers(self):
+        for kind in KINDS:
+            for rate in (0, 1):
+                for seed in range(100):
+                    with self.subTest(kind=kind, rate=rate, seed=seed):
+                        event = create_event(kind, random.Random(seed), rate)
+                        decoded = json.loads(json.dumps(event, allow_nan=False))
+                        for field, value in decoded.items():
+                            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                                self.assertIs(type(value), int, field)
 
     def test_all_scenarios_use_orders_event_time_format(self):
         # Orders uses local wall time with second precision, including on day boundaries.
