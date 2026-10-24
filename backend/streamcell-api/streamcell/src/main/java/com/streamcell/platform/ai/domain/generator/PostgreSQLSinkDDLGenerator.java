@@ -1,6 +1,5 @@
 package com.streamcell.platform.ai.domain.generator;
 
-import com.streamcell.global.config.DBConfig;
 import com.streamcell.platform._common.config.FlinkJdbcConfig;
 import com.streamcell.platform.ai.domain.context.PostgreSQLSinkDDLGenerationContext;
 import com.streamcell.platform.ai.domain.policy.FlinkSQLPolicy;
@@ -8,13 +7,13 @@ import com.streamcell.platform.ai.domain.policy.PostgreSQLSinkPolicy;
 import com.streamcell.platform.ai.domain.resolver.AggregationTypeResolver;
 import com.streamcell.platform.ai.domain.spec.AggregationSpec;
 import com.streamcell.platform.ai.dto.PipelinePlan;
+import com.streamcell.platform.pipeline.domain.policy.PipelineResultKeyPolicy;
 import com.streamcell.platform.pipeline.vo.Pipeline;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
@@ -48,13 +47,13 @@ public class PostgreSQLSinkDDLGenerator {
 
         List<String> columnItems = new ArrayList<>();
 
-        columnItems.add("window_start TIMESTAMP(3)");
-        columnItems.add("window_end TIMESTAMP(3)");
+        columnItems.add("window_start TIMESTAMP(3) NOT NULL");
+        columnItems.add("window_end TIMESTAMP(3) NOT NULL");
 
         List<String> groupByItems = pipelinePlan.getGroupBy();
         for (String item : groupByItems) {
             Object schema = parsedTopicSchema.get(item);
-            columnItems.add(item + " " + schema);
+            columnItems.add(item + " " + schema + " NOT NULL");
         }
 
         List<AggregationSpec> aggregations = pipelinePlan.getAggregations();
@@ -66,6 +65,16 @@ public class PostgreSQLSinkDDLGenerator {
 
             columnItems.add(alias + " " + sinkResultType);
         }
+
+//        PRIMARY KEY (
+//            window_start,
+//            window_end,
+//            product_id
+//    ) NOT ENFORCED
+        List<String> primaryKeyColumns = PipelineResultKeyPolicy.getPrimaryKeyColumns(pipelinePlan);
+        columnItems.add("PRIMARY KEY (");
+        columnItems.addAll(primaryKeyColumns);
+        columnItems.add(") NOT ENFORCED");
 
         return String.join(",\n    ", columnItems);
     }

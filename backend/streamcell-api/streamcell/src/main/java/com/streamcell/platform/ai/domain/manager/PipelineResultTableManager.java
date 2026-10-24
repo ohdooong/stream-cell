@@ -8,6 +8,7 @@ import com.streamcell.platform.ai.domain.spec.AggregationSpec;
 import com.streamcell.platform.ai.dto.PipelinePlan;
 import com.streamcell.platform.ai.dto.PipelineResultTable;
 import com.streamcell.platform.ai.repository.PipelineResultRepository;
+import com.streamcell.platform.pipeline.domain.policy.PipelineResultKeyPolicy;
 import com.streamcell.platform.pipeline.vo.Pipeline;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -57,6 +58,15 @@ public class PipelineResultTableManager {
 
             columns.add(postgresColumn + " " + postgresType);
         }
+
+
+        List<String> primaryKeys =
+            PipelineResultKeyPolicy.getPrimaryKeyColumns(pipelinePlan);
+
+        columns.add(
+            "PRIMARY KEY (" + String.join(", ", primaryKeys) + ")"
+        );
+
 
         PipelineResultTable dto = PipelineResultTable.builder()
                 .tableName(tableName)

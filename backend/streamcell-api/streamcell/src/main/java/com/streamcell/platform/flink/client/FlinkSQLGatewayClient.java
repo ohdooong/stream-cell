@@ -3,6 +3,7 @@ package com.streamcell.platform.flink.client;
 import com.streamcell.platform.flink.dto.FlinkSQLGatewayRequest;
 import com.streamcell.platform.flink.dto.FlinkSQLGatewayResponse;
 import com.streamcell.platform.flink.config.FlinkSQLGatewayProperties;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -16,11 +17,27 @@ public class FlinkSQLGatewayClient {
     private final RestClient restClient;
 
     public FlinkSQLGatewayResponse.CreateSession createSession() {
+
+        Map<String, String> properties = Map.of(
+            "execution.checkpointing.interval", "10 s",
+            "execution.checkpointing.mode", "EXACTLY_ONCE",
+            "state.checkpoints.dir", "file:///opt/flink/checkpoints",
+            "restart-strategy.type", "fixed-delay",
+            "restart-strategy.fixed-delay.attempts", "10",
+            "restart-strategy.fixed-delay.delay", "10 s"
+        );
+
+        Map<String, Object> requestBody = Map.of(
+            "sessionName", "streamcell-ai-sql",
+            "properties", properties
+        );
+
         return restClient.post()
-                .uri(flinkSQLGatewayProperties.getCreateSessionUrl())
-                .contentType(MediaType.APPLICATION_JSON)
-                .retrieve()
-                .body(FlinkSQLGatewayResponse.CreateSession.class);
+            .uri(flinkSQLGatewayProperties.getCreateSessionUrl())
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(requestBody)
+            .retrieve()
+            .body(FlinkSQLGatewayResponse.CreateSession.class);
     }
 
     public FlinkSQLGatewayResponse.CreateSource createSource(String sessionHandle, FlinkSQLGatewayRequest.CreateSource requestDto) {
