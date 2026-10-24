@@ -72,9 +72,12 @@ public class PostgreSQLSinkDDLGenerator {
 //            product_id
 //    ) NOT ENFORCED
         List<String> primaryKeyColumns = PipelineResultKeyPolicy.getPrimaryKeyColumns(pipelinePlan);
-        columnItems.add("PRIMARY KEY (");
-        columnItems.addAll(primaryKeyColumns);
-        columnItems.add(") NOT ENFORCED");
+
+        columnItems.add(
+            "PRIMARY KEY (" +
+                String.join(", ", primaryKeyColumns) +
+                ") NOT ENFORCED"
+        );
 
         return String.join(",\n    ", columnItems);
     }
